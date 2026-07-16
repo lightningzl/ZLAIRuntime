@@ -22,7 +22,7 @@
 
 | ID | 状态 | 工作包 | 主要产物 | 依赖 | 完成条件 |
 | --- | --- | --- | --- | --- | --- |
-| `M1-01` | `待开始` | Python Service 骨架 | `PythonService/app/`、依赖声明、启动说明 | 无 | Service 可通过一条明确命令在本地启动 |
+| `M1-01` | `已完成` | Python Service 骨架 | `PythonService/app/`、依赖声明、启动说明 | 无 | Service 可通过一条明确命令在本地启动 |
 | `M1-02` | `待开始` | Python 协议与错误处理 | Route、Schema、Service、统一异常映射 | `M1-01` | 合法请求返回协议响应；非法请求返回规定错误结构且 Service 不崩溃 |
 | `M1-03` | `待开始` | Python 自动化测试 | 成功与错误路径测试 | `M1-02` | 测试覆盖字段透传、Stub Provider、缺字段、类型错误和空输入并全部通过 |
 | `M1-04` | `待开始` | UE AI Service Client | Subsystem、协议结构体、HTTP/JSON 请求与响应解析 | 无 | UE 能构造协议请求并以明确的成功或失败结果完成异步回调 |
@@ -40,6 +40,8 @@
 - 不加入 LLM SDK、数据库、向量库或 Tool 框架。
 
 验证：安装依赖后执行启动命令，确认进程可启动且应用可加载。
+
+验证记录（2026-07-17）：使用 Python 3.12.13 创建本地虚拟环境并安装 `requirements.txt`；应用导入检查通过；按 `README.md` 中的单命令启动 Uvicorn 后，`GET /docs` 返回 `200`，进程可正常停止。`POST /v1/dialogue` 返回 `404`，符合该接口留待 `M1-02` 实现的范围边界。
 
 ### M1-02：Python 协议与错误处理
 

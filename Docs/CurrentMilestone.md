@@ -35,7 +35,7 @@
 
 ## 验收标准
 
-- [ ] Python Service 可通过单条明确命令在本地启动。
+- [x] Python Service 可通过单条明确命令在本地启动。
 - [ ] 使用合法 JSON 调用 `/v1/dialogue`，返回 `200` 且结构符合协议。
 - [ ] `request_id` 和 `npc_id` 在请求与响应间保持一致。
 - [ ] 响应的 `provider` 为 `stub`，运行过程不需要任何 LLM API Key。

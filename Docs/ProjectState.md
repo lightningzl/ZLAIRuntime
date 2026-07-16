@@ -10,11 +10,11 @@
 | --- | --- |
 | 最后更新 | 2026-07-17 |
 | 当前里程碑 | Milestone 1：UE 到 Python Service 最小闭环 |
-| 里程碑状态 | `已规划` |
+| 里程碑状态 | `进行中` |
 | 当前活动任务 | 无 |
-| 下一候选任务 | `M1-01` Python Service 骨架；`M1-04` UE AI Service Client |
+| 下一候选任务 | `M1-02` Python 协议与错误处理；`M1-04` UE AI Service Client |
 | 已知阻塞 | 无 |
-| 验收进度 | 0/10 项已验证 |
+| 验收进度 | 1/10 项已验证 |
 
 ### 已完成基础工作
 
@@ -25,7 +25,8 @@
 
 ### 当前实现状态
 
-- 仓库尚无 `PythonService` 实现。
+- `M1-01` 已完成：`PythonService` FastAPI 分层骨架、Python/依赖声明和单命令启动说明已建立，并通过本地启动检查。
+- `POST /v1/dialogue`、协议 Schema、Stub 回复和统一错误处理尚未实现，等待 `M1-02`。
 - UE 工程尚无 AI Service Client 实现。
 - 当前没有数据库、向量库、真实 LLM 或 Tool Use 运行时依赖。
 

@@ -2,12 +2,13 @@
 
 ## 当前状态
 
-仓库尚无 Python AI Service 目录或模块。以下结构仅覆盖 Milestone 1 的 FastAPI Stub Service。
+`M1-01` 已建立可启动的 Python AI Service 骨架。FastAPI App 与 Route、Schema、Service 目录边界已经就位；对话协议、Stub 回复和错误映射留待 `M1-02` 实现。
 
 ## 计划目录
 
 ```text
 PythonService/
+  .python-version
   app/
     __init__.py
     main.py
@@ -26,14 +27,16 @@ PythonService/
   README.md
 ```
 
+`tests/` 及其测试文件将在 `M1-03` 创建。
+
 ## 模块职责
 
 | 模块 | 状态 | 职责 |
 | --- | --- | --- |
-| `app.main` | 计划 | 创建 FastAPI App、注册 Route 和统一异常处理 |
-| `app.api.dialogue` | 计划 | 实现 `POST /v1/dialogue` 的 HTTP 输入输出适配 |
-| `app.schemas.dialogue` | 计划 | 定义请求、成功响应和错误响应 Schema |
-| `app.services.dialogue_service` | 计划 | 返回确定性的 Stub 回复，不依赖 HTTP 类型 |
+| `app.main` | 已实现（M1-01） | 通过 `create_app()` 创建 FastAPI App 并注册 Dialogue Router；统一异常处理留待 `M1-02` |
+| `app.api.dialogue` | 骨架（M1-01） | 提供 `/v1` Router；`POST /v1/dialogue` 输入输出适配留待 `M1-02` |
+| `app.schemas.dialogue` | 占位（M1-01） | 请求、成功响应和错误响应 Schema 留待 `M1-02` |
+| `app.services.dialogue_service` | 占位（M1-01） | 确定性 Stub 回复留待 `M1-02`，且不依赖 HTTP 类型 |
 | `tests.test_dialogue_api` | 计划 | 验证成功请求和协议规定的错误路径 |
 
 ## 依赖方向
