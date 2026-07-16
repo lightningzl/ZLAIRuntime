@@ -2,13 +2,14 @@
 
 ## 当前状态
 
-`M1-01` 与 `M1-02` 已完成：Python AI Service 可启动，并已实现对话 Route、严格协议 Schema、确定性 Stub Service 和统一错误映射。自动化测试留待 `M1-03`。
+Python 链路 `M1-01` 至 `M1-03` 已完成：AI Service 可启动，并已实现对话 Route、严格协议 Schema、确定性 Stub Service、统一错误映射和自动化回归测试。
 
 ## 计划目录
 
 ```text
 PythonService/
   .python-version
+  pyproject.toml
   app/
     __init__.py
     main.py
@@ -23,11 +24,10 @@ PythonService/
       dialogue_service.py
   tests/
     test_dialogue_api.py
+  requirements-dev.txt
   requirements.txt
   README.md
 ```
-
-`tests/` 及其测试文件将在 `M1-03` 创建。
 
 ## 模块职责
 
@@ -37,7 +37,7 @@ PythonService/
 | `app.api.dialogue` | 已实现（M1-02） | 提供 `POST /v1/dialogue` 的 HTTP 输入输出适配，并将业务处理委托给 Service |
 | `app.schemas.dialogue` | 已实现（M1-02） | 定义严格的请求、成功响应和统一错误响应 Schema |
 | `app.services.dialogue_service` | 已实现（M1-02） | 校验空输入并返回确定性 Stub 回复，不依赖 FastAPI HTTP 类型 |
-| `tests.test_dialogue_api` | 计划 | 验证成功请求和协议规定的错误路径 |
+| `tests.test_dialogue_api` | 已实现（M1-03） | 验证成功字段透传、确定性回复、业务与 Schema 错误、内部错误脱敏，以及无 API Key/外部网络运行 |
 
 ## 依赖方向
 
