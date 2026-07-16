@@ -36,10 +36,10 @@
 ## 验收标准
 
 - [x] Python Service 可通过单条明确命令在本地启动。
-- [ ] 使用合法 JSON 调用 `/v1/dialogue`，返回 `200` 且结构符合协议。
-- [ ] `request_id` 和 `npc_id` 在请求与响应间保持一致。
-- [ ] 响应的 `provider` 为 `stub`，运行过程不需要任何 LLM API Key。
-- [ ] 缺少必填字段或字段类型错误时，返回结构化错误且 Service 不崩溃。
+- [x] 使用合法 JSON 调用 `/v1/dialogue`，返回 `200` 且结构符合协议。
+- [x] `request_id` 和 `npc_id` 在请求与响应间保持一致。
+- [x] 响应的 `provider` 为 `stub`，运行过程不需要任何 LLM API Key。
+- [x] 缺少必填字段或字段类型错误时，返回结构化错误且 Service 不崩溃。
 - [ ] UE 可配置 Service 地址并成功发出请求。
 - [ ] UE 能解析并可见地展示 `reply`。
 - [ ] Service 未启动、请求超时或返回非 `2xx` 时，UE 不崩溃并输出可定位的错误信息。

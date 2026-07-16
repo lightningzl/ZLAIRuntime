@@ -1,6 +1,6 @@
 # Python AI Service
 
-Milestone 1 使用的本地 FastAPI Stub Service。当前骨架只负责应用启动和模块分层；`POST /v1/dialogue` 将在 `M1-02` 中实现。
+Milestone 1 使用的本地 FastAPI Stub Service。当前实现提供版本化对话接口、严格请求校验、确定性 Stub 回复和统一错误结构。
 
 ## 环境要求
 
@@ -24,4 +24,4 @@ PythonService/.venv/Scripts/python -m pip install -r PythonService/requirements.
 PythonService/.venv/Scripts/python -m uvicorn app.main:app --app-dir PythonService --host 127.0.0.1 --port 8000
 ```
 
-启动后，FastAPI 文档页面位于 `http://127.0.0.1:8000/docs`。当前尚未注册对话接口。
+启动后，FastAPI 文档页面位于 `http://127.0.0.1:8000/docs`，对话接口为 `POST http://127.0.0.1:8000/v1/dialogue`。请求和响应格式见 [`Docs/Protocol.md`](../Docs/Protocol.md)。

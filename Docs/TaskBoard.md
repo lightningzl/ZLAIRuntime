@@ -23,7 +23,7 @@
 | ID | 状态 | 工作包 | 主要产物 | 依赖 | 完成条件 |
 | --- | --- | --- | --- | --- | --- |
 | `M1-01` | `已完成` | Python Service 骨架 | `PythonService/app/`、依赖声明、启动说明 | 无 | Service 可通过一条明确命令在本地启动 |
-| `M1-02` | `待开始` | Python 协议与错误处理 | Route、Schema、Service、统一异常映射 | `M1-01` | 合法请求返回协议响应；非法请求返回规定错误结构且 Service 不崩溃 |
+| `M1-02` | `已完成` | Python 协议与错误处理 | Route、Schema、Service、统一异常映射 | `M1-01` | 合法请求返回协议响应；非法请求返回规定错误结构且 Service 不崩溃 |
 | `M1-03` | `待开始` | Python 自动化测试 | 成功与错误路径测试 | `M1-02` | 测试覆盖字段透传、Stub Provider、缺字段、类型错误和空输入并全部通过 |
 | `M1-04` | `待开始` | UE AI Service Client | Subsystem、协议结构体、HTTP/JSON 请求与响应解析 | 无 | UE 能构造协议请求并以明确的成功或失败结果完成异步回调 |
 | `M1-05` | `待开始` | UE 配置与失败处理 | Base URL、超时配置、分类错误模型和日志 | `M1-04` | 网络失败、超时、非 `2xx` 和解析失败均不崩溃，并输出可定位信息 |
@@ -52,6 +52,8 @@
 - Stub 回复保持确定性，Service 层不依赖 FastAPI HTTP 类型。
 
 验证：分别发送合法请求、空输入、缺字段和错误类型请求，检查状态码和 JSON 结构。
+
+验证记录（2026-07-17）：实际启动 Uvicorn 后，合法请求返回 `200`，`request_id` 与 `npc_id` 原样透传，`provider` 为 `stub`；空 `player_input` 返回 `400 invalid_request`；缺少 `player_input` 和数值类型 `player_input` 均返回 `422 validation_error`。另验证 Stub 回复具有确定性，`500 internal_error` 响应不包含原始异常文本或内部路径，Service 进程可正常停止。
 
 ### M1-03：Python 自动化测试
 

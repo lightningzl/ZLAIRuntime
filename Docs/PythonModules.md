@@ -2,7 +2,7 @@
 
 ## 当前状态
 
-`M1-01` 已建立可启动的 Python AI Service 骨架。FastAPI App 与 Route、Schema、Service 目录边界已经就位；对话协议、Stub 回复和错误映射留待 `M1-02` 实现。
+`M1-01` 与 `M1-02` 已完成：Python AI Service 可启动，并已实现对话 Route、严格协议 Schema、确定性 Stub Service 和统一错误映射。自动化测试留待 `M1-03`。
 
 ## 计划目录
 
@@ -33,10 +33,10 @@ PythonService/
 
 | 模块 | 状态 | 职责 |
 | --- | --- | --- |
-| `app.main` | 已实现（M1-01） | 通过 `create_app()` 创建 FastAPI App 并注册 Dialogue Router；统一异常处理留待 `M1-02` |
-| `app.api.dialogue` | 骨架（M1-01） | 提供 `/v1` Router；`POST /v1/dialogue` 输入输出适配留待 `M1-02` |
-| `app.schemas.dialogue` | 占位（M1-01） | 请求、成功响应和错误响应 Schema 留待 `M1-02` |
-| `app.services.dialogue_service` | 占位（M1-01） | 确定性 Stub 回复留待 `M1-02`，且不依赖 HTTP 类型 |
+| `app.main` | 已实现（M1-02） | 通过 `create_app()` 创建 FastAPI App、注册 Dialogue Router，并统一映射业务校验、Schema 校验和未预期错误 |
+| `app.api.dialogue` | 已实现（M1-02） | 提供 `POST /v1/dialogue` 的 HTTP 输入输出适配，并将业务处理委托给 Service |
+| `app.schemas.dialogue` | 已实现（M1-02） | 定义严格的请求、成功响应和统一错误响应 Schema |
+| `app.services.dialogue_service` | 已实现（M1-02） | 校验空输入并返回确定性 Stub 回复，不依赖 FastAPI HTTP 类型 |
 | `tests.test_dialogue_api` | 计划 | 验证成功请求和协议规定的错误路径 |
 
 ## 依赖方向
