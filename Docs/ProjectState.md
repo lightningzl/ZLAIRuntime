@@ -11,8 +11,8 @@
 | 最后更新 | 2026-07-17 |
 | 当前里程碑 | Milestone 1：UE 到 Python Service 最小闭环 |
 | 里程碑状态 | `进行中` |
-| 当前活动任务 | 无 |
-| 下一候选任务 | `M1-04` UE AI Service Client |
+| 当前活动任务 | `M1-04` UE AI Service Client（待验收） |
+| 下一候选任务 | 无 |
 | 已知阻塞 | 无 |
 | 验收进度 | 5/10 项已验证 |
 
@@ -27,7 +27,8 @@
 
 - Python 链路 `M1-01` 至 `M1-03` 已完成：Service 可启动，`POST /v1/dialogue`、严格协议 Schema、确定性 Stub 回复和统一错误映射均已实现。
 - Python 自动化测试共 10 项，覆盖成功与协议错误路径、内部错误脱敏，以及无 API Key 和外部网络条件，当前全部通过。
-- UE 工程尚无 AI Service Client 实现。
+- UE AI Runtime 已实现于项目级 `ZLAIRuntime` Runtime Plugin；`M1-04` 已完成插件模块、协议结构体、HTTP/JSON Client 和三项协议自动化测试，当前待异步 Service 调用验收。
+- UE 5.8 `ZLEditor Win64 Development` 已使用 MSVC `14.44.35228` 编译通过；`ZLAIRuntime.Protocol` 三项自动化测试全部通过。
 - 当前没有数据库、向量库、真实 LLM 或 Tool Use 运行时依赖。
 
 ## 文档职责与优先级

@@ -25,7 +25,7 @@
 | `M1-01` | `已完成` | Python Service 骨架 | `PythonService/app/`、依赖声明、启动说明 | 无 | Service 可通过一条明确命令在本地启动 |
 | `M1-02` | `已完成` | Python 协议与错误处理 | Route、Schema、Service、统一异常映射 | `M1-01` | 合法请求返回协议响应；非法请求返回规定错误结构且 Service 不崩溃 |
 | `M1-03` | `已完成` | Python 自动化测试 | 成功与错误路径测试 | `M1-02` | 测试覆盖字段透传、Stub Provider、缺字段、类型错误和空输入并全部通过 |
-| `M1-04` | `待开始` | UE AI Service Client | Subsystem、协议结构体、HTTP/JSON 请求与响应解析 | 无 | UE 能构造协议请求并以明确的成功或失败结果完成异步回调 |
+| `M1-04` | `待验收` | UE AI Service Client | `ZLAIRuntime` Runtime Plugin、Subsystem、协议结构体、HTTP/JSON 请求与响应解析 | 无 | UE 能构造协议请求并以明确的成功或失败结果完成异步回调 |
 | `M1-05` | `待开始` | UE 配置与失败处理 | Base URL、超时配置、分类错误模型和日志 | `M1-04` | 网络失败、超时、非 `2xx` 和解析失败均不崩溃，并输出可定位信息 |
 | `M1-06` | `待开始` | UE 最小演示入口 | 对话触发入口、最小可见结果载体 | `M1-04`、`M1-05` | UE 可发起请求并可见地展示 `reply` 或失败信息 |
 | `M1-07` | `待开始` | 端到端验收与交付记录 | 演示步骤、验收结果、依赖检查 | `M1-03`、`M1-06` | Milestone 1 全部验收项有证据，包含至少 10 次连续请求验证 |
@@ -77,6 +77,8 @@
 - 同步维护 [UEClasses.md](./UEClasses.md)。
 
 验证：编译受影响的 UE Target，并验证序列化与反序列化路径。
+
+验证记录（2026-07-17）：`ZLAIRuntime` 项目级 Runtime Plugin 已创建，包含 `UZLAIServiceSubsystem`、三类协议结构体和独立 JSON 协议转换函数。使用 UE 5.8 与 MSVC `14.44.35228` 编译 `ZLEditor Win64 Development` 成功；执行 `ZLAIRuntime.Protocol` 自动化测试，共发现并通过 3 项，覆盖请求序列化、成功响应必填字段与未知字段兼容、服务错误解析。实际 Python Service 异步成功/失败回调尚待验收，因此任务保持 `待验收`。
 
 ### M1-05：UE 配置与失败处理
 

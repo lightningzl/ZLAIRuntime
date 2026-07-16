@@ -7,8 +7,10 @@ Player / UI
     |
     v
 UE5 Runtime
-  - NPC / Interaction
-  - AI Service Client
+  - ZL Gameplay/UI
+  - ZLAIRuntime Plugin
+    - AI Service Client
+    - Protocol Types
   - Response Presentation
     |
     | HTTP + JSON
@@ -24,6 +26,8 @@ Python AI Service
 ## 模块边界
 
 ### UE5 Runtime
+
+AI Runtime 通信能力位于项目级 `ZLAIRuntime` Runtime Plugin。游戏主模块 `ZL` 只通过插件公开接口提交请求和消费结果，不直接实现 HTTP、JSON 或协议解析。
 
 职责：
 
@@ -61,11 +65,12 @@ Python AI Service
 ## 依赖方向
 
 ```text
-UE Gameplay/UI -> UE AI Service Client -> Protocol
+ZL Gameplay/UI -> ZLAIRuntime Plugin -> HTTP/JSON Protocol
 FastAPI Route  -> Service Logic        -> Protocol Schema
 ```
 
-- Gameplay 层不直接处理 HTTP 细节。
+- Gameplay 层不直接处理 HTTP 细节，也不依赖插件私有实现。
+- `ZLAIRuntime` 插件不依赖 `ZL` 游戏模块、具体 UI 或 NPC Actor。
 - FastAPI Route 只做输入输出适配，回复逻辑放在独立 Service 层。
 - 当前 Stub Provider 应可在后续被 LLM Provider 替换，不影响 UE 调用方。
 
