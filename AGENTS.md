@@ -10,6 +10,8 @@
 2. `Docs/Architecture.md`
 3. `Docs/Protocol.md`
 4. `Docs/CurrentMilestone.md`
+5. `Docs/ProjectState.md`
+6. `Docs/TaskBoard.md`
 
 ## 实施范围
 
