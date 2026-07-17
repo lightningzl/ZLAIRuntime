@@ -10,11 +10,11 @@
 | --- | --- |
 | 最后更新 | 2026-07-17 |
 | 当前里程碑 | Milestone 1：UE 到 Python Service 最小闭环 |
-| 里程碑状态 | `进行中` |
+| 里程碑状态 | `验收中` |
 | 当前活动任务 | 无 |
-| 下一候选任务 | `M1-06` UE 最小演示入口 |
+| 下一候选任务 | `M1-07` 端到端验收与交付记录 |
 | 已知阻塞 | 无 |
-| 验收进度 | 7/10 项已验证 |
+| 验收进度 | 8/10 项已验证 |
 
 ### 已完成基础工作
 
@@ -29,7 +29,8 @@
 - Python 自动化测试共 10 项，覆盖成功与协议错误路径、内部错误脱敏，以及无 API Key 和外部网络条件，当前全部通过。
 - UE AI Runtime 已实现于项目级 `ZLAIRuntime` Runtime Plugin；`M1-04` 已完成插件模块、协议结构体、HTTP/JSON Client、三项协议自动化测试和真实 Stub Service 异步回调验收。
 - `M1-05` 已完成：Service Base URL 与超时由 UE Config 集中提供，客户端可区分并记录客户端、网络、超时、HTTP 和解析失败。
-- UE 5.8 `ZLEditor Win64 Development` 已使用 MSVC `14.44.35228` 编译通过；完整 `ZLAIRuntime` 自动化测试共 6 项全部通过，包含配置、失败分类、协议和真实 Stub Service 联调。
+- `M1-06` 已完成：游戏控制台命令 `ZL.AI.DialogueDemo` 可提交 NPC ID 与玩家输入，并在屏幕和日志中展示成功回复或失败信息。
+- UE 5.8 `ZLEditor Win64 Development` 已使用 MSVC `14.44.35228` 编译通过；实际 Game 模式成功和失败演示均已验证。
 - 当前没有数据库、向量库、真实 LLM 或 Tool Use 运行时依赖。
 
 ## 文档职责与优先级

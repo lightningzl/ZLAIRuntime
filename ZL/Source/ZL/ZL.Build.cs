@@ -21,7 +21,9 @@ public class ZL : ModuleRules
 			"Slate"
 		});
 
-		PrivateDependencyModuleNames.AddRange(new string[] { });
+		PrivateDependencyModuleNames.AddRange(new string[] {
+			"ZLAIRuntime"
+		});
 
 		PublicIncludePaths.AddRange(new string[] {
 			"ZL",

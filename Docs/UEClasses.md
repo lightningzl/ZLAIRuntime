@@ -41,6 +41,7 @@ Gameplay / UI
 - Gameplay/UI 只提交对话请求并消费成功/失败结果。
 - 协议结构体可被 Client 使用，但不得依赖具体 UI 或 NPC 类型。
 - Subsystem 不持有 NPC Actor 的强引用，不直接修改世界状态。
+- 游戏模块通过 `ZL.AI.DialogueDemo <npc_id> <player_input>` 控制台命令提供 Milestone 1 演示入口；命令只依赖插件公开接口。
 
 ## 生命周期与异步约束
 
@@ -61,6 +62,12 @@ Gameplay / UI
 - `DefaultGame.ini` 提供默认 `ServiceBaseUrl=http://127.0.0.1:8000` 和 10 秒请求超时，可在 Project Settings 的 `ZL AI Service` 中覆盖。
 - `EZLServiceErrorCategory` 区分客户端、网络、超时、HTTP 和解析失败；日志包含 `request_id`、分类、错误码与 HTTP 状态。
 - UE 5.8 `ZLEditor Win64 Development` 编译通过；完整 `ZLAIRuntime` 自动化测试共 6 项全部通过，覆盖配置、失败分类、协议与真实 Service 联调。
+
+## M1-06 验证
+
+- `ZL.AI.DialogueDemo` 接收 NPC ID 和玩家输入，通过 `UZLAIServiceSubsystem` 异步发起请求。
+- 成功回调将 `reply` 输出为绿色屏幕消息和 `LogZL` Display 日志；失败回调将错误码与消息输出为红色屏幕消息和 Warning 日志。
+- UE 5.8 Game 模式已分别在 Stub Service 启动和停止状态下执行命令，确认成功回复和失败信息均可见且游戏正常退出。
 
 ## 更新规则
 

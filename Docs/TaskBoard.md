@@ -27,7 +27,7 @@
 | `M1-03` | `已完成` | Python 自动化测试 | 成功与错误路径测试 | `M1-02` | 测试覆盖字段透传、Stub Provider、缺字段、类型错误和空输入并全部通过 |
 | `M1-04` | `已完成` | UE AI Service Client | `ZLAIRuntime` Runtime Plugin、Subsystem、协议结构体、HTTP/JSON 请求与响应解析 | 无 | UE 能构造协议请求并以明确的成功或失败结果完成异步回调 |
 | `M1-05` | `已完成` | UE 配置与失败处理 | Base URL、超时配置、分类错误模型和日志 | `M1-04` | 网络失败、超时、非 `2xx` 和解析失败均不崩溃，并输出可定位信息 |
-| `M1-06` | `待开始` | UE 最小演示入口 | 对话触发入口、最小可见结果载体 | `M1-04`、`M1-05` | UE 可发起请求并可见地展示 `reply` 或失败信息 |
+| `M1-06` | `已完成` | UE 最小演示入口 | 对话触发入口、最小可见结果载体 | `M1-04`、`M1-05` | UE 可发起请求并可见地展示 `reply` 或失败信息 |
 | `M1-07` | `待开始` | 端到端验收与交付记录 | 演示步骤、验收结果、依赖检查 | `M1-03`、`M1-06` | Milestone 1 全部验收项有证据，包含至少 10 次连续请求验证 |
 
 ## 工作包明细
@@ -99,6 +99,8 @@
 - 以同样可见的方式报告失败，但不把屏幕日志当作错误处理本身。
 
 验证：在 UE 中实际触发一次成功请求和一次失败请求。
+
+验证记录（2026-07-17）：游戏模块新增控制台命令 `ZL.AI.DialogueDemo <npc_id> <player_input>`，通过 `UZLAIServiceSubsystem` 发起请求，并将请求、成功回复或失败信息同时输出到屏幕与 `LogZL`。UE 5.8 `ZLEditor Win64 Development` 编译通过。实际以 Game 模式执行 `ZL.AI.DialogueDemo npc_guard_01 What happened here?`，本地 Stub Service 收到 `POST /v1/dialogue` 并返回 `200`，游戏日志可见中文 `reply`；停止 Service 后再次执行命令，游戏日志可见带 `request_id`、错误码和状态的失败信息，两个进程均正常退出。
 
 ### M1-07：端到端验收与交付记录
 
