@@ -10,11 +10,11 @@
 | --- | --- |
 | 最后更新 | 2026-07-17 |
 | 当前里程碑 | Milestone 1：UE 到 Python Service 最小闭环 |
-| 里程碑状态 | `验收中` |
+| 里程碑状态 | `已完成` |
 | 当前活动任务 | 无 |
-| 下一候选任务 | `M1-07` 端到端验收与交付记录 |
+| 下一候选任务 | 无 |
 | 已知阻塞 | 无 |
-| 验收进度 | 8/10 项已验证 |
+| 验收进度 | 10/10 项已验证 |
 
 ### 已完成基础工作
 
@@ -30,8 +30,9 @@
 - UE AI Runtime 已实现于项目级 `ZLAIRuntime` Runtime Plugin；`M1-04` 已完成插件模块、协议结构体、HTTP/JSON Client、三项协议自动化测试和真实 Stub Service 异步回调验收。
 - `M1-05` 已完成：Service Base URL 与超时由 UE Config 集中提供，客户端可区分并记录客户端、网络、超时、HTTP 和解析失败。
 - `M1-06` 已完成：游戏控制台命令 `ZL.AI.DialogueDemo` 可提交 NPC ID 与玩家输入，并在屏幕和日志中展示成功回复或失败信息。
-- UE 5.8 `ZLEditor Win64 Development` 已使用 MSVC `14.44.35228` 编译通过；实际 Game 模式成功和失败演示均已验证。
-- 当前没有数据库、向量库、真实 LLM 或 Tool Use 运行时依赖。
+- `M1-07` 已完成：Python 10 项测试、UE 编译、UE 6 项自动化测试和单次 Game 会话 10 请求均通过，完整证据见 [Milestone1Validation.md](./Validation/Milestone1Validation.md)。
+- 连续请求中 UE 记录 10 条请求和 10 条成功回复，Service 记录 10 个 HTTP 200；进程正常结束且未观察到明显资源泄漏。
+- 运行源码与依赖声明审计确认当前没有数据库、向量库、真实 LLM 或 Tool Use 运行时依赖。
 
 ## 文档职责与优先级
 

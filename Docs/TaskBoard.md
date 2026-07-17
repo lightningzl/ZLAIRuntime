@@ -28,7 +28,7 @@
 | `M1-04` | `已完成` | UE AI Service Client | `ZLAIRuntime` Runtime Plugin、Subsystem、协议结构体、HTTP/JSON 请求与响应解析 | 无 | UE 能构造协议请求并以明确的成功或失败结果完成异步回调 |
 | `M1-05` | `已完成` | UE 配置与失败处理 | Base URL、超时配置、分类错误模型和日志 | `M1-04` | 网络失败、超时、非 `2xx` 和解析失败均不崩溃，并输出可定位信息 |
 | `M1-06` | `已完成` | UE 最小演示入口 | 对话触发入口、最小可见结果载体 | `M1-04`、`M1-05` | UE 可发起请求并可见地展示 `reply` 或失败信息 |
-| `M1-07` | `待开始` | 端到端验收与交付记录 | 演示步骤、验收结果、依赖检查 | `M1-03`、`M1-06` | Milestone 1 全部验收项有证据，包含至少 10 次连续请求验证 |
+| `M1-07` | `已完成` | 端到端验收与交付记录 | 演示步骤、验收结果、依赖检查 | `M1-03`、`M1-06` | Milestone 1 全部验收项有证据，包含至少 10 次连续请求验证 |
 
 ## 工作包明细
 
@@ -111,6 +111,8 @@
 - 同步维护 [PythonModules.md](./PythonModules.md)、[UEClasses.md](./UEClasses.md) 和 [ProjectState.md](./ProjectState.md)。
 
 验证：Python 测试、UE 编译/运行验证和端到端请求均有明确结果。
+
+验证记录（2026-07-17）：详见 [Milestone1Validation.md](./Validation/Milestone1Validation.md)。Python 10 项测试与依赖检查通过；UE 5.8 `ZLEditor Win64 Development` 编译成功，`ZLAIRuntime` 6 项自动化测试全部通过。在单次 Game 会话中完成 10 次独立请求，UE 记录 10 条请求和 10 条成功回复，Service 记录 10 个 HTTP 200，两个进程均正常结束且无遗留进程。运行源码与依赖声明审计确认未引入数据库、向量库、真实 LLM 或 Tool Use 运行时依赖。
 
 ## 推荐执行顺序
 

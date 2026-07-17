@@ -62,3 +62,9 @@ app.main -> app.api.dialogue -> app.services.dialogue_service
 ## 更新规则
 
 新增、删除或改变 Python 模块职责时，更新目录、职责表和依赖方向；架构变化同时记录到 [DecisionLog.md](./DecisionLog.md)。
+
+## Milestone 1 最终验证
+
+- Python 3.12.13 执行完整测试共 10 项，全部通过；`pip check` 未发现依赖冲突。
+- Stub Service 在 UE 单次 Game 会话的 10 次连续请求中返回 10 个 HTTP 200，并可在验收结束后正常停止。
+- 运行依赖仅包含 FastAPI 与 Uvicorn；源码与依赖声明未引入数据库、向量库、真实 LLM SDK 或 Tool 框架。

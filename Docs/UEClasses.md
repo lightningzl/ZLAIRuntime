@@ -72,3 +72,9 @@ Gameplay / UI
 ## 更新规则
 
 新增、删除或改变 AI Runtime 类型职责时，更新类型表、依赖方向和对应验证说明；架构变化同时记录到 [DecisionLog.md](./DecisionLog.md)。
+
+## Milestone 1 最终验证
+
+- UE 5.8 `ZLEditor Win64 Development` 编译成功，完整 `ZLAIRuntime` 自动化测试共 6 项全部通过。
+- 单次 Game 会话连续发起 10 次请求，记录 10 条请求、10 条成功回复和 0 条失败；游戏按退出码 0 结束且无遗留进程。
+- `ZLAIRuntime` Runtime Plugin 的源码与 Build.cs 未引入数据库、向量库、真实 LLM 或 Tool Use 运行时依赖。
