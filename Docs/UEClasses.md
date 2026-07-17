@@ -54,7 +54,8 @@ Gameplay / UI
 
 - UE 5.8 `ZLEditor Win64 Development` 使用 MSVC `14.44.35228` 编译通过。
 - UE 5.8 自动化测试 `ZLAIRuntime.Protocol` 共 3 项，覆盖请求序列化、成功响应解析和错误响应解析，全部通过。
-- HTTP 异步完成路径的实际 Service 联调留待任务验收；Base URL 配置、超时、分类日志属于 M1-05。
+- UE 5.8 联调测试 `ZLAIRuntime.Integration.ServiceClientCallbacks` 在本地 Python Stub Service 上通过，覆盖真实 HTTP `200` 成功响应、`400 invalid_request`、唯一请求 ID、字段透传和 Game Thread 成功/失败回调。
+- 集中 Base URL 配置、超时和分类日志属于 M1-05。
 
 ## 更新规则
 
