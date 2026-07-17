@@ -14,11 +14,10 @@ class ZLAIRUNTIME_API UZLAIServiceSubsystem final : public UGameInstanceSubsyste
 
 public:
 	/**
-	 * Sends one dialogue request to the supplied Service base URL.
+	 * Sends one dialogue request using UZLAIServiceSettings.
 	 * Returns the generated request ID immediately; completion delegates run on the Game Thread.
 	 */
 	FString SendDialogueRequest(
-		const FString& ServiceBaseUrl,
 		const FString& NpcId,
 		const FString& PlayerInput,
 		FZLDialogueSuccessDelegate OnSuccess,
@@ -29,8 +28,11 @@ private:
 		const FString& ExpectedRequestId,
 		const FString& ExpectedNpcId,
 		bool bTransportSucceeded,
+		bool bTimedOut,
 		int32 HttpStatusCode,
 		const FString& ResponseBody,
 		FZLDialogueSuccessDelegate OnSuccess,
 		FZLDialogueFailureDelegate OnFailure);
+
+	friend class FZLAIServiceFailureHandlingTest;
 };

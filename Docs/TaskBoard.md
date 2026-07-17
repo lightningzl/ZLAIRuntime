@@ -26,7 +26,7 @@
 | `M1-02` | `已完成` | Python 协议与错误处理 | Route、Schema、Service、统一异常映射 | `M1-01` | 合法请求返回协议响应；非法请求返回规定错误结构且 Service 不崩溃 |
 | `M1-03` | `已完成` | Python 自动化测试 | 成功与错误路径测试 | `M1-02` | 测试覆盖字段透传、Stub Provider、缺字段、类型错误和空输入并全部通过 |
 | `M1-04` | `已完成` | UE AI Service Client | `ZLAIRuntime` Runtime Plugin、Subsystem、协议结构体、HTTP/JSON 请求与响应解析 | 无 | UE 能构造协议请求并以明确的成功或失败结果完成异步回调 |
-| `M1-05` | `待开始` | UE 配置与失败处理 | Base URL、超时配置、分类错误模型和日志 | `M1-04` | 网络失败、超时、非 `2xx` 和解析失败均不崩溃，并输出可定位信息 |
+| `M1-05` | `已完成` | UE 配置与失败处理 | Base URL、超时配置、分类错误模型和日志 | `M1-04` | 网络失败、超时、非 `2xx` 和解析失败均不崩溃，并输出可定位信息 |
 | `M1-06` | `待开始` | UE 最小演示入口 | 对话触发入口、最小可见结果载体 | `M1-04`、`M1-05` | UE 可发起请求并可见地展示 `reply` 或失败信息 |
 | `M1-07` | `待开始` | 端到端验收与交付记录 | 演示步骤、验收结果、依赖检查 | `M1-03`、`M1-06` | Milestone 1 全部验收项有证据，包含至少 10 次连续请求验证 |
 
@@ -88,6 +88,8 @@
 - 异步完成时检查上下文有效性，不持有 NPC Actor 强引用。
 
 验证：分别模拟 Service 未启动、请求超时、非 `2xx` 和无效响应，确认 UE 可恢复且不崩溃。
+
+验证记录（2026-07-17）：新增 `UZLAIServiceSettings`，通过 `DefaultGame.ini` 提供默认 Base URL 与 10 秒请求超时，`UZLAIServiceSubsystem` 已改为集中读取配置并向 UE HTTP Request 设置超时。`FZLServiceError` 新增客户端、网络、超时、HTTP 和解析分类；失败日志包含 `request_id`、分类、稳定错误码及 HTTP 状态。UE 5.8 `ZLEditor Win64 Development` 使用 MSVC `14.44.35228` 编译通过；启动本地 Python Stub Service 后执行完整 `ZLAIRuntime` 自动化测试，共 6 项全部通过，覆盖配置读取、四类失败模拟、协议转换和真实 `200`/`400` 异步联调。
 
 ### M1-06：UE 最小演示入口
 

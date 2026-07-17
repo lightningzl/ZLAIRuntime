@@ -4,6 +4,16 @@
 
 #include "ZLAIServiceTypes.generated.h"
 
+UENUM(BlueprintType)
+enum class EZLServiceErrorCategory : uint8
+{
+	Client,
+	Network,
+	Timeout,
+	Http,
+	Parse
+};
+
 USTRUCT(BlueprintType)
 struct ZLAIRUNTIME_API FZLDialogueRequest
 {
@@ -41,6 +51,9 @@ USTRUCT(BlueprintType)
 struct ZLAIRUNTIME_API FZLServiceError
 {
 	GENERATED_BODY()
+
+	UPROPERTY(BlueprintReadOnly, Category = "ZL|AI")
+	EZLServiceErrorCategory Category = EZLServiceErrorCategory::Client;
 
 	UPROPERTY(BlueprintReadOnly, Category = "ZL|AI")
 	FString RequestId;

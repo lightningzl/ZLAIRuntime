@@ -60,6 +60,10 @@ bool FWaitForDialogueIntegrationCalls::Update()
 	Test->TestFalse(TEXT("Invalid request used the failure delegate"), State->FailureCall->bSucceeded);
 	Test->TestTrue(TEXT("Failure delegate ran on the Game Thread"), State->FailureCall->bCallbackOnGameThread);
 	Test->TestEqual(
+		TEXT("Failure response is categorized as HTTP"),
+		State->FailureCall->Error.Category,
+		EZLServiceErrorCategory::Http);
+	Test->TestEqual(
 		TEXT("Failure response preserves request ID"),
 		State->FailureCall->Error.RequestId,
 		State->FailureCall->ExpectedRequestId);
@@ -99,7 +103,6 @@ bool FZLAIServiceClientIntegrationTest::RunTest(const FString& Parameters)
 	State->DeadlineSeconds = FPlatformTime::Seconds() + 10.0;
 
 	State->SuccessCall->ExpectedRequestId = State->Subsystem->SendDialogueRequest(
-		TEXT("http://127.0.0.1:8000"),
 		TEXT("npc_guard_01"),
 		TEXT("What happened here?"),
 		FZLDialogueSuccessDelegate::CreateLambda([CallState = State->SuccessCall](const FZLDialogueResponse& Response)
@@ -118,7 +121,6 @@ bool FZLAIServiceClientIntegrationTest::RunTest(const FString& Parameters)
 		}));
 
 	State->FailureCall->ExpectedRequestId = State->Subsystem->SendDialogueRequest(
-		TEXT("http://127.0.0.1:8000/"),
 		TEXT("npc_guard_01"),
 		TEXT(""),
 		FZLDialogueSuccessDelegate::CreateLambda([CallState = State->FailureCall](const FZLDialogueResponse& Response)

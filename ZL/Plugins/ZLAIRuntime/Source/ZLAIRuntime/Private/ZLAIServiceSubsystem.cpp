@@ -5,6 +5,8 @@
 #include "Interfaces/IHttpRequest.h"
 #include "Interfaces/IHttpResponse.h"
 #include "ZLAIServiceProtocol.h"
+#include "ZLAIServiceSettings.h"
+#include "ZLAIRuntimeModule.h"
 
 namespace
 {
@@ -18,22 +20,51 @@ namespace
 		return ServiceBaseUrl + TEXT("/v1/dialogue");
 	}
 
+	const TCHAR* ErrorCategoryToString(const EZLServiceErrorCategory Category)
+	{
+		switch (Category)
+		{
+		case EZLServiceErrorCategory::Client: return TEXT("client");
+		case EZLServiceErrorCategory::Network: return TEXT("network");
+		case EZLServiceErrorCategory::Timeout: return TEXT("timeout");
+		case EZLServiceErrorCategory::Http: return TEXT("http");
+		case EZLServiceErrorCategory::Parse: return TEXT("parse");
+		default: return TEXT("unknown");
+		}
+	}
+
+	void LogFailure(const FZLServiceError& Error)
+	{
+		UE_LOG(
+			LogZLAIRuntime,
+			Warning,
+			TEXT("Dialogue request failed request_id=%s category=%s code=%s http_status=%d"),
+			*Error.RequestId,
+			ErrorCategoryToString(Error.Category),
+			*Error.Code,
+			Error.HttpStatusCode);
+	}
+
 	void DispatchFailure(FZLServiceError Error, FZLDialogueFailureDelegate OnFailure)
 	{
 		AsyncTask(ENamedThreads::GameThread, [Error = MoveTemp(Error), OnFailure = MoveTemp(OnFailure)]() mutable
 		{
+			LogFailure(Error);
 			OnFailure.ExecuteIfBound(Error);
 		});
 	}
 }
 
 FString UZLAIServiceSubsystem::SendDialogueRequest(
-	const FString& ServiceBaseUrl,
 	const FString& NpcId,
 	const FString& PlayerInput,
 	FZLDialogueSuccessDelegate OnSuccess,
 	FZLDialogueFailureDelegate OnFailure)
 {
+	const UZLAIServiceSettings* Settings = GetDefault<UZLAIServiceSettings>();
+	const FString ServiceBaseUrl = Settings->ServiceBaseUrl;
+	const float RequestTimeoutSeconds = FMath::Max(Settings->RequestTimeoutSeconds, 0.1f);
+
 	FZLDialogueRequest DialogueRequest;
 	DialogueRequest.RequestId = FGuid::NewGuid().ToString(EGuidFormats::DigitsWithHyphens);
 	DialogueRequest.NpcId = NpcId;
@@ -43,6 +74,7 @@ FString UZLAIServiceSubsystem::SendDialogueRequest(
 	if (ServiceBaseUrl.TrimStartAndEnd().IsEmpty())
 	{
 		FZLServiceError Error;
+		Error.Category = EZLServiceErrorCategory::Client;
 		Error.RequestId = DialogueRequest.RequestId;
 		Error.Code = TEXT("client_error");
 		Error.Message = TEXT("Service base URL must not be empty");
@@ -54,6 +86,7 @@ FString UZLAIServiceSubsystem::SendDialogueRequest(
 	if (!ZLAIServiceProtocol::SerializeDialogueRequest(DialogueRequest, RequestBody))
 	{
 		FZLServiceError Error;
+		Error.Category = EZLServiceErrorCategory::Client;
 		Error.RequestId = DialogueRequest.RequestId;
 		Error.Code = TEXT("client_error");
 		Error.Message = TEXT("Failed to serialize dialogue request");
@@ -66,6 +99,7 @@ FString UZLAIServiceSubsystem::SendDialogueRequest(
 	HttpRequest->SetVerb(TEXT("POST"));
 	HttpRequest->SetHeader(TEXT("Content-Type"), TEXT("application/json; charset=utf-8"));
 	HttpRequest->SetContentAsString(RequestBody);
+	HttpRequest->SetTimeout(RequestTimeoutSeconds);
 
 	const TWeakObjectPtr<UZLAIServiceSubsystem> WeakThis(this);
 	HttpRequest->OnProcessRequestComplete().BindLambda(
@@ -74,18 +108,21 @@ FString UZLAIServiceSubsystem::SendDialogueRequest(
 			ExpectedNpcId = DialogueRequest.NpcId,
 			OnSuccess,
 			OnFailure](
-			FHttpRequestPtr,
+			FHttpRequestPtr Request,
 			FHttpResponsePtr Response,
 			bool bSucceeded) mutable
 		{
 			const int32 StatusCode = Response.IsValid() ? Response->GetResponseCode() : 0;
 			const FString ResponseBody = Response.IsValid() ? Response->GetContentAsString() : FString();
+			const bool bTimedOut = Request.IsValid()
+				&& Request->GetFailureReason() == EHttpFailureReason::TimedOut;
 
 			AsyncTask(ENamedThreads::GameThread,
 				[WeakThis,
 					ExpectedRequestId = MoveTemp(ExpectedRequestId),
 					ExpectedNpcId = MoveTemp(ExpectedNpcId),
 					bSucceeded,
+					bTimedOut,
 					StatusCode,
 					ResponseBody,
 					OnSuccess = MoveTemp(OnSuccess),
@@ -97,6 +134,7 @@ FString UZLAIServiceSubsystem::SendDialogueRequest(
 							ExpectedRequestId,
 							ExpectedNpcId,
 							bSucceeded,
+							bTimedOut,
 							StatusCode,
 							ResponseBody,
 							MoveTemp(OnSuccess),
@@ -110,6 +148,7 @@ FString UZLAIServiceSubsystem::SendDialogueRequest(
 		HttpRequest->OnProcessRequestComplete().Unbind();
 
 		FZLServiceError Error;
+		Error.Category = EZLServiceErrorCategory::Client;
 		Error.RequestId = DialogueRequest.RequestId;
 		Error.Code = TEXT("client_error");
 		Error.Message = TEXT("Failed to start dialogue request");
@@ -123,6 +162,7 @@ void UZLAIServiceSubsystem::CompleteRequest(
 	const FString& ExpectedRequestId,
 	const FString& ExpectedNpcId,
 	const bool bTransportSucceeded,
+	const bool bTimedOut,
 	const int32 HttpStatusCode,
 	const FString& ResponseBody,
 	FZLDialogueSuccessDelegate OnSuccess,
@@ -134,8 +174,12 @@ void UZLAIServiceSubsystem::CompleteRequest(
 	{
 		FZLServiceError Error;
 		Error.RequestId = ExpectedRequestId;
-		Error.Code = TEXT("network_error");
-		Error.Message = TEXT("Dialogue request did not complete");
+		Error.Category = bTimedOut ? EZLServiceErrorCategory::Timeout : EZLServiceErrorCategory::Network;
+		Error.Code = bTimedOut ? TEXT("timeout") : TEXT("network_error");
+		Error.Message = bTimedOut
+			? TEXT("Dialogue request timed out")
+			: TEXT("Dialogue request did not complete");
+		LogFailure(Error);
 		OnFailure.ExecuteIfBound(Error);
 		return;
 	}
@@ -143,6 +187,7 @@ void UZLAIServiceSubsystem::CompleteRequest(
 	if (!EHttpResponseCodes::IsOk(HttpStatusCode))
 	{
 		FZLServiceError Error;
+		Error.Category = EZLServiceErrorCategory::Http;
 		if (!ZLAIServiceProtocol::TryParseServiceError(ResponseBody, Error))
 		{
 			Error.RequestId = ExpectedRequestId;
@@ -150,7 +195,10 @@ void UZLAIServiceSubsystem::CompleteRequest(
 			Error.Message = TEXT("Service returned a non-success status");
 		}
 
+		Error.RequestId = ExpectedRequestId;
+		Error.Category = EZLServiceErrorCategory::Http;
 		Error.HttpStatusCode = HttpStatusCode;
+		LogFailure(Error);
 		OnFailure.ExecuteIfBound(Error);
 		return;
 	}
@@ -162,9 +210,11 @@ void UZLAIServiceSubsystem::CompleteRequest(
 	{
 		FZLServiceError Error;
 		Error.RequestId = ExpectedRequestId;
+		Error.Category = EZLServiceErrorCategory::Parse;
 		Error.Code = TEXT("parse_error");
 		Error.Message = TEXT("Service returned an invalid dialogue response");
 		Error.HttpStatusCode = HttpStatusCode;
+		LogFailure(Error);
 		OnFailure.ExecuteIfBound(Error);
 		return;
 	}

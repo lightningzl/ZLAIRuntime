@@ -10,6 +10,7 @@ public class ZLAIRuntime : ModuleRules
 		{
 			"Core",
 			"CoreUObject",
+			"DeveloperSettings",
 			"Engine"
 		});
 

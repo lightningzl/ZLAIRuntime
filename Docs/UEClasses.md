@@ -17,13 +17,13 @@
 
 | 类型 | 状态 | 职责 | 不负责 |
 | --- | --- | --- | --- |
-| `UZLAIServiceSubsystem` | M1-04 已实现 | 生成请求 ID；构造并发送 HTTP 请求；校验并解析响应；在 Game Thread 通过原生委托返回成功或失败 | UI、NPC 行为、Prompt、Memory、Tool Call、持久配置 |
-| `UZLAIServiceSettings` | 计划 | 通过 UE Config 提供 Base URL 和请求超时 | 运行时请求状态或密钥管理 |
+| `UZLAIServiceSubsystem` | M1-05 已实现 | 生成请求 ID；从设置读取地址与超时；构造并发送 HTTP 请求；分类、记录并返回成功或失败 | UI、NPC 行为、Prompt、Memory、Tool Call、持久配置 |
+| `UZLAIServiceSettings` | M1-05 已实现 | 通过 UE Config 提供 Base URL 和请求超时 | 运行时请求状态或密钥管理 |
 | `FZLDialogueRequest` | M1-04 已实现 | 表示 `request_id`、`npc_id`、`player_input` | 保存对话历史 |
 | `FZLDialogueResponse` | M1-04 已实现 | 表示 `request_id`、`npc_id`、`reply`、`provider` | 推断或执行 Gameplay 指令 |
-| `FZLServiceError` | M1-04 已实现 | 表示错误码、消息、请求 ID 和 HTTP 状态码 | 暴露底层堆栈或内部路径 |
+| `FZLServiceError` | M1-05 已实现 | 表示错误分类、错误码、消息、请求 ID 和 HTTP 状态码 | 暴露底层堆栈或内部路径 |
 
-`ZLAIServiceProtocol` 命名空间公开请求序列化、成功响应解析和协议错误解析函数。M1-04 由调用方逐次传入 Base URL；集中配置和超时设置属于 M1-05。
+`ZLAIServiceProtocol` 命名空间公开请求序列化、成功响应解析和协议错误解析函数。Gameplay/UI 调用方只提交 NPC ID 和玩家输入；Base URL 与请求超时由 `UZLAIServiceSettings` 从 Game Config 读取。
 
 实际实现名称如需调整，必须在同一任务中更新本文件；字段不得偏离 [Protocol.md](./Protocol.md)。
 
@@ -55,7 +55,12 @@ Gameplay / UI
 - UE 5.8 `ZLEditor Win64 Development` 使用 MSVC `14.44.35228` 编译通过。
 - UE 5.8 自动化测试 `ZLAIRuntime.Protocol` 共 3 项，覆盖请求序列化、成功响应解析和错误响应解析，全部通过。
 - UE 5.8 联调测试 `ZLAIRuntime.Integration.ServiceClientCallbacks` 在本地 Python Stub Service 上通过，覆盖真实 HTTP `200` 成功响应、`400 invalid_request`、唯一请求 ID、字段透传和 Game Thread 成功/失败回调。
-- 集中 Base URL 配置、超时和分类日志属于 M1-05。
+
+## M1-05 验证
+
+- `DefaultGame.ini` 提供默认 `ServiceBaseUrl=http://127.0.0.1:8000` 和 10 秒请求超时，可在 Project Settings 的 `ZL AI Service` 中覆盖。
+- `EZLServiceErrorCategory` 区分客户端、网络、超时、HTTP 和解析失败；日志包含 `request_id`、分类、错误码与 HTTP 状态。
+- UE 5.8 `ZLEditor Win64 Development` 编译通过；完整 `ZLAIRuntime` 自动化测试共 6 项全部通过，覆盖配置、失败分类、协议与真实 Service 联调。
 
 ## 更新规则
 
