@@ -12,6 +12,7 @@
 4. `Docs/CurrentMilestone.md`
 5. `Docs/ProjectState.md`
 6. `Docs/TaskBoard.md`
+7. `Docs/DocumentationRules.md`
 
 ## 实施范围
 
@@ -22,12 +23,9 @@
 
 ## 完成任务后
 
-1. 涉及 UE C++ 类型、职责或接口时，更新 `Docs/UEClasses.md`。
-2. 涉及 Python 模块、职责或接口时，更新 `Docs/PythonModules.md`。
-3. 如果做出新的架构选择或改变既有架构选择，更新 `Docs/DecisionLog.md`，记录背景、决定和原因。
-4. 如果实现需要修改协议，必须先向用户说明修改原因并等待确认；未经确认，不得直接修改 `Docs/Protocol.md` 或实现与当前协议不一致的通信格式。
+按 `Docs/DocumentationRules.md` 更新受影响的状态、模块、架构、协议、决策和验收文档。协议修改必须先向用户说明修改原因并等待确认；未经确认，不得直接修改 `Docs/Protocol.md` 或实现与当前协议不一致的通信格式。
 
-如果上述文档尚不存在，在首次需要更新时于 `Docs` 目录创建，并保持内容简洁、面向后续 Agent 协作。
+如果上述文档尚不存在，在首次需要更新时于 `Docs` 目录创建，并遵守 `Docs/DocumentationRules.md` 的职责边界。
 
 ## Git 提交流程
 

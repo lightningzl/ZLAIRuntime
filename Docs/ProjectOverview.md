@@ -17,7 +17,7 @@
 - AI Service：Python、FastAPI
 - Data：SQLite
 - 可选扩展：Chroma 或 FAISS
-- LLM：后续接入，供应商与模型暂不绑定
+- LLM：首先接入 OpenAI Responses API；模型由 Python Service 配置，UE 与协议不绑定具体模型
 
 ## 核心原则
 
@@ -37,4 +37,4 @@
 
 ## 当前状态
 
-当前处于第一阶段：仅实现 UE 调用 Python AI Service 的最小闭环。具体范围与验收标准见 [CurrentMilestone.md](./CurrentMilestone.md)。
+当前执行状态见 [ProjectState.md](./ProjectState.md)。当前范围、验收标准和任务拆分分别见 [CurrentMilestone.md](./CurrentMilestone.md) 与 [TaskBoard.md](./TaskBoard.md)。
