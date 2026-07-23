@@ -31,7 +31,16 @@ class DialogueResponse(ProtocolModel):
 class ErrorDetail(ProtocolModel):
     """Stable machine-readable error details."""
 
-    code: Literal["invalid_request", "validation_error", "internal_error"]
+    code: Literal[
+        "invalid_request",
+        "validation_error",
+        "provider_auth_error",
+        "provider_rate_limited",
+        "provider_error",
+        "provider_unavailable",
+        "provider_timeout",
+        "internal_error",
+    ]
     message: str
 
 

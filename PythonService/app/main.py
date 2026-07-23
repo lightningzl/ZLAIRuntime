@@ -12,6 +12,13 @@ from fastapi.responses import JSONResponse
 from app.api.dialogue import router as dialogue_router
 from app.core.settings import Settings
 from app.providers.base import DialogueProvider
+from app.providers.errors import (
+    DialogueProviderError,
+    ProviderAuthenticationError,
+    ProviderRateLimitError,
+    ProviderTimeoutError,
+    ProviderUnavailableError,
+)
 from app.providers.factory import create_dialogue_provider
 from app.schemas.dialogue import ErrorDetail, ErrorResponse
 from app.services.dialogue_service import DialogueService, InvalidDialogueRequest
@@ -66,6 +73,41 @@ async def _handle_validation_error(
     )
 
 
+def _provider_error_details(
+    exception: DialogueProviderError,
+) -> tuple[int, str, str]:
+    if isinstance(exception, ProviderAuthenticationError):
+        return 503, "provider_auth_error", "dialogue provider authentication failed"
+    if isinstance(exception, ProviderRateLimitError):
+        return 429, "provider_rate_limited", "dialogue provider rate limited the request"
+    if isinstance(exception, ProviderTimeoutError):
+        return 504, "provider_timeout", "dialogue provider timed out"
+    if isinstance(exception, ProviderUnavailableError):
+        return 503, "provider_unavailable", "dialogue provider is unavailable"
+    return 502, "provider_error", "dialogue provider failed"
+
+
+async def _handle_provider_error(
+    request: Request,
+    exception: DialogueProviderError,
+) -> JSONResponse:
+    request_id = getattr(request.state, "request_id", "")
+    status_code, code, message = _provider_error_details(exception)
+    LOGGER.warning(
+        "Dialogue provider failed request_id=%s provider=%s category=%s http_status=%d",
+        request_id,
+        exception.provider,
+        code,
+        status_code,
+    )
+    return _error_response(
+        status_code=status_code,
+        request_id=request_id,
+        code=code,
+        message=message,
+    )
+
+
 async def _handle_internal_error(
     request: Request,
     _exception: Exception,
@@ -99,6 +141,7 @@ def create_app(
     application = FastAPI(title="ZL AI Service", version="0.2.0", lifespan=lifespan)
     application.add_exception_handler(InvalidDialogueRequest, _handle_invalid_request)
     application.add_exception_handler(RequestValidationError, _handle_validation_error)
+    application.add_exception_handler(DialogueProviderError, _handle_provider_error)
     application.add_exception_handler(Exception, _handle_internal_error)
     application.include_router(dialogue_router)
     return application

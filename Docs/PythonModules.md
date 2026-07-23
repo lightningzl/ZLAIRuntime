@@ -2,7 +2,7 @@
 
 ## 当前状态
 
-Route、协议 Schema、集中 Settings、Provider 接口与 Factory、确定性 Stub Provider、OpenAI Responses API 适配器、可注入的 Dialogue Service 和自动化回归测试已经完成。完整 Provider 错误分类与协议错误映射尚未实现。
+Route、协议 Schema、集中 Settings、Provider 接口与 Factory、确定性 Stub Provider、OpenAI Responses API 适配器、可注入的 Dialogue Service、Provider 错误分类、协议错误映射和自动化回归测试已经完成。
 
 ## 目标目录
 
@@ -48,17 +48,17 @@ PythonService/
 
 | 模块 | 状态 | 职责 |
 | --- | --- | --- |
-| `app.main` | M2-02 已调整 | 创建 FastAPI App，在启动阶段组装 Settings/Provider/Service、注册 Route，并统一映射协议异常；支持 Provider 注入且模块导入时不读取配置或访问网络 |
+| `app.main` | M2-04 已调整 | 创建 FastAPI App，在启动阶段组装 Settings/Provider/Service、注册 Route，并统一映射业务、Provider 和内部异常；支持 Provider 注入且模块导入时不读取配置或访问网络 |
 | `app.api.dialogue` | M2-02 已调整 | 提供 `POST /v1/dialogue` 的 HTTP 适配，将已经校验的请求交给应用持有的 Dialogue Service，不直接调用 Provider SDK |
 | `app.core.settings` | M2-02 已实现 | 从环境读取 Provider、密钥、模型、超时和输出上限；完成类型、范围、组合与脱敏校验 |
-| `app.schemas.dialogue` | M2-02 部分调整 | 定义 v1 请求、成功响应和统一错误响应；成功响应允许 `provider` 为 `stub` 或 `openai`，完整错误码声明留给 M2-04 |
-| `app.services.dialogue_service` | M2-02 已调整 | 执行业务校验，构造最小生成输入，调用注入的 Dialogue Provider，将内部结果转换为协议响应 |
+| `app.schemas.dialogue` | M2-04 已调整 | 定义 v1 请求、成功响应和统一错误响应；声明 `stub`/`openai` 成功来源和全部协议错误码 |
+| `app.services.dialogue_service` | M2-04 已调整 | 执行业务校验，构造最小生成输入，只调用一次注入的 Dialogue Provider，将内部结果转换为协议响应 |
 | `app.providers.base` | M2-02 已实现 | 定义与 FastAPI、Pydantic 协议 Schema 和供应商 SDK 解耦的 Provider 接口与内部结果类型 |
-| `app.providers.errors` | M2-03 部分实现 | 已定义 Provider 基础异常和无效响应异常；鉴权、限流、超时和不可用分类留给 M2-04，不包含 HTTP 状态码 |
+| `app.providers.errors` | M2-04 已实现 | 定义鉴权、限流、超时、不可用、无效响应和通用 Provider 内部异常，不包含 HTTP 状态码 |
 | `app.providers.factory` | M2-03 已调整 | 根据 Settings 创建 OpenAI 或显式 Stub Provider，并支持注入 OpenAI 构造器；不静默回退 |
-| `app.providers.openai_provider` | M2-03 已实现 | 使用官方 OpenAI Python SDK 和 Responses API 完成一次非流式文本生成，提取非空回复；SDK 异常分类留给 M2-04 |
+| `app.providers.openai_provider` | M2-04 已调整 | 使用官方 OpenAI Python SDK 和 Responses API 完成一次非流式文本生成，提取非空回复并把 SDK 异常转换为内部 Provider 分类 |
 | `app.providers.stub_provider` | M2-02 已实现 | 提供确定性离线回复，仅用于显式本地模式和联调，不满足真实 LLM 验收 |
-| `tests.*` | M2-03 已扩展 | 已离线覆盖配置、Factory、Stub/Fake 注入、OpenAI 请求构造与输出提取、API 回归、密钥脱敏和禁止外部网络；完整错误路径留给后续工作包 |
+| `tests.*` | M2-04 已扩展 | 已离线覆盖配置、Factory、Stub/Fake 注入、OpenAI 请求构造与输出提取、全部 Provider 错误映射、API 回归、单次调用和脱敏；全局网络隔离审计留给 M2-05 |
 
 ## 内部类型边界
 

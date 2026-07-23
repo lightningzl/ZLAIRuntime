@@ -3,11 +3,20 @@
 from types import SimpleNamespace
 from typing import Any
 
+import httpx
+import openai
 import pytest
 
 from app.core.settings import Settings
 from app.providers.base import DialogueProviderRequest, DialogueProviderResult
-from app.providers.errors import ProviderInvalidResponseError
+from app.providers.errors import (
+    DialogueProviderError,
+    ProviderAuthenticationError,
+    ProviderInvalidResponseError,
+    ProviderRateLimitError,
+    ProviderTimeoutError,
+    ProviderUnavailableError,
+)
 from app.providers.openai_provider import (
     OPENAI_DIALOGUE_INSTRUCTIONS,
     OpenAIDialogueProvider,
@@ -15,18 +24,21 @@ from app.providers.openai_provider import (
 
 
 class FakeResponsesResource:
-    def __init__(self, response: object) -> None:
+    def __init__(self, response: object, error: Exception | None = None) -> None:
         self._response = response
+        self._error = error
         self.calls: list[dict[str, Any]] = []
 
     def create(self, **kwargs: Any) -> object:
         self.calls.append(kwargs)
+        if self._error is not None:
+            raise self._error
         return self._response
 
 
 class FakeOpenAIClient:
-    def __init__(self, response: object) -> None:
-        self.responses = FakeResponsesResource(response)
+    def __init__(self, response: object, error: Exception | None = None) -> None:
+        self.responses = FakeResponsesResource(response, error)
 
 
 def _settings() -> Settings:
@@ -117,3 +129,52 @@ def test_missing_output_text_is_rejected_without_sdk_type_leakage() -> None:
         provider.generate(
             DialogueProviderRequest(npc_id="npc-1", player_input="hello")
         )
+
+
+def _status_error(error_type: type[openai.APIStatusError], status: int) -> Exception:
+    request = httpx.Request("POST", "https://api.openai.invalid/v1/responses")
+    response = httpx.Response(status, request=request)
+    return error_type("sensitive upstream detail", response=response, body=None)
+
+
+@pytest.mark.parametrize(
+    ("sdk_error", "expected_type"),
+    [
+        (_status_error(openai.AuthenticationError, 401), ProviderAuthenticationError),
+        (_status_error(openai.PermissionDeniedError, 403), ProviderAuthenticationError),
+        (_status_error(openai.RateLimitError, 429), ProviderRateLimitError),
+        (
+            openai.APITimeoutError(
+                httpx.Request("POST", "https://api.openai.invalid/v1/responses")
+            ),
+            ProviderTimeoutError,
+        ),
+        (
+            openai.APIConnectionError(
+                request=httpx.Request(
+                    "POST", "https://api.openai.invalid/v1/responses"
+                )
+            ),
+            ProviderUnavailableError,
+        ),
+        (_status_error(openai.InternalServerError, 500), ProviderUnavailableError),
+        (_status_error(openai.NotFoundError, 404), ProviderUnavailableError),
+        (_status_error(openai.BadRequestError, 400), DialogueProviderError),
+    ],
+)
+def test_sdk_errors_are_classified_without_raw_details(
+    sdk_error: Exception,
+    expected_type: type[DialogueProviderError],
+) -> None:
+    fake_client = FakeOpenAIClient(SimpleNamespace(output_text="unused"), sdk_error)
+    provider = OpenAIDialogueProvider(_settings(), client=fake_client)
+
+    with pytest.raises(expected_type) as captured:
+        provider.generate(
+            DialogueProviderRequest(npc_id="npc-1", player_input="hello")
+        )
+
+    assert type(captured.value) is expected_type
+    assert captured.value.provider == "openai"
+    assert "sensitive upstream detail" not in str(captured.value)
+    assert len(fake_client.responses.calls) == 1

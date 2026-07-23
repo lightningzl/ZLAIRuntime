@@ -15,6 +15,10 @@ router = APIRouter(prefix="/v1")
     responses={
         400: {"model": ErrorResponse},
         422: {"model": ErrorResponse},
+        429: {"model": ErrorResponse},
+        502: {"model": ErrorResponse},
+        503: {"model": ErrorResponse},
+        504: {"model": ErrorResponse},
         500: {"model": ErrorResponse},
     },
 )
