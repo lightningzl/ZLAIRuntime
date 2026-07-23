@@ -6,10 +6,10 @@ import socket
 from fastapi.testclient import TestClient
 import pytest
 
-import app.api.dialogue as dialogue_api
+from app.core.settings import Settings
 from app.main import create_app
-from app.schemas.dialogue import DialogueRequest, DialogueResponse
-from app.services.dialogue_service import STUB_REPLY
+from app.providers.base import DialogueProviderRequest, DialogueProviderResult
+from app.providers.stub_provider import STUB_REPLY, StubDialogueProvider
 
 
 VALID_REQUEST = {
@@ -22,7 +22,10 @@ VALID_REQUEST = {
 @pytest.fixture
 def client() -> Iterator[TestClient]:
     """Create an in-process client that exposes handled 500 responses."""
-    with TestClient(create_app(), raise_server_exceptions=False) as test_client:
+    with TestClient(
+        create_app(provider=StubDialogueProvider()),
+        raise_server_exceptions=False,
+    ) as test_client:
         yield test_client
 
 
@@ -100,16 +103,19 @@ def test_wrong_field_type_returns_validation_error(
     }
 
 
-def test_internal_error_does_not_expose_exception_details(
-    client: TestClient,
-    monkeypatch: pytest.MonkeyPatch,
-) -> None:
-    def raise_internal_error(_request: DialogueRequest) -> DialogueResponse:
-        raise RuntimeError("secret_token at C:/internal/service.py")
+def test_internal_error_does_not_expose_exception_details() -> None:
+    class FailingProvider:
+        def generate(
+            self,
+            _request: DialogueProviderRequest,
+        ) -> DialogueProviderResult:
+            raise RuntimeError("secret_token at C:/internal/service.py")
 
-    monkeypatch.setattr(dialogue_api, "build_dialogue_response", raise_internal_error)
-
-    response = client.post("/v1/dialogue", json=VALID_REQUEST)
+    with TestClient(
+        create_app(provider=FailingProvider()),
+        raise_server_exceptions=False,
+    ) as failing_client:
+        response = failing_client.post("/v1/dialogue", json=VALID_REQUEST)
 
     assert response.status_code == 500
     assert response.json() == {
@@ -125,7 +131,6 @@ def test_internal_error_does_not_expose_exception_details(
 
 
 def test_request_succeeds_without_api_key_or_network(
-    client: TestClient,
     monkeypatch: pytest.MonkeyPatch,
 ) -> None:
     monkeypatch.delenv("OPENAI_API_KEY", raising=False)
@@ -135,7 +140,33 @@ def test_request_succeeds_without_api_key_or_network(
 
     monkeypatch.setattr(socket, "create_connection", reject_network)
 
-    response = client.post("/v1/dialogue", json=VALID_REQUEST)
+    settings = Settings.from_env({"ZL_DIALOGUE_PROVIDER": "stub"})
+    with TestClient(create_app(settings=settings)) as offline_client:
+        response = offline_client.post("/v1/dialogue", json=VALID_REQUEST)
 
     assert response.status_code == 200
     assert response.json()["provider"] == "stub"
+
+
+def test_injected_fake_provider_can_return_openai_result() -> None:
+    class FakeOpenAIProvider:
+        def generate(
+            self,
+            request: DialogueProviderRequest,
+        ) -> DialogueProviderResult:
+            assert request == DialogueProviderRequest(
+                npc_id=VALID_REQUEST["npc_id"],
+                player_input=VALID_REQUEST["player_input"],
+            )
+            return DialogueProviderResult(reply="测试回复", provider="openai")
+
+    with TestClient(create_app(provider=FakeOpenAIProvider())) as fake_client:
+        response = fake_client.post("/v1/dialogue", json=VALID_REQUEST)
+
+    assert response.status_code == 200
+    assert response.json() == {
+        "request_id": VALID_REQUEST["request_id"],
+        "npc_id": VALID_REQUEST["npc_id"],
+        "reply": "测试回复",
+        "provider": "openai",
+    }

@@ -23,7 +23,7 @@
 | ID | 状态 | 工作包 | 主要产物 | 依赖 | 完成条件 |
 | --- | --- | --- | --- | --- | --- |
 | `M2-01` | `已完成` | 范围、协议与架构定稿 | Milestone、协议、架构、任务板、状态、模块和决策文档 | Milestone 1 | 开发前置文档相互一致，范围和协议扩展已获用户确认 |
-| `M2-02` | `待开始` | Provider 配置与抽象 | Settings、Provider 接口、Provider Factory、Stub/Fake 注入边界 | `M2-01` | 配置可校验；OpenAI/Stub 模式可明确选择；Service 不依赖具体 Provider SDK 类型 |
+| `M2-02` | `已完成` | Provider 配置与抽象 | Settings、Provider 接口、Provider Factory、Stub/Fake 注入边界 | `M2-01` | 配置可校验；OpenAI/Stub 模式可明确选择；Service 不依赖具体 Provider SDK 类型 |
 | `M2-03` | `待开始` | OpenAI Provider | 官方 SDK 依赖、Responses API 适配器、最小静态指令 | `M2-02` | 有效配置可生成非空纯文本回复，供应商类型不泄漏出 Provider 边界 |
 | `M2-04` | `待开始` | Dialogue Service 与错误映射 | Provider 编排、协议成功响应、分类异常与脱敏日志 | `M2-03` | 成功及鉴权、限流、超时、不可用、无效响应均符合协议且单次请求不重试 |
 | `M2-05` | `待开始` | Python 离线自动化测试 | 配置、Provider、Service、API 成功与错误路径测试 | `M2-02`、`M2-04` | 默认测试无外网、无 API Key、无真实 Token 消耗并覆盖全部 M2 Python 验收路径 |
@@ -55,6 +55,8 @@
 - 更新 `PythonService/README.md`，说明安装、环境变量、OpenAI 与离线启动方式。
 
 验证：覆盖默认值、合法覆盖、无效类型/范围、缺少密钥、显式 Stub 模式和密钥脱敏。
+
+验证记录（2026-07-22）：集中 Settings、Provider 接口与内部类型、显式 Factory、确定性 Stub Provider、应用启动组装和 Fake 注入边界已完成。Python 离线测试 `27 passed`，应用字节码编译和 `pip check` 通过；文档链接、密钥形态扫描与 `git diff --check` 通过。OpenAI SDK 调用和 Provider 错误映射按任务依赖分别留给 `M2-03` 与 `M2-04`。
 
 ### M2-03：OpenAI Provider
 

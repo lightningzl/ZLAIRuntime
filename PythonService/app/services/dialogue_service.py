@@ -1,9 +1,7 @@
-"""Deterministic dialogue behavior independent of HTTP concerns."""
+"""Dialogue orchestration independent of HTTP and concrete Provider concerns."""
 
+from app.providers.base import DialogueProvider, DialogueProviderRequest
 from app.schemas.dialogue import DialogueRequest, DialogueResponse
-
-
-STUB_REPLY = "城门刚刚关闭，请稍后再来。"
 
 
 class InvalidDialogueRequest(ValueError):
@@ -15,16 +13,28 @@ class InvalidDialogueRequest(ValueError):
         self.message = message
 
 
-def build_dialogue_response(request: DialogueRequest) -> DialogueResponse:
-    """Validate business rules and return a deterministic Stub response."""
-    if request.player_input == "":
-        raise InvalidDialogueRequest(
-            request_id=request.request_id,
-            message="player_input must not be empty",
-        )
+class DialogueService:
+    """Validate one dialogue turn and delegate generation to an injected Provider."""
 
-    return DialogueResponse(
-        request_id=request.request_id,
-        npc_id=request.npc_id,
-        reply=STUB_REPLY,
-    )
+    def __init__(self, provider: DialogueProvider) -> None:
+        self._provider = provider
+
+    def build_response(self, request: DialogueRequest) -> DialogueResponse:
+        if request.player_input == "":
+            raise InvalidDialogueRequest(
+                request_id=request.request_id,
+                message="player_input must not be empty",
+            )
+
+        result = self._provider.generate(
+            DialogueProviderRequest(
+                npc_id=request.npc_id,
+                player_input=request.player_input,
+            )
+        )
+        return DialogueResponse(
+            request_id=request.request_id,
+            npc_id=request.npc_id,
+            reply=result.reply,
+            provider=result.provider,
+        )

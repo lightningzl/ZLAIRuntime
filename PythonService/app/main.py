@@ -1,5 +1,7 @@
 """FastAPI application entry point and protocol error mapping."""
 
+from collections.abc import AsyncIterator
+from contextlib import asynccontextmanager
 import logging
 from typing import Any, Mapping
 
@@ -8,8 +10,11 @@ from fastapi.exceptions import RequestValidationError
 from fastapi.responses import JSONResponse
 
 from app.api.dialogue import router as dialogue_router
+from app.core.settings import Settings
+from app.providers.base import DialogueProvider
+from app.providers.factory import create_dialogue_provider
 from app.schemas.dialogue import ErrorDetail, ErrorResponse
-from app.services.dialogue_service import InvalidDialogueRequest
+from app.services.dialogue_service import DialogueService, InvalidDialogueRequest
 
 
 LOGGER = logging.getLogger(__name__)
@@ -75,9 +80,23 @@ async def _handle_internal_error(
     )
 
 
-def create_app() -> FastAPI:
-    """Create the HTTP application without starting a server as an import side effect."""
-    application = FastAPI(title="ZL AI Service", version="0.1.0")
+def create_app(
+    *,
+    settings: Settings | None = None,
+    provider: DialogueProvider | None = None,
+) -> FastAPI:
+    """Create an application whose Provider is resolved only during startup."""
+
+    @asynccontextmanager
+    async def lifespan(application: FastAPI) -> AsyncIterator[None]:
+        selected_provider = provider
+        if selected_provider is None:
+            selected_settings = settings or Settings.from_env()
+            selected_provider = create_dialogue_provider(selected_settings)
+        application.state.dialogue_service = DialogueService(selected_provider)
+        yield
+
+    application = FastAPI(title="ZL AI Service", version="0.2.0", lifespan=lifespan)
     application.add_exception_handler(InvalidDialogueRequest, _handle_invalid_request)
     application.add_exception_handler(RequestValidationError, _handle_validation_error)
     application.add_exception_handler(Exception, _handle_internal_error)

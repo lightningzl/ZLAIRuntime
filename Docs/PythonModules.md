@@ -2,7 +2,7 @@
 
 ## 当前状态
 
-Route、协议 Schema、确定性 Stub Service、统一错误映射和自动化回归测试已经完成。真实 LLM 接入所需的模块边界已经规划，但 OpenAI SDK、配置、Provider 接口和真实生成逻辑尚未实现。
+Route、协议 Schema、集中 Settings、Provider 接口与 Factory、确定性 Stub Provider、可注入的 Dialogue Service 和自动化回归测试已经完成。OpenAI SDK 适配、Provider 错误分类与完整协议错误映射尚未实现。
 
 ## 目标目录
 
@@ -48,17 +48,17 @@ PythonService/
 
 | 模块 | 状态 | 职责 |
 | --- | --- | --- |
-| `app.main` | M1 已实现，M2 待调整 | 创建 FastAPI App、组装 Settings/Provider/Service、注册 Route，并统一映射协议异常；支持测试注入且导入时不访问网络 |
-| `app.api.dialogue` | M1 已实现，M2 待调整 | 提供 `POST /v1/dialogue` 的 HTTP 适配，将已经校验的请求交给 Dialogue Service，不直接调用 Provider SDK |
-| `app.core.settings` | M2 计划 | 从环境读取 Provider、密钥、模型、超时和输出上限；完成类型、范围、组合与脱敏校验 |
-| `app.schemas.dialogue` | M1 已实现，M2 待调整 | 定义 v1 请求、成功响应和统一错误响应；允许 `provider` 为 `stub` 或 `openai`，声明全部协议错误码 |
-| `app.services.dialogue_service` | M1 已实现，M2 待调整 | 执行业务校验，构造最小生成输入，调用一次 Dialogue Provider，将 Provider 结果转换为协议响应 |
-| `app.providers.base` | M2 计划 | 定义与 FastAPI、Pydantic 协议 Schema 和供应商 SDK 解耦的 Provider 接口与内部结果类型 |
+| `app.main` | M2-02 已调整 | 创建 FastAPI App，在启动阶段组装 Settings/Provider/Service、注册 Route，并统一映射协议异常；支持 Provider 注入且模块导入时不读取配置或访问网络 |
+| `app.api.dialogue` | M2-02 已调整 | 提供 `POST /v1/dialogue` 的 HTTP 适配，将已经校验的请求交给应用持有的 Dialogue Service，不直接调用 Provider SDK |
+| `app.core.settings` | M2-02 已实现 | 从环境读取 Provider、密钥、模型、超时和输出上限；完成类型、范围、组合与脱敏校验 |
+| `app.schemas.dialogue` | M2-02 部分调整 | 定义 v1 请求、成功响应和统一错误响应；成功响应允许 `provider` 为 `stub` 或 `openai`，完整错误码声明留给 M2-04 |
+| `app.services.dialogue_service` | M2-02 已调整 | 执行业务校验，构造最小生成输入，调用注入的 Dialogue Provider，将内部结果转换为协议响应 |
+| `app.providers.base` | M2-02 已实现 | 定义与 FastAPI、Pydantic 协议 Schema 和供应商 SDK 解耦的 Provider 接口与内部结果类型 |
 | `app.providers.errors` | M2 计划 | 定义鉴权、限流、超时、不可用、无效响应等内部 Provider 异常，不包含 HTTP 状态码 |
-| `app.providers.factory` | M2 计划 | 根据 Settings 创建 OpenAI 或显式 Stub Provider；无效配置明确失败，不静默回退 |
+| `app.providers.factory` | M2-02 已实现 | 根据 Settings 创建显式 Stub Provider 或调用注入的 OpenAI 构造器；OpenAI 实现缺失或无效配置时明确失败，不静默回退 |
 | `app.providers.openai_provider` | M2 计划 | 使用官方 OpenAI Python SDK 和 Responses API 完成一次非流式文本生成，提取非空回复并转换 SDK 异常 |
-| `app.providers.stub_provider` | M2 计划 | 提供确定性离线回复，仅用于显式本地模式和联调，不满足真实 LLM 验收 |
-| `tests.*` | M1 基线存在，M2 待扩展 | 离线覆盖配置、Provider、Service、API、协议兼容、错误映射、脱敏和禁止外部网络 |
+| `app.providers.stub_provider` | M2-02 已实现 | 提供确定性离线回复，仅用于显式本地模式和联调，不满足真实 LLM 验收 |
+| `tests.*` | M2-02 已扩展 | 已离线覆盖配置、Factory、Stub/Fake 注入、API 回归、密钥脱敏和禁止外部网络；OpenAI 与完整错误路径留给后续工作包 |
 
 ## 内部类型边界
 
@@ -109,8 +109,8 @@ app.providers.openai_provider
 | `ZL_DIALOGUE_PROVIDER` | 默认 `openai`；只允许受支持值，`stub` 必须显式选择 |
 | `OPENAI_API_KEY` | OpenAI 模式必填；不得写入日志、响应、UE 或 Git |
 | `ZL_OPENAI_MODEL` | 默认 `gpt-5.6-luna`；只在 Python Provider 内消费 |
-| `ZL_OPENAI_TIMEOUT_SECONDS` | 正数并小于 UE 外层请求超时 |
-| `ZL_OPENAI_MAX_OUTPUT_TOKENS` | 正整数并受实现硬上限保护 |
+| `ZL_OPENAI_TIMEOUT_SECONDS` | 默认 `20` 秒；正数并小于 UE 外层基线 `30` 秒 |
+| `ZL_OPENAI_MAX_OUTPUT_TOKENS` | 默认 `256`；正整数，硬上限 `4096` |
 
 - 模块导入不得启动服务、读取网络或调用 OpenAI。
 - OpenAI 模式在应用启动阶段完成配置校验；配置无效时明确失败。

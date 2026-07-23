@@ -3,7 +3,7 @@
 from fastapi import APIRouter, Request
 
 from app.schemas.dialogue import DialogueRequest, DialogueResponse, ErrorResponse
-from app.services.dialogue_service import build_dialogue_response
+from app.services.dialogue_service import DialogueService
 
 
 router = APIRouter(prefix="/v1")
@@ -24,4 +24,5 @@ def create_dialogue(
 ) -> DialogueResponse:
     """Adapt a validated HTTP request to the dialogue service."""
     http_request.state.request_id = dialogue_request.request_id
-    return build_dialogue_response(dialogue_request)
+    service: DialogueService = http_request.app.state.dialogue_service
+    return service.build_response(dialogue_request)
