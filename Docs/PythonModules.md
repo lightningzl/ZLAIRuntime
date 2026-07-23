@@ -38,9 +38,12 @@ PythonService/
       openai_provider.py
       stub_provider.py
   tests/
+    conftest.py
     test_dialogue_api.py
+    test_openai_api_integration.py
+    test_provider_error_api.py
+    test_provider_factory.py
     test_settings.py
-    test_dialogue_service.py
     test_openai_provider.py
 ```
 
@@ -58,7 +61,7 @@ PythonService/
 | `app.providers.factory` | M2-03 已调整 | 根据 Settings 创建 OpenAI 或显式 Stub Provider，并支持注入 OpenAI 构造器；不静默回退 |
 | `app.providers.openai_provider` | M2-04 已调整 | 使用官方 OpenAI Python SDK 和 Responses API 完成一次非流式文本生成，提取非空回复并把 SDK 异常转换为内部 Provider 分类 |
 | `app.providers.stub_provider` | M2-02 已实现 | 提供确定性离线回复，仅用于显式本地模式和联调，不满足真实 LLM 验收 |
-| `tests.*` | M2-04 已扩展 | 已离线覆盖配置、Factory、Stub/Fake 注入、OpenAI 请求构造与输出提取、全部 Provider 错误映射、API 回归、单次调用和脱敏；全局网络隔离审计留给 M2-05 |
+| `tests.*` | M2-05 已完成 | 全局移除真实 `OPENAI_API_KEY` 并拦截非本机套接字连接；离线覆盖配置、Factory、Stub/OpenAI 成功响应、SDK 到 HTTP 的完整错误映射、API 回归、单次调用和脱敏 |
 
 ## 内部类型边界
 

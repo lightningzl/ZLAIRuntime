@@ -26,7 +26,7 @@
 | `M2-02` | `已完成` | Provider 配置与抽象 | Settings、Provider 接口、Provider Factory、Stub/Fake 注入边界 | `M2-01` | 配置可校验；OpenAI/Stub 模式可明确选择；Service 不依赖具体 Provider SDK 类型 |
 | `M2-03` | `已完成` | OpenAI Provider | 官方 SDK 依赖、Responses API 适配器、最小静态指令 | `M2-02` | 有效配置可生成非空纯文本回复，供应商类型不泄漏出 Provider 边界 |
 | `M2-04` | `已完成` | Dialogue Service 与错误映射 | Provider 编排、协议成功响应、分类异常与脱敏日志 | `M2-03` | 成功及鉴权、限流、超时、不可用、无效响应均符合协议且单次请求不重试 |
-| `M2-05` | `待开始` | Python 离线自动化测试 | 配置、Provider、Service、API 成功与错误路径测试 | `M2-02`、`M2-04` | 默认测试无外网、无 API Key、无真实 Token 消耗并覆盖全部 M2 Python 验收路径 |
+| `M2-05` | `已完成` | Python 离线自动化测试 | 配置、Provider、Service、API 成功与错误路径测试 | `M2-02`、`M2-04` | 默认测试无外网、无 API Key、无真实 Token 消耗并覆盖全部 M2 Python 验收路径 |
 | `M2-06` | `待开始` | UE 兼容与失败处理验证 | Provider 兼容测试、新错误码联调、超时配置与演示入口验证 | `M2-04` | UE 可展示 OpenAI 回复并安全处理全部 Provider 失败；外层超时次序明确 |
 | `M2-07` | `待开始` | 真实端到端验收与交付记录 | 真实请求证据、密钥审计、依赖检查、Milestone 2 验收记录 | `M2-05`、`M2-06` | `M2-A01` 至 `M2-A10` 均有可复查证据 |
 
@@ -97,6 +97,8 @@
 - 执行 `pip check` 并记录依赖结果。
 
 验证：执行完整 Python 测试；测试必须可重复、无真实 Token 消耗且不依赖当前账户状态。
+
+验证记录（2026-07-23）：测试套件通过自动夹具删除进程中的 `OPENAI_API_KEY`，并拒绝所有非本机套接字连接；使用 Fake SDK 串联验证 OpenAI 成功、鉴权、限流、超时、不可用和无效响应从 Provider 到 HTTP 协议层的结果，且每条路径仅发起一次生成调用。完整离线测试 `56 passed`，`pip check` 报告无依赖冲突。
 
 ### M2-06：UE 兼容与失败处理验证
 

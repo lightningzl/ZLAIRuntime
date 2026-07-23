@@ -1,7 +1,6 @@
 """Protocol-level tests for the dialogue API."""
 
 from collections.abc import Iterator
-import socket
 
 from fastapi.testclient import TestClient
 import pytest
@@ -130,16 +129,7 @@ def test_internal_error_does_not_expose_exception_details() -> None:
     assert "traceback" not in response.text.lower()
 
 
-def test_request_succeeds_without_api_key_or_network(
-    monkeypatch: pytest.MonkeyPatch,
-) -> None:
-    monkeypatch.delenv("OPENAI_API_KEY", raising=False)
-
-    def reject_network(*_args: object, **_kwargs: object) -> None:
-        raise AssertionError("external network access is not allowed")
-
-    monkeypatch.setattr(socket, "create_connection", reject_network)
-
+def test_request_succeeds_without_api_key_or_network() -> None:
     settings = Settings.from_env({"ZL_DIALOGUE_PROVIDER": "stub"})
     with TestClient(create_app(settings=settings)) as offline_client:
         response = offline_client.post("/v1/dialogue", json=VALID_REQUEST)
