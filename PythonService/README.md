@@ -29,7 +29,7 @@ PythonService/.venv/Scripts/python -m pip install -r PythonService/requirements-
 | --- | --- | --- |
 | `ZL_DIALOGUE_PROVIDER` | `kimi` | 只允许 `kimi` 或 `stub`；不会静默回退 |
 | `MOONSHOT_API_KEY` | 无 | Kimi 模式必填；不得写入仓库、请求或日志 |
-| `ZL_KIMI_MODEL` | `kimi-k3` | 必须是非空字符串 |
+| `ZL_KIMI_MODEL` | `kimi-k2.6` | 必须是非空字符串；K2.x 默认关闭思考以适配简短对话 |
 | `ZL_KIMI_TIMEOUT_SECONDS` | `20` | 必须大于 `0` 且小于 UE 外层基线 `30` 秒 |
 | `ZL_KIMI_MAX_OUTPUT_TOKENS` | `256` | 必须为正整数，硬上限为 `4096` |
 
@@ -52,7 +52,7 @@ $env:MOONSHOT_API_KEY = "<your-local-api-key>"
 PythonService/.venv/Scripts/python -m uvicorn app.main:app --app-dir PythonService --host 127.0.0.1 --port 8000
 ```
 
-Kimi 模式使用 `openai>=2.46,<3.0` 调用 `https://api.moonshot.ai/v1`，从集中配置读取模型、超时和输出上限，并显式禁用 SDK 自动重试。单次请求不会启用流式输出、工具或托管会话状态，也不会在失败时回退到 Stub。
+Kimi 模式使用 `openai>=2.46,<3.0` 调用国内开放平台 `https://api.moonshot.cn/v1`，从集中配置读取模型、超时和输出上限，并显式禁用 SDK 自动重试。单次请求不会启用流式输出、工具或托管会话状态，也不会在失败时回退到 Stub。
 
 启动后，FastAPI 文档页面位于 `http://127.0.0.1:8000/docs`，对话接口为 `POST http://127.0.0.1:8000/v1/dialogue`。请求和响应格式见 [`Docs/Protocol.md`](../Docs/Protocol.md)。
 

@@ -70,7 +70,7 @@ def test_client_configuration_disables_retries_and_uses_settings() -> None:
 
     assert captured_kwargs == {
         "api_key": "test-placeholder",
-        "base_url": "https://api.moonshot.ai/v1",
+        "base_url": "https://api.moonshot.cn/v1",
         "timeout": 12.5,
         "max_retries": 0,
     }
@@ -117,6 +117,27 @@ def test_generate_constructs_one_non_streaming_response_request() -> None:
     assert "npc_guard_01" not in str(request_arguments)
 
 
+def test_k2_generation_disables_thinking_for_short_dialogue() -> None:
+    fake_client = FakeKimiClient(
+        SimpleNamespace(
+            choices=[SimpleNamespace(message=SimpleNamespace(content="reply"))]
+        )
+    )
+    settings = Settings.from_env(
+        {
+            "MOONSHOT_API_KEY": "test-placeholder",
+            "ZL_KIMI_MODEL": "kimi-k2.6",
+        }
+    )
+    provider = KimiDialogueProvider(settings, client=fake_client)
+
+    provider.generate(DialogueProviderRequest(npc_id="npc-1", player_input="hello"))
+
+    request_arguments = fake_client.chat.completions.calls[0]
+    assert request_arguments["extra_body"] == {"thinking": {"type": "disabled"}}
+    assert "reasoning_effort" not in request_arguments
+
+
 @pytest.mark.parametrize("output_text", [None, "", "   ", 42])
 def test_empty_or_non_text_output_is_rejected(output_text: object) -> None:
     provider = KimiDialogueProvider(
@@ -156,7 +177,7 @@ def test_missing_output_text_is_rejected_without_sdk_type_leakage() -> None:
 
 def _status_error(error_type: type[openai.APIStatusError], status: int) -> Exception:
     request = httpx.Request(
-        "POST", "https://api.moonshot.ai/v1/chat/completions"
+        "POST", "https://api.moonshot.cn/v1/chat/completions"
     )
     response = httpx.Response(status, request=request)
     return error_type("sensitive upstream detail", response=response, body=None)
@@ -171,7 +192,7 @@ def _status_error(error_type: type[openai.APIStatusError], status: int) -> Excep
         (
             openai.APITimeoutError(
                 httpx.Request(
-                    "POST", "https://api.moonshot.ai/v1/chat/completions"
+                    "POST", "https://api.moonshot.cn/v1/chat/completions"
                 )
             ),
             ProviderTimeoutError,
@@ -179,7 +200,7 @@ def _status_error(error_type: type[openai.APIStatusError], status: int) -> Excep
         (
             openai.APIConnectionError(
                 request=httpx.Request(
-                    "POST", "https://api.moonshot.ai/v1/chat/completions"
+                    "POST", "https://api.moonshot.cn/v1/chat/completions"
                 )
             ),
             ProviderUnavailableError,

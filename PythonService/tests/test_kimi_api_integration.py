@@ -55,7 +55,7 @@ def _status_error(
     status_code: int,
 ) -> openai.APIStatusError:
     request = httpx.Request(
-        "POST", "https://api.moonshot.ai/v1/chat/completions"
+        "POST", "https://api.moonshot.cn/v1/chat/completions"
     )
     response = httpx.Response(status_code, request=request)
     return error_type("sensitive upstream detail", response=response, body=None)
@@ -95,7 +95,7 @@ def test_kimi_adapter_success_returns_protocol_response() -> None:
         (
             openai.APITimeoutError(
                 httpx.Request(
-                    "POST", "https://api.moonshot.ai/v1/chat/completions"
+                    "POST", "https://api.moonshot.cn/v1/chat/completions"
                 )
             ),
             504,
@@ -104,7 +104,7 @@ def test_kimi_adapter_success_returns_protocol_response() -> None:
         (
             openai.APIConnectionError(
                 request=httpx.Request(
-                    "POST", "https://api.moonshot.ai/v1/chat/completions"
+                    "POST", "https://api.moonshot.cn/v1/chat/completions"
                 )
             ),
             503,
@@ -144,7 +144,7 @@ def test_suite_guard_blocks_external_connections() -> None:
         AssertionError,
         match="external network access is not allowed",
     ):
-        socket.create_connection(("api.moonshot.ai", 443))
+        socket.create_connection(("api.moonshot.cn", 443))
 
 
 def test_suite_guard_removes_real_moonshot_api_key() -> None:

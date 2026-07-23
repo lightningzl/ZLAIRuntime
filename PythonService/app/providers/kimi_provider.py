@@ -76,24 +76,29 @@ class KimiDialogueProvider:
             if client is not None
             else client_factory(
                 api_key=settings.moonshot_api_key,
-                base_url="https://api.moonshot.ai/v1",
+                base_url="https://api.moonshot.cn/v1",
                 timeout=settings.kimi_timeout_seconds,
                 max_retries=0,
             )
         )
 
     def generate(self, request: DialogueProviderRequest) -> DialogueProviderResult:
+        request_options: dict[str, Any] = {
+            "model": self._model,
+            "messages": [
+                {"role": "system", "content": KIMI_DIALOGUE_INSTRUCTIONS},
+                {"role": "user", "content": request.player_input},
+            ],
+            "max_completion_tokens": self._max_output_tokens,
+            "stream": False,
+        }
+        if self._model.startswith("kimi-k2."):
+            request_options["extra_body"] = {"thinking": {"type": "disabled"}}
+        else:
+            request_options["reasoning_effort"] = "low"
+
         try:
-            response = self._client.chat.completions.create(
-                model=self._model,
-                messages=[
-                    {"role": "system", "content": KIMI_DIALOGUE_INSTRUCTIONS},
-                    {"role": "user", "content": request.player_input},
-                ],
-                reasoning_effort="low",
-                max_completion_tokens=self._max_output_tokens,
-                stream=False,
-            )
+            response = self._client.chat.completions.create(**request_options)
         except (AuthenticationError, PermissionDeniedError):
             raise ProviderAuthenticationError(
                 "kimi", "Kimi Provider authentication failed"

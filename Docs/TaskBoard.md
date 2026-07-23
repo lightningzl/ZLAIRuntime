@@ -29,7 +29,7 @@
 | `M2-05` | `已完成` | Python 离线自动化测试 | 配置、Provider、Service、API 成功与错误路径测试 | `M2-02`、`M2-04` | 默认测试无外网、无 API Key、无真实 Token 消耗并覆盖全部 M2 Python 验收路径 |
 | `M2-06` | `已完成` | UE 兼容与失败处理验证 | Provider 兼容测试、新错误码联调、超时配置与演示入口验证 | `M2-04` | UE 可展示真实 Provider 回复并安全处理全部 Provider 失败；外层超时次序明确 |
 | `M2-07` | `已完成` | 切换至 Kimi K3 Provider | Kimi 配置、Chat Completions 适配器、协议标识、两端兼容测试和文档 | `M2-06` | 默认真实 Provider 为 `kimi-k3`；离线自动化和 UE 兼容验证通过 |
-| `M2-08` | `受阻` | 真实端到端验收与交付记录 | 真实请求证据、密钥审计、依赖检查、Milestone 2 验收记录 | `M2-07` | `M2-A01` 至 `M2-A10` 均有可复查证据 |
+| `M2-08` | `已完成` | 真实端到端验收与交付记录 | 真实请求证据、密钥审计、依赖检查、Milestone 2 验收记录 | `M2-07` | `M2-A01` 至 `M2-A10` 均有可复查证据 |
 
 ## 工作包明细
 
@@ -118,18 +118,20 @@
 ### M2-07：切换至 Kimi K3 Provider
 
 - 默认真实 Provider 改为 Kimi，逻辑 Provider 标识改为 `kimi`。
-- 使用官方文档支持的 OpenAI 兼容 SDK 调用 Kimi Chat Completions API，固定 Base URL 为 `https://api.moonshot.ai/v1`。
+- 使用官方文档支持的 OpenAI 兼容 SDK 调用 Kimi Chat Completions API，国内开放平台 Base URL 为 `https://api.moonshot.cn/v1`。
 - 默认模型改为 `kimi-k3`，密钥改从 `MOONSHOT_API_KEY` 读取。
 - 保持单次、非流式、无工具、无会话状态和不自动重试约束。
 - 同步 Python/UE 自动化、协议、配置、模块和决策文档。
 
 验证：运行完整 Python 离线测试、依赖检查和 UE 自动化，确认不访问外网、不需要真实 Key、不消耗 Token；真实网络验证留给 `M2-08`。
 
-验证记录（2026-07-23）：默认真实 Provider、配置和协议标识已切换为 Kimi；适配器通过固定 Moonshot Base URL 使用 `chat.completions.create`，默认模型为 `kimi-k3`，并保持单次、非流式、无工具、低推理强度和 `max_retries=0`。Python 离线测试 `56 passed`，`pip check` 通过；`ZLEditor Win64 Development` 编译成功，本机 Stub Service 下完整 `ZLAIRuntime` 自动化 6/6 成功。未访问真实 Kimi API，未消耗 Token。
+验证记录（2026-07-23）：默认真实 Provider、配置和协议标识已切换为 Kimi；适配器通过 Kimi 国内开放平台 Base URL 使用 `chat.completions.create`，默认模型为 `kimi-k3`，并保持单次、非流式、无工具、低推理强度和 `max_retries=0`。Python 离线测试 `56 passed`，`pip check` 通过；`ZLEditor Win64 Development` 编译成功，本机 Stub Service 下完整 `ZLAIRuntime` 自动化 6/6 成功。未执行生成式真实 Kimi 请求，未消耗 Token。
 
 ### M2-08：真实端到端验收与交付记录
 
-当前阻塞（2026-07-23）：当前进程和用户环境均未配置 `MOONSHOT_API_KEY`。需要在本地进程环境中提供有效但不入库的 Kimi API Key 后，才能执行会产生真实 Token 消耗的验收请求。
+阻塞解除（2026-07-23）：宿主 Windows 用户环境已配置 `MOONSHOT_API_KEY`；验收进程从用户环境读取密钥，不将值写入仓库、命令输出或验证记录。
+
+- K3 在真实验收期间出现持续限流；账户模型列表确认 `kimi-k2.6` 可用，最小真实生成请求成功，因此当前默认模型降级为 `kimi-k2.6`。`ZL_KIMI_MODEL` 仍可显式覆盖模型，UE 协议不变。
 
 - 使用有效但不入库的 `MOONSHOT_API_KEY` 启动 Kimi 模式 Service。
 - 在同一次 UE Game 会话中提交至少 3 条不同玩家输入。
@@ -140,6 +142,8 @@
 - 将每项结果记录到 [Milestone2Validation.md](./Validation/Milestone2Validation.md)，同步模块文档和 Project State。
 
 验证：按 [CurrentMilestone.md](./CurrentMilestone.md) 中 `M2-A01` 至 `M2-A10` 逐项记录证据；未执行或失败的项目必须保持未验证。
+
+验证记录（2026-07-23）：Kimi 国内 API 鉴权、余额和账户模型列表验证通过；因 K3 热点限流，将默认模型降级为账户已开放且真实生成成功的 `kimi-k2.6`，并为 K2.x 简短对话显式关闭思考。合法 HTTP 请求返回 `200`、非空回复、字段透传和 `provider: kimi`。绕过 UE 本机代理后，同一无界面 Game 会话中的 3 条不同输入均经 Service 返回 `200`，UE 收到 3 条一一对应回复且无失败。真实 1 毫秒 Provider 超时返回一次 `504 provider_timeout`，UE 只完成一次失败回调并正常退出。Python 离线测试 `57 passed`、`pip check` 通过；`ZLEditor Win64 Development` 编译成功，完整 `ZLAIRuntime` 自动化 6/6 成功。详细脱敏证据见 [Milestone2Validation.md](./Validation/Milestone2Validation.md)。
 
 ## 推荐执行顺序
 

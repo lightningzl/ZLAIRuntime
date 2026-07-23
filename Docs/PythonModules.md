@@ -113,7 +113,7 @@ OpenAI 兼容 Python SDK 运行依赖锁定为 `openai>=2.46,<3.0`。Kimi Client
 | --- | --- |
 | `ZL_DIALOGUE_PROVIDER` | 默认 `kimi`；只允许受支持值，`stub` 必须显式选择 |
 | `MOONSHOT_API_KEY` | Kimi 模式必填；不得写入日志、响应、UE 或 Git |
-| `ZL_KIMI_MODEL` | 默认 `kimi-k3`；只在 Python Provider 内消费 |
+| `ZL_KIMI_MODEL` | 默认 `kimi-k2.6`；只在 Python Provider 内消费；K2.x 简短对话关闭思考 |
 | `ZL_KIMI_TIMEOUT_SECONDS` | 默认 `20` 秒；正数并小于 UE 外层基线 `30` 秒 |
 | `ZL_KIMI_MAX_OUTPUT_TOKENS` | 默认 `256`；正整数，硬上限 `4096` |
 
