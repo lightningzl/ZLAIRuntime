@@ -4,7 +4,7 @@ from dataclasses import dataclass
 from typing import Literal, Protocol
 
 
-ProviderId = Literal["stub", "openai"]
+ProviderId = Literal["stub", "kimi"]
 
 
 @dataclass(frozen=True, slots=True)

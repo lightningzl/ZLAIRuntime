@@ -15,7 +15,7 @@ def isolate_tests_from_credentials_and_external_network(
     monkeypatch: pytest.MonkeyPatch,
 ) -> Iterator[None]:
     """Remove the real API key and reject non-loopback socket connections."""
-    monkeypatch.delenv("OPENAI_API_KEY", raising=False)
+    monkeypatch.delenv("MOONSHOT_API_KEY", raising=False)
 
     original_create_connection = socket.create_connection
     original_connect = socket.socket.connect

@@ -17,7 +17,7 @@
 - AI Service：Python、FastAPI
 - Data：SQLite
 - 可选扩展：Chroma 或 FAISS
-- LLM：首先接入 OpenAI Responses API；模型由 Python Service 配置，UE 与协议不绑定具体模型
+- LLM：首先接入 Kimi 开放平台 Chat Completions API；模型由 Python Service 配置，UE 与协议不绑定具体模型
 
 ## 核心原则
 

@@ -8,7 +8,7 @@ from app.providers.base import (
 from app.providers.factory import (
     create_dialogue_provider,
 )
-from app.providers.openai_provider import OpenAIDialogueProvider
+from app.providers.kimi_provider import KimiDialogueProvider
 from app.providers.stub_provider import STUB_REPLY, StubDialogueProvider
 
 
@@ -24,32 +24,32 @@ def test_explicit_stub_selection_returns_deterministic_provider() -> None:
     assert result == DialogueProviderResult(reply=STUB_REPLY, provider="stub")
 
 
-def test_openai_selection_uses_injected_factory() -> None:
-    settings = Settings.from_env({"OPENAI_API_KEY": "test-placeholder"})
+def test_kimi_selection_uses_injected_factory() -> None:
+    settings = Settings.from_env({"MOONSHOT_API_KEY": "test-placeholder"})
     captured_settings: list[Settings] = []
 
-    class FakeOpenAIProvider:
+    class FakeKimiProvider:
         def generate(
             self,
             _request: DialogueProviderRequest,
         ) -> DialogueProviderResult:
-            return DialogueProviderResult(reply="fake", provider="openai")
+            return DialogueProviderResult(reply="fake", provider="kimi")
 
-    fake_provider = FakeOpenAIProvider()
+    fake_provider = FakeKimiProvider()
 
-    def build_fake(received_settings: Settings) -> FakeOpenAIProvider:
+    def build_fake(received_settings: Settings) -> FakeKimiProvider:
         captured_settings.append(received_settings)
         return fake_provider
 
-    provider = create_dialogue_provider(settings, openai_factory=build_fake)
+    provider = create_dialogue_provider(settings, kimi_factory=build_fake)
 
     assert provider is fake_provider
     assert captured_settings == [settings]
 
 
-def test_openai_selection_constructs_openai_provider_without_network() -> None:
-    settings = Settings.from_env({"OPENAI_API_KEY": "test-placeholder"})
+def test_kimi_selection_constructs_kimi_provider_without_network() -> None:
+    settings = Settings.from_env({"MOONSHOT_API_KEY": "test-placeholder"})
 
     provider = create_dialogue_provider(settings)
 
-    assert isinstance(provider, OpenAIDialogueProvider)
+    assert isinstance(provider, KimiDialogueProvider)

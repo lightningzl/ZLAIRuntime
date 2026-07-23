@@ -41,37 +41,37 @@ class FailingProvider:
     ("error", "status_code", "code", "message"),
     [
         (
-            ProviderAuthenticationError("openai", "sensitive auth detail"),
+            ProviderAuthenticationError("kimi", "sensitive auth detail"),
             503,
             "provider_auth_error",
             "dialogue provider authentication failed",
         ),
         (
-            ProviderRateLimitError("openai", "sensitive rate detail"),
+            ProviderRateLimitError("kimi", "sensitive rate detail"),
             429,
             "provider_rate_limited",
             "dialogue provider rate limited the request",
         ),
         (
-            ProviderTimeoutError("openai", "sensitive timeout detail"),
+            ProviderTimeoutError("kimi", "sensitive timeout detail"),
             504,
             "provider_timeout",
             "dialogue provider timed out",
         ),
         (
-            ProviderUnavailableError("openai", "sensitive unavailable detail"),
+            ProviderUnavailableError("kimi", "sensitive unavailable detail"),
             503,
             "provider_unavailable",
             "dialogue provider is unavailable",
         ),
         (
-            ProviderInvalidResponseError("openai", "sensitive response detail"),
+            ProviderInvalidResponseError("kimi", "sensitive response detail"),
             502,
             "provider_error",
             "dialogue provider failed",
         ),
         (
-            DialogueProviderError("openai", "sensitive generic detail"),
+            DialogueProviderError("kimi", "sensitive generic detail"),
             502,
             "provider_error",
             "dialogue provider failed",
@@ -103,5 +103,5 @@ def test_provider_errors_map_to_sanitized_protocol_responses(
     assert str(error) not in response.text
     assert str(error) not in caplog.text
     assert "request_id=req-provider-error" in caplog.text
-    assert "provider=openai" in caplog.text
+    assert "provider=kimi" in caplog.text
     assert f"category={code}" in caplog.text

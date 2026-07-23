@@ -25,7 +25,7 @@ class DialogueResponse(ProtocolModel):
     request_id: str
     npc_id: str
     reply: str
-    provider: Literal["stub", "openai"]
+    provider: Literal["stub", "kimi"]
 
 
 class ErrorDetail(ProtocolModel):

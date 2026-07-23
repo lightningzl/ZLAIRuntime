@@ -52,11 +52,11 @@ bool FZLDialogueResponseParsingTest::RunTest(const FString& Parameters)
 	TestEqual(TEXT("Reply parsed"), Response.Reply, FString(TEXT("hello")));
 	TestEqual(TEXT("Provider parsed"), Response.Provider, FString(TEXT("stub")));
 
-	const FString OpenAIJson = TEXT(
+	const FString KimiJson = TEXT(
 		"{\"request_id\":\"request-002\",\"npc_id\":\"npc_guard_01\","
-		"\"reply\":\"generated reply\",\"provider\":\"openai\"}");
-	TestTrue(TEXT("OpenAI provider response parses"), ZLAIServiceProtocol::TryParseDialogueResponse(OpenAIJson, Response));
-	TestEqual(TEXT("OpenAI provider remains a string"), Response.Provider, FString(TEXT("openai")));
+		"\"reply\":\"generated reply\",\"provider\":\"kimi\"}");
+	TestTrue(TEXT("Kimi provider response parses"), ZLAIServiceProtocol::TryParseDialogueResponse(KimiJson, Response));
+	TestEqual(TEXT("Kimi provider remains a string"), Response.Provider, FString(TEXT("kimi")));
 
 	const FString FutureProviderJson = TEXT(
 		"{\"request_id\":\"request-003\",\"npc_id\":\"npc_guard_01\","

@@ -29,14 +29,14 @@
 
 ## 当前演进约束
 
-真实 LLM 接入不计划新增 UE Runtime 类型，也不把 OpenAI SDK、API Key、模型配置或 Prompt 引入 UE。现有公开类型按以下方式继续使用：
+真实 LLM 接入不计划新增 UE Runtime 类型，也不把 Kimi/OpenAI 兼容 SDK、API Key、模型配置或 Prompt 引入 UE。现有公开类型按以下方式继续使用：
 
 | 类型 | 计划 |
 | --- | --- |
 | `UZLAIServiceSubsystem` | 保持请求入口和异步委托；已验证新增 Provider HTTP 错误路径和单次完成回调 |
 | `UZLAIServiceSettings` | UE 外层请求超时为 30 秒，明确大于 Python Provider 默认 20 秒；不增加模型或密钥设置 |
 | `FZLDialogueRequest` | 字段保持不变，不加入 Provider、模型、人格、历史或世界状态 |
-| `FZLDialogueResponse` | `Provider` 继续使用字符串，接受 `stub`、`openai` 和未来未知标识，不加入模型名 |
+| `FZLDialogueResponse` | `Provider` 继续使用字符串，接受 `stub`、`kimi` 和未来未知标识，不加入模型名 |
 | `FZLServiceError` | `Code` 继续使用字符串，保留新增 Provider 错误码；`Category` 仍归类为 HTTP，不新增供应商专用枚举 |
 
 UE 当前工作的重点是协议兼容和真实链路验证，而不是扩展 Gameplay 能力。控制台命令 `ZL.AI.DialogueDemo` 继续作为最小演示入口；正式 UMG、NPC 人格、多轮对话和行为执行不在当前范围。

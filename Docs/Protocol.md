@@ -38,7 +38,7 @@ HTTP Status：`200 OK`
   "request_id": "7b66ad74-51cd-4a23-92c7-9e290e6374b1",
   "npc_id": "npc_guard_01",
   "reply": "城门刚刚关闭，请稍后再来。",
-  "provider": "openai"
+  "provider": "kimi"
 }
 ```
 
@@ -47,9 +47,9 @@ HTTP Status：`200 OK`
 | `request_id` | string | 是 | 与请求一致 |
 | `npc_id` | string | 是 | 与请求一致 |
 | `reply` | string | 是 | 非空 NPC 回复文本 |
-| `provider` | string | 是 | 生成回复的逻辑 Provider；当前允许 `stub`、`openai`，不包含模型名 |
+| `provider` | string | 是 | 生成回复的逻辑 Provider；当前允许 `stub`、`kimi`，不包含模型名 |
 
-`stub` 仅用于显式离线开发和确定性验证；真实模型链路成功时必须返回 `openai`。
+`stub` 仅用于显式离线开发和确定性验证；真实模型链路成功时必须返回 `kimi`。
 
 当前响应不包含模型名、Token 用量、会话状态或 Tool Call。UE 只消费 `reply`，不得从回复文本中推断并执行 Gameplay 指令。
 

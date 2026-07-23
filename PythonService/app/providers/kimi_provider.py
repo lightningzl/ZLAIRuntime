@@ -1,4 +1,4 @@
-"""OpenAI Responses API adapter for one non-streaming dialogue turn."""
+"""Kimi Chat Completions API adapter for one non-streaming dialogue turn."""
 
 from collections.abc import Callable
 from typing import Any, Protocol
@@ -28,7 +28,7 @@ from app.providers.errors import (
 )
 
 
-OPENAI_DIALOGUE_INSTRUCTIONS = (
+KIMI_DIALOGUE_INSTRUCTIONS = (
     "Generate one concise plain-text NPC reply to the player's input. "
     "Do not claim knowledge of any personality, world state, player history, "
     "memory, or gameplay ability that was not provided. Do not produce JSON, "
@@ -36,90 +36,99 @@ OPENAI_DIALOGUE_INSTRUCTIONS = (
 )
 
 
-class ResponsesResource(Protocol):
+class ChatCompletionsResource(Protocol):
     """Minimum SDK resource surface used by this adapter."""
 
     def create(self, **kwargs: Any) -> Any:
-        """Create one non-streaming Responses API result."""
+        """Create one non-streaming Chat Completions API result."""
         ...
 
 
-class OpenAIClient(Protocol):
-    """Minimum OpenAI SDK client surface used by this adapter."""
+class ChatResource(Protocol):
+    """Minimum chat resource surface used by this adapter."""
 
-    responses: ResponsesResource
-
-
-OpenAIClientFactory = Callable[..., OpenAIClient]
+    completions: ChatCompletionsResource
 
 
-class OpenAIDialogueProvider:
-    """Generate a supplier-neutral reply through the OpenAI Responses API."""
+class KimiClient(Protocol):
+    """Minimum OpenAI-compatible SDK client surface used by this adapter."""
+
+    chat: ChatResource
+
+
+KimiClientFactory = Callable[..., KimiClient]
+
+
+class KimiDialogueProvider:
+    """Generate a supplier-neutral reply through Kimi Chat Completions."""
 
     def __init__(
         self,
         settings: Settings,
         *,
-        client: OpenAIClient | None = None,
-        client_factory: OpenAIClientFactory = OpenAI,
+        client: KimiClient | None = None,
+        client_factory: KimiClientFactory = OpenAI,
     ) -> None:
-        self._model = settings.openai_model
-        self._max_output_tokens = settings.openai_max_output_tokens
+        self._model = settings.kimi_model
+        self._max_output_tokens = settings.kimi_max_output_tokens
         self._client = (
             client
             if client is not None
             else client_factory(
-                api_key=settings.openai_api_key,
-                timeout=settings.openai_timeout_seconds,
+                api_key=settings.moonshot_api_key,
+                base_url="https://api.moonshot.ai/v1",
+                timeout=settings.kimi_timeout_seconds,
                 max_retries=0,
             )
         )
 
     def generate(self, request: DialogueProviderRequest) -> DialogueProviderResult:
         try:
-            response = self._client.responses.create(
+            response = self._client.chat.completions.create(
                 model=self._model,
-                instructions=OPENAI_DIALOGUE_INSTRUCTIONS,
-                input=request.player_input,
-                max_output_tokens=self._max_output_tokens,
-                store=False,
+                messages=[
+                    {"role": "system", "content": KIMI_DIALOGUE_INSTRUCTIONS},
+                    {"role": "user", "content": request.player_input},
+                ],
+                reasoning_effort="low",
+                max_completion_tokens=self._max_output_tokens,
                 stream=False,
             )
         except (AuthenticationError, PermissionDeniedError):
             raise ProviderAuthenticationError(
-                "openai", "OpenAI Provider authentication failed"
+                "kimi", "Kimi Provider authentication failed"
             ) from None
         except RateLimitError:
             raise ProviderRateLimitError(
-                "openai", "OpenAI Provider rate limited the request"
+                "kimi", "Kimi Provider rate limited the request"
             ) from None
         except APITimeoutError:
             raise ProviderTimeoutError(
-                "openai", "OpenAI Provider request timed out"
+                "kimi", "Kimi Provider request timed out"
             ) from None
         except (APIConnectionError, InternalServerError, NotFoundError):
             raise ProviderUnavailableError(
-                "openai", "OpenAI Provider is unavailable"
+                "kimi", "Kimi Provider is unavailable"
             ) from None
         except APIResponseValidationError:
             raise ProviderInvalidResponseError(
-                "openai", "OpenAI Provider returned an invalid response"
+                "kimi", "Kimi Provider returned an invalid response"
             ) from None
         except APIError:
             raise DialogueProviderError(
-                "openai", "OpenAI Provider request failed"
+                "kimi", "Kimi Provider request failed"
             ) from None
 
         try:
-            output_text = response.output_text
-        except (AttributeError, TypeError):
+            output_text = response.choices[0].message.content
+        except (AttributeError, IndexError, TypeError):
             raise ProviderInvalidResponseError(
-                "openai", "OpenAI Provider returned an invalid response"
+                "kimi", "Kimi Provider returned an invalid response"
             ) from None
 
         if not isinstance(output_text, str) or not output_text.strip():
             raise ProviderInvalidResponseError(
-                "openai", "OpenAI Provider returned an empty reply"
+                "kimi", "Kimi Provider returned an empty reply"
             )
 
-        return DialogueProviderResult(reply=output_text.strip(), provider="openai")
+        return DialogueProviderResult(reply=output_text.strip(), provider="kimi")

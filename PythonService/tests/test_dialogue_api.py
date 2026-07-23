@@ -138,8 +138,8 @@ def test_request_succeeds_without_api_key_or_network() -> None:
     assert response.json()["provider"] == "stub"
 
 
-def test_injected_fake_provider_can_return_openai_result() -> None:
-    class FakeOpenAIProvider:
+def test_injected_fake_provider_can_return_kimi_result() -> None:
+    class FakeKimiProvider:
         def generate(
             self,
             request: DialogueProviderRequest,
@@ -148,9 +148,9 @@ def test_injected_fake_provider_can_return_openai_result() -> None:
                 npc_id=VALID_REQUEST["npc_id"],
                 player_input=VALID_REQUEST["player_input"],
             )
-            return DialogueProviderResult(reply="测试回复", provider="openai")
+            return DialogueProviderResult(reply="测试回复", provider="kimi")
 
-    with TestClient(create_app(provider=FakeOpenAIProvider())) as fake_client:
+    with TestClient(create_app(provider=FakeKimiProvider())) as fake_client:
         response = fake_client.post("/v1/dialogue", json=VALID_REQUEST)
 
     assert response.status_code == 200
@@ -158,5 +158,5 @@ def test_injected_fake_provider_can_return_openai_result() -> None:
         "request_id": VALID_REQUEST["request_id"],
         "npc_id": VALID_REQUEST["npc_id"],
         "reply": "测试回复",
-        "provider": "openai",
+        "provider": "kimi",
     }

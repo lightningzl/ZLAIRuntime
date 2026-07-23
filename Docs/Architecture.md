@@ -18,7 +18,7 @@ Python AI Service
   - FastAPI Route
   - Dialogue Service
   - Dialogue Provider Interface
-      |- OpenAI Provider
+      |- Kimi Provider
       `- Stub Provider
 ```
 
