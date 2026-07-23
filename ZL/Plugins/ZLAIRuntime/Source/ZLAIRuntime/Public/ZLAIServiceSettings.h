@@ -15,5 +15,5 @@ public:
 	FString ServiceBaseUrl = TEXT("http://127.0.0.1:8000");
 
 	UPROPERTY(Config, EditAnywhere, Category = "Service", meta = (ClampMin = "0.1", UIMin = "0.1", Units = "s"))
-	float RequestTimeoutSeconds = 10.0f;
+	float RequestTimeoutSeconds = 30.0f;
 };

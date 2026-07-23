@@ -12,6 +12,7 @@ namespace
 		bool bCompleted = false;
 		bool bSucceeded = false;
 		bool bCallbackOnGameThread = false;
+		int32 CallbackCount = 0;
 		FString ExpectedRequestId;
 		FZLDialogueResponse Response;
 		FZLServiceError Error;
@@ -43,6 +44,7 @@ bool FWaitForDialogueIntegrationCalls::Update()
 	}
 
 	Test->TestTrue(TEXT("Success request completed before timeout"), State->SuccessCall->bCompleted);
+	Test->TestEqual(TEXT("Success request completes exactly once"), State->SuccessCall->CallbackCount, 1);
 	Test->TestTrue(TEXT("Valid request used the success delegate"), State->SuccessCall->bSucceeded);
 	Test->TestTrue(TEXT("Success delegate ran on the Game Thread"), State->SuccessCall->bCallbackOnGameThread);
 	Test->TestEqual(
@@ -57,6 +59,7 @@ bool FWaitForDialogueIntegrationCalls::Update()
 	Test->TestFalse(TEXT("Success response contains a reply"), State->SuccessCall->Response.Reply.IsEmpty());
 
 	Test->TestTrue(TEXT("Invalid request completed before timeout"), State->FailureCall->bCompleted);
+	Test->TestEqual(TEXT("Invalid request completes exactly once"), State->FailureCall->CallbackCount, 1);
 	Test->TestFalse(TEXT("Invalid request used the failure delegate"), State->FailureCall->bSucceeded);
 	Test->TestTrue(TEXT("Failure delegate ran on the Game Thread"), State->FailureCall->bCallbackOnGameThread);
 	Test->TestEqual(
@@ -107,6 +110,7 @@ bool FZLAIServiceClientIntegrationTest::RunTest(const FString& Parameters)
 		TEXT("What happened here?"),
 		FZLDialogueSuccessDelegate::CreateLambda([CallState = State->SuccessCall](const FZLDialogueResponse& Response)
 		{
+			++CallState->CallbackCount;
 			CallState->bCompleted = true;
 			CallState->bSucceeded = true;
 			CallState->bCallbackOnGameThread = IsInGameThread();
@@ -114,6 +118,7 @@ bool FZLAIServiceClientIntegrationTest::RunTest(const FString& Parameters)
 		}),
 		FZLDialogueFailureDelegate::CreateLambda([CallState = State->SuccessCall](const FZLServiceError& Error)
 		{
+			++CallState->CallbackCount;
 			CallState->bCompleted = true;
 			CallState->bSucceeded = false;
 			CallState->bCallbackOnGameThread = IsInGameThread();
@@ -125,6 +130,7 @@ bool FZLAIServiceClientIntegrationTest::RunTest(const FString& Parameters)
 		TEXT(""),
 		FZLDialogueSuccessDelegate::CreateLambda([CallState = State->FailureCall](const FZLDialogueResponse& Response)
 		{
+			++CallState->CallbackCount;
 			CallState->bCompleted = true;
 			CallState->bSucceeded = true;
 			CallState->bCallbackOnGameThread = IsInGameThread();
@@ -132,6 +138,7 @@ bool FZLAIServiceClientIntegrationTest::RunTest(const FString& Parameters)
 		}),
 		FZLDialogueFailureDelegate::CreateLambda([CallState = State->FailureCall](const FZLServiceError& Error)
 		{
+			++CallState->CallbackCount;
 			CallState->bCompleted = true;
 			CallState->bSucceeded = false;
 			CallState->bCallbackOnGameThread = IsInGameThread();

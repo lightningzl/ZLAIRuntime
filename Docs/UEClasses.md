@@ -33,8 +33,8 @@
 
 | 类型 | 计划 |
 | --- | --- |
-| `UZLAIServiceSubsystem` | 保持请求入口和异步委托；验证新增 Provider HTTP 错误路径；确保单次超时只完成一次回调 |
-| `UZLAIServiceSettings` | 调整 UE 外层请求超时，使其明确大于 Python Provider 超时；不增加模型或密钥设置 |
+| `UZLAIServiceSubsystem` | 保持请求入口和异步委托；已验证新增 Provider HTTP 错误路径和单次完成回调 |
+| `UZLAIServiceSettings` | UE 外层请求超时为 30 秒，明确大于 Python Provider 默认 20 秒；不增加模型或密钥设置 |
 | `FZLDialogueRequest` | 字段保持不变，不加入 Provider、模型、人格、历史或世界状态 |
 | `FZLDialogueResponse` | `Provider` 继续使用字符串，接受 `stub`、`openai` 和未来未知标识，不加入模型名 |
 | `FZLServiceError` | `Code` 继续使用字符串，保留新增 Provider 错误码；`Category` 仍归类为 HTTP，不新增供应商专用枚举 |
@@ -67,4 +67,4 @@ Gameplay / UI
 
 ## 已有实现验证基线
 
-现有 AI Runtime 类型已通过 UE 编译、协议/失败处理自动化测试和 Stub Service 端到端演示验证。可复查证据见 [Milestone1Validation.md](./Validation/Milestone1Validation.md)。后续类型职责、接口和验证记录的更新规则见 [DocumentationRules.md](./DocumentationRules.md)。
+现有 AI Runtime 类型已通过 UE 编译、协议/失败处理自动化测试和 Stub Service 端到端演示验证。Milestone 2 进一步验证了字符串 Provider 前向兼容、`429`/`502`/`503`/`504` 错误保留，以及成功和失败回调各自恰好完成一次。可复查证据见 [Milestone2Validation.md](./Validation/Milestone2Validation.md)，历史基线见 [Milestone1Validation.md](./Validation/Milestone1Validation.md)。

@@ -27,7 +27,7 @@
 | `M2-03` | `已完成` | OpenAI Provider | 官方 SDK 依赖、Responses API 适配器、最小静态指令 | `M2-02` | 有效配置可生成非空纯文本回复，供应商类型不泄漏出 Provider 边界 |
 | `M2-04` | `已完成` | Dialogue Service 与错误映射 | Provider 编排、协议成功响应、分类异常与脱敏日志 | `M2-03` | 成功及鉴权、限流、超时、不可用、无效响应均符合协议且单次请求不重试 |
 | `M2-05` | `已完成` | Python 离线自动化测试 | 配置、Provider、Service、API 成功与错误路径测试 | `M2-02`、`M2-04` | 默认测试无外网、无 API Key、无真实 Token 消耗并覆盖全部 M2 Python 验收路径 |
-| `M2-06` | `待开始` | UE 兼容与失败处理验证 | Provider 兼容测试、新错误码联调、超时配置与演示入口验证 | `M2-04` | UE 可展示 OpenAI 回复并安全处理全部 Provider 失败；外层超时次序明确 |
+| `M2-06` | `已完成` | UE 兼容与失败处理验证 | Provider 兼容测试、新错误码联调、超时配置与演示入口验证 | `M2-04` | UE 可展示 OpenAI 回复并安全处理全部 Provider 失败；外层超时次序明确 |
 | `M2-07` | `待开始` | 真实端到端验收与交付记录 | 真实请求证据、密钥审计、依赖检查、Milestone 2 验收记录 | `M2-05`、`M2-06` | `M2-A01` 至 `M2-A10` 均有可复查证据 |
 
 ## 工作包明细
@@ -111,6 +111,8 @@
 - 同步更新 [UEClasses.md](./UEClasses.md)。
 
 验证：编译受影响 UE Target，执行完整 `ZLAIRuntime` 自动化测试，并在 Game 模式验证一条成功和一条 Provider 失败路径。
+
+验证记录（2026-07-23）：`ZLEditor Win64 Development` 编译成功；本机 Stub Service 下完整 `ZLAIRuntime` 自动化报告为 6/6 成功、0 失败。协议测试接受 `stub`、`openai` 和未来字符串 Provider；失败处理测试覆盖 `429`、`502`、`503`、`504` 并保留协议错误码；本地 HTTP 集成测试确认成功与失败路径均只完成一次回调。无界面 Game 模式通过 `ZL.AI.DialogueDemo` 分别验证了 Stub 成功回复和 Fake Provider 的 `503 provider_unavailable` 可定位失败。UE 请求超时调整为 30 秒，明确大于 Python Provider 默认 20 秒。
 
 ### M2-07：真实端到端验收与交付记录
 

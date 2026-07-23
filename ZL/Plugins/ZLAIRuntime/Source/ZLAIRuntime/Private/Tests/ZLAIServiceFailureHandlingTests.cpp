@@ -11,6 +11,8 @@ namespace
 	{
 		bool bFailureCalled = false;
 		bool bSuccessCalled = false;
+		int32 FailureCallCount = 0;
+		int32 SuccessCallCount = 0;
 		FZLServiceError Error;
 	};
 }
@@ -24,7 +26,7 @@ bool FZLAIServiceSettingsTest::RunTest(const FString& Parameters)
 {
 	const UZLAIServiceSettings* Settings = GetDefault<UZLAIServiceSettings>();
 	TestEqual(TEXT("Default Service URL comes from Game config"), Settings->ServiceBaseUrl, FString(TEXT("http://127.0.0.1:8000")));
-	TestEqual(TEXT("Default request timeout comes from Game config"), Settings->RequestTimeoutSeconds, 10.0f);
+	TestEqual(TEXT("Default request timeout comes from Game config"), Settings->RequestTimeoutSeconds, 30.0f);
 	return true;
 }
 
@@ -56,11 +58,13 @@ bool FZLAIServiceFailureHandlingTest::RunTest(const FString& Parameters)
 			FZLDialogueSuccessDelegate::CreateLambda([&Result](const FZLDialogueResponse&)
 			{
 				Result.bSuccessCalled = true;
+				++Result.SuccessCallCount;
 			}),
 			FZLDialogueFailureDelegate::CreateLambda([&Result](const FZLServiceError& Error)
 			{
 				Result.Error = Error;
 				Result.bFailureCalled = true;
+				++Result.FailureCallCount;
 			}));
 		return Result;
 	};
@@ -88,6 +92,34 @@ bool FZLAIServiceFailureHandlingTest::RunTest(const FString& Parameters)
 	TestEqual(TEXT("Non-2xx response is an HTTP failure"), HttpResult.Error.Category, EZLServiceErrorCategory::Http);
 	TestEqual(TEXT("HTTP failure preserves the Service code"), HttpResult.Error.Code, FString(TEXT("invalid_request")));
 	TestEqual(TEXT("HTTP failure includes its status"), HttpResult.Error.HttpStatusCode, 400);
+
+	auto TestProviderHttpFailure = [this, &CompleteFailure](
+		const int32 HttpStatusCode,
+		const TCHAR* ErrorCode)
+	{
+		const FString RequestId = FString::Printf(TEXT("provider-http-%d"), HttpStatusCode);
+		const FString ResponseBody = FString::Printf(
+			TEXT("{\"request_id\":\"%s\",\"error\":{\"code\":\"%s\",\"message\":\"provider failure\"}}"),
+			*RequestId,
+			ErrorCode);
+		const FFailureCompletionResult Result = CompleteFailure(
+			RequestId,
+			true,
+			false,
+			HttpStatusCode,
+			ResponseBody);
+
+		TestEqual(TEXT("Provider HTTP failure calls failure exactly once"), Result.FailureCallCount, 1);
+		TestEqual(TEXT("Provider HTTP failure never calls success"), Result.SuccessCallCount, 0);
+		TestEqual(TEXT("Provider HTTP failure remains in HTTP category"), Result.Error.Category, EZLServiceErrorCategory::Http);
+		TestEqual(TEXT("Provider HTTP failure preserves status"), Result.Error.HttpStatusCode, HttpStatusCode);
+		TestEqual(TEXT("Provider HTTP failure preserves protocol code"), Result.Error.Code, FString(ErrorCode));
+	};
+
+	TestProviderHttpFailure(429, TEXT("provider_rate_limited"));
+	TestProviderHttpFailure(502, TEXT("provider_error"));
+	TestProviderHttpFailure(503, TEXT("provider_unavailable"));
+	TestProviderHttpFailure(504, TEXT("provider_timeout"));
 
 	const FFailureCompletionResult ParseResult = CompleteFailure(TEXT("parse-request"), true, false, 200, TEXT("not-json"));
 	TestTrue(TEXT("Parse failure delegate is called"), ParseResult.bFailureCalled);

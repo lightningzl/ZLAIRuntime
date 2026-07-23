@@ -52,6 +52,18 @@ bool FZLDialogueResponseParsingTest::RunTest(const FString& Parameters)
 	TestEqual(TEXT("Reply parsed"), Response.Reply, FString(TEXT("hello")));
 	TestEqual(TEXT("Provider parsed"), Response.Provider, FString(TEXT("stub")));
 
+	const FString OpenAIJson = TEXT(
+		"{\"request_id\":\"request-002\",\"npc_id\":\"npc_guard_01\","
+		"\"reply\":\"generated reply\",\"provider\":\"openai\"}");
+	TestTrue(TEXT("OpenAI provider response parses"), ZLAIServiceProtocol::TryParseDialogueResponse(OpenAIJson, Response));
+	TestEqual(TEXT("OpenAI provider remains a string"), Response.Provider, FString(TEXT("openai")));
+
+	const FString FutureProviderJson = TEXT(
+		"{\"request_id\":\"request-003\",\"npc_id\":\"npc_guard_01\","
+		"\"reply\":\"future reply\",\"provider\":\"future-provider\"}");
+	TestTrue(TEXT("Future provider response parses"), ZLAIServiceProtocol::TryParseDialogueResponse(FutureProviderJson, Response));
+	TestEqual(TEXT("Future provider remains forward compatible"), Response.Provider, FString(TEXT("future-provider")));
+
 	const FString MissingReplyJson = TEXT(
 		"{\"request_id\":\"request-001\",\"npc_id\":\"npc_guard_01\",\"provider\":\"stub\"}");
 	TestFalse(
