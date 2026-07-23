@@ -2,7 +2,7 @@
 
 ## 当前状态
 
-Route、协议 Schema、集中 Settings、Provider 接口与 Factory、确定性 Stub Provider、可注入的 Dialogue Service 和自动化回归测试已经完成。OpenAI SDK 适配、Provider 错误分类与完整协议错误映射尚未实现。
+Route、协议 Schema、集中 Settings、Provider 接口与 Factory、确定性 Stub Provider、OpenAI Responses API 适配器、可注入的 Dialogue Service 和自动化回归测试已经完成。完整 Provider 错误分类与协议错误映射尚未实现。
 
 ## 目标目录
 
@@ -54,11 +54,11 @@ PythonService/
 | `app.schemas.dialogue` | M2-02 部分调整 | 定义 v1 请求、成功响应和统一错误响应；成功响应允许 `provider` 为 `stub` 或 `openai`，完整错误码声明留给 M2-04 |
 | `app.services.dialogue_service` | M2-02 已调整 | 执行业务校验，构造最小生成输入，调用注入的 Dialogue Provider，将内部结果转换为协议响应 |
 | `app.providers.base` | M2-02 已实现 | 定义与 FastAPI、Pydantic 协议 Schema 和供应商 SDK 解耦的 Provider 接口与内部结果类型 |
-| `app.providers.errors` | M2 计划 | 定义鉴权、限流、超时、不可用、无效响应等内部 Provider 异常，不包含 HTTP 状态码 |
-| `app.providers.factory` | M2-02 已实现 | 根据 Settings 创建显式 Stub Provider 或调用注入的 OpenAI 构造器；OpenAI 实现缺失或无效配置时明确失败，不静默回退 |
-| `app.providers.openai_provider` | M2 计划 | 使用官方 OpenAI Python SDK 和 Responses API 完成一次非流式文本生成，提取非空回复并转换 SDK 异常 |
+| `app.providers.errors` | M2-03 部分实现 | 已定义 Provider 基础异常和无效响应异常；鉴权、限流、超时和不可用分类留给 M2-04，不包含 HTTP 状态码 |
+| `app.providers.factory` | M2-03 已调整 | 根据 Settings 创建 OpenAI 或显式 Stub Provider，并支持注入 OpenAI 构造器；不静默回退 |
+| `app.providers.openai_provider` | M2-03 已实现 | 使用官方 OpenAI Python SDK 和 Responses API 完成一次非流式文本生成，提取非空回复；SDK 异常分类留给 M2-04 |
 | `app.providers.stub_provider` | M2-02 已实现 | 提供确定性离线回复，仅用于显式本地模式和联调，不满足真实 LLM 验收 |
-| `tests.*` | M2-02 已扩展 | 已离线覆盖配置、Factory、Stub/Fake 注入、API 回归、密钥脱敏和禁止外部网络；OpenAI 与完整错误路径留给后续工作包 |
+| `tests.*` | M2-03 已扩展 | 已离线覆盖配置、Factory、Stub/Fake 注入、OpenAI 请求构造与输出提取、API 回归、密钥脱敏和禁止外部网络；完整错误路径留给后续工作包 |
 
 ## 内部类型边界
 
@@ -95,6 +95,8 @@ app.providers.openai_provider
   -> app.providers.base / errors
   -> OpenAI SDK
 ```
+
+官方 OpenAI Python SDK 运行依赖锁定为兼容范围 `openai>=2.46,<3.0`。OpenAI Client 从 Settings 接收 API Key、超时并设置 `max_retries=0`；Provider 每次只调用一次 `responses.create`。
 
 - Route 可以依赖 Schema 和 Service，但不能依赖具体 Provider。
 - Service 只依赖 Provider 接口和内部异常，不依赖 OpenAI SDK 或 FastAPI HTTP 类型。

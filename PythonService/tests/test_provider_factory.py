@@ -1,16 +1,14 @@
 """Tests for explicit Provider selection and injection boundaries."""
 
-import pytest
-
 from app.core.settings import Settings
 from app.providers.base import (
     DialogueProviderRequest,
     DialogueProviderResult,
 )
 from app.providers.factory import (
-    ProviderConfigurationError,
     create_dialogue_provider,
 )
+from app.providers.openai_provider import OpenAIDialogueProvider
 from app.providers.stub_provider import STUB_REPLY, StubDialogueProvider
 
 
@@ -49,11 +47,9 @@ def test_openai_selection_uses_injected_factory() -> None:
     assert captured_settings == [settings]
 
 
-def test_openai_selection_never_falls_back_to_stub() -> None:
+def test_openai_selection_constructs_openai_provider_without_network() -> None:
     settings = Settings.from_env({"OPENAI_API_KEY": "test-placeholder"})
 
-    with pytest.raises(
-        ProviderConfigurationError,
-        match="OpenAI Provider implementation is unavailable",
-    ):
-        create_dialogue_provider(settings)
+    provider = create_dialogue_provider(settings)
+
+    assert isinstance(provider, OpenAIDialogueProvider)

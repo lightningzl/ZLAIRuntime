@@ -4,14 +4,11 @@ from collections.abc import Callable
 
 from app.core.settings import Settings
 from app.providers.base import DialogueProvider
+from app.providers.openai_provider import OpenAIDialogueProvider
 from app.providers.stub_provider import StubDialogueProvider
 
 
 OpenAIProviderFactory = Callable[[Settings], DialogueProvider]
-
-
-class ProviderConfigurationError(RuntimeError):
-    """Raised when the selected Provider cannot be constructed."""
 
 
 def create_dialogue_provider(
@@ -23,8 +20,5 @@ def create_dialogue_provider(
     if settings.dialogue_provider == "stub":
         return StubDialogueProvider()
 
-    if openai_factory is None:
-        raise ProviderConfigurationError(
-            "OpenAI Provider implementation is unavailable"
-        )
-    return openai_factory(settings)
+    factory = openai_factory or OpenAIDialogueProvider
+    return factory(settings)

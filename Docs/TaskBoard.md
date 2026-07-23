@@ -24,7 +24,7 @@
 | --- | --- | --- | --- | --- | --- |
 | `M2-01` | `已完成` | 范围、协议与架构定稿 | Milestone、协议、架构、任务板、状态、模块和决策文档 | Milestone 1 | 开发前置文档相互一致，范围和协议扩展已获用户确认 |
 | `M2-02` | `已完成` | Provider 配置与抽象 | Settings、Provider 接口、Provider Factory、Stub/Fake 注入边界 | `M2-01` | 配置可校验；OpenAI/Stub 模式可明确选择；Service 不依赖具体 Provider SDK 类型 |
-| `M2-03` | `待开始` | OpenAI Provider | 官方 SDK 依赖、Responses API 适配器、最小静态指令 | `M2-02` | 有效配置可生成非空纯文本回复，供应商类型不泄漏出 Provider 边界 |
+| `M2-03` | `已完成` | OpenAI Provider | 官方 SDK 依赖、Responses API 适配器、最小静态指令 | `M2-02` | 有效配置可生成非空纯文本回复，供应商类型不泄漏出 Provider 边界 |
 | `M2-04` | `待开始` | Dialogue Service 与错误映射 | Provider 编排、协议成功响应、分类异常与脱敏日志 | `M2-03` | 成功及鉴权、限流、超时、不可用、无效响应均符合协议且单次请求不重试 |
 | `M2-05` | `待开始` | Python 离线自动化测试 | 配置、Provider、Service、API 成功与错误路径测试 | `M2-02`、`M2-04` | 默认测试无外网、无 API Key、无真实 Token 消耗并覆盖全部 M2 Python 验收路径 |
 | `M2-06` | `待开始` | UE 兼容与失败处理验证 | Provider 兼容测试、新错误码联调、超时配置与演示入口验证 | `M2-04` | UE 可展示 OpenAI 回复并安全处理全部 Provider 失败；外层超时次序明确 |
@@ -69,6 +69,8 @@
 - 只向上层返回非空文本和 `openai` Provider 标识；SDK 响应类型不得泄漏。
 
 验证：使用 Fake SDK Client 或等价注入验证请求参数、模型配置、输出提取、空/无效输出和一次调用约束；真实网络验证留给 `M2-07`。
+
+验证记录（2026-07-23）：官方 OpenAI Python SDK 兼容范围、Responses API 非流式适配器、集中静态指令和 Factory 接线已完成。Fake SDK Client 验证了模型、指令、输入、输出 Token 上限、超时、`max_retries=0`、单次调用、无工具/流式/会话参数、`npc_id` 不推导人格、输出裁剪以及空/无效输出拒绝。Python 离线测试 `34 passed`，`pip check` 通过；未访问真实 OpenAI API，未消耗 Token。
 
 ### M2-04：Dialogue Service 与错误映射
 

@@ -1,6 +1,6 @@
 # Python AI Service
 
-Milestone 2 的本地 FastAPI AI Service。当前已完成集中配置、Dialogue Provider 接口、显式 Provider 选择和可注入的离线 Stub/Fake 边界；OpenAI Responses API 适配器将在 `M2-03` 接入。
+Milestone 2 的本地 FastAPI AI Service。当前已完成集中配置、Dialogue Provider 接口、显式 Provider 选择、可注入的离线 Stub/Fake 边界，以及使用官方 Python SDK 的 OpenAI Responses API 非流式适配器。
 
 ## 环境要求
 
@@ -52,7 +52,7 @@ $env:OPENAI_API_KEY = "<your-local-api-key>"
 PythonService/.venv/Scripts/python -m uvicorn app.main:app --app-dir PythonService --host 127.0.0.1 --port 8000
 ```
 
-在 `M2-03` 完成前，OpenAI 模式会在启动阶段明确报告 Provider 实现尚不可用，不会回退到 Stub。
+OpenAI 模式使用 `openai>=2.46,<3.0`，从集中配置读取模型、超时和输出上限，并显式禁用 SDK 自动重试。单次请求不会启用流式输出、工具或托管会话状态，也不会在失败时回退到 Stub。
 
 启动后，FastAPI 文档页面位于 `http://127.0.0.1:8000/docs`，对话接口为 `POST http://127.0.0.1:8000/v1/dialogue`。请求和响应格式见 [`Docs/Protocol.md`](../Docs/Protocol.md)。
 
