@@ -278,3 +278,28 @@ Python Service 新增独立 Context Builder。它以确定性顺序组合固定�
 
 重要性：
 重要
+
+## 2026-07-27：使用显式范围和 SQLite 持久化对话 Memory
+
+决定：
+Milestone 4 继续使用 `POST /v1/dialogue`，在 v1 请求中增加可选 `memory` 对象，其中只包含稳定、不透明的 `scope_id`。请求提供 Memory 时，Python Service 以 `(scope_id, npc_id)` 隔离读取和保存对话；请求省略 Memory 时严格保持既有无状态行为。
+
+Python Service 新增独立 Memory Service 与 SQLite Repository。Repository 独占 Schema、索引、查询和事务；Memory Service 负责隔离、预算、顺序、重叠消除和幂等轮次语义；Dialogue Service 协调读取、Context Builder、单次 Provider 调用和成功后写入。只保存成功完成的玩家输入与 NPC 回复，不保存完整上下文、Provider 原始响应或推理内容。
+
+原因：
+- 可选 Memory 保持 Milestone 1 至 3 客户端和无状态请求兼容，不会让所有请求隐式产生持久化副作用。
+- `(scope_id, npc_id)` 同时表达玩家/存档范围和 NPC 隔离，避免只按 NPC ID 导致不同玩家串线。
+- SQLite 足以支撑单机 Demo 的结构化历史、事务、唯一约束和重启恢复，且无需提前引入外部数据库服务。
+- 独立 Memory Service 和 Repository 保持 SQL、Prompt 编排、Provider 和 UE Runtime 边界清晰，为后续评估摘要或向量检索留下替换点。
+
+取舍：
+- Gameplay/UI 必须提供稳定 scope，Service 不负责账号、存档或身份生命周期。
+- 本地 SQLite 保存对话明文，当前只适合受控 Demo 环境；生产级加密、备份、权限和合规删除需要后续设计。
+- 最近轮次检索不能提供语义相关性；本阶段明确不引入 Embedding、向量库或 LLM 摘要。
+- v1 响应不暴露 Memory 命中数量或数据库状态，运行验证依赖脱敏日志、测试和本地维护入口。
+
+状态：
+已接受
+
+重要性：
+重要

@@ -18,9 +18,9 @@
 
 | 类型 | 状态 | 职责 | 不负责 |
 | --- | --- | --- | --- |
-| `UZLAIServiceSubsystem` | M3-06 已调整 | 生成请求 ID；提供无上下文和完整上下文重载；在创建 HTTP 前校验；共享构造、发送、超时和单次完成逻辑 | UI、NPC 行为、Prompt、Memory、Tool Call、持久配置 |
+| `UZLAIServiceSubsystem` | M4-02 计划调整 | 保留既有入口并增加显式 Memory 范围入口；在创建 HTTP 前校验；共享构造、发送、超时和单次完成逻辑 | UI、NPC 行为、Prompt、Memory 存储检索、Tool Call、持久配置 |
 | `UZLAIServiceSettings` | 已实现 | 通过 UE Config 提供 Base URL 和请求超时 | 运行时请求状态或密钥管理 |
-| `FZLDialogueRequest` | M3-02 已调整 | 表示 `request_id`、`npc_id`、`player_input` 和可选瞬时上下文 | 保存跨请求对话状态 |
+| `FZLDialogueRequest` | M4-02 计划调整 | 表示 `request_id`、`npc_id`、`player_input`、可选瞬时上下文和可选 Memory 范围 | 保存跨请求对话正文或访问数据库 |
 | `FZLDialogueResponse` | 已实现 | 表示 `request_id`、`npc_id`、`reply`、`provider` | 推断或执行 Gameplay 指令 |
 | `FZLServiceError` | 已实现 | 表示错误分类、错误码、消息、请求 ID 和 HTTP 状态码 | 暴露底层堆栈或内部路径 |
 
@@ -40,24 +40,34 @@
 
 协议中的 `context` 可选，但存在时必须完整。UE 结构应能明确区分“未提供上下文”和“提供完整上下文”，不得用空对象替代缺失字段。
 
+## Milestone 4 Memory 类型
+
+| 类型 | 状态 | 职责 | 不负责 |
+| --- | --- | --- | --- |
+| `FZLDialogueMemory` | M4-02 计划 | 表示稳定、不透明的 `scope_id`，与 `npc_id` 共同隔离持久化对话 | 解释账号、存档槽、平台身份或数据库位置 |
+| `FZLDialogueRequest` | M4-02 计划调整 | 明确区分省略 Memory 与提供完整 Memory 对象 | 持有历史记录、数据库连接或服务端行 ID |
+| `UZLAIServiceSubsystem` | M4-07 计划调整 | 提供显式 Memory 请求入口并复用现有 HTTP 与完成逻辑 | 自动生成业务 scope、清理数据库或展示 Memory |
+
+协议中的 `memory` 可选。Gameplay/UI 必须显式提供稳定 scope；插件不得从账号、SaveGame、Actor、World 或平台服务自动推导。省略时请求必须保持既有无状态行为。
+
 ## 当前实现约束
 
-Milestone 3 只扩展供应商无关的协议类型和请求入口，不把 Kimi/OpenAI 兼容 SDK、API Key、模型配置或 Prompt 引入 UE。现有公开类型按以下方式继续使用：
+Milestone 4 只扩展供应商无关的协议类型和请求入口，不把 SQLite、Kimi/OpenAI 兼容 SDK、API Key、模型配置或 Prompt 引入 UE。现有公开类型按以下方式继续使用：
 
 | 类型 | 实现 |
 | --- | --- |
-| `UZLAIServiceSubsystem` | 已保留现有 `NpcId + PlayerInput` 入口，并增加接受完整上下文的重载；共享 HTTP、超时和单次完成逻辑 |
+| `UZLAIServiceSubsystem` | 保留现有无 Memory 入口；计划增加接受 Memory 范围的入口并共享 HTTP、超时和单次完成逻辑 |
 | `UZLAIServiceSettings` | UE 外层请求超时为 30 秒，明确大于 Python Provider 默认 20 秒；不增加模型或密钥设置 |
-| `FZLDialogueRequest` | 可选携带完整上下文；不加入 Provider、模型、密钥、Memory ID 或 Tool 定义 |
+| `FZLDialogueRequest` | 可选携带完整上下文和 Memory 范围；不加入 Provider、模型、密钥、数据库行 ID 或 Tool 定义 |
 | `FZLDialogueResponse` | `Provider` 继续使用字符串，接受 `stub`、`kimi` 和未来未知标识，不加入模型名 |
 | `FZLServiceError` | `Code` 继续使用字符串，保留新增 Provider 错误码；`Category` 仍归类为 HTTP，不新增供应商专用枚举 |
 
-Gameplay/UI 负责显式构造上下文快照，插件不得依赖具体 NPC Actor、关卡、UI、DataTable 或内容资产。控制台演示只使用固定脱敏示例验证链路；正式 UMG、内容创作工具、持久化会话和行为执行不在当前范围。
+Gameplay/UI 负责显式构造上下文快照和 Memory scope，插件不得依赖具体 NPC Actor、关卡、UI、DataTable、SaveGame、账号或内容资产。控制台演示只使用固定脱敏示例验证链路；正式 UMG、Memory 管理工具和行为执行不在当前范围。
 
 ## 依赖方向
 
 ```text
-Gameplay / UI Context Snapshot
+Gameplay / UI Context Snapshot + Optional Memory Scope
     -> ZLAIRuntime Plugin
         -> UZLAIServiceSubsystem
             -> ZLAIServiceProtocol
@@ -65,18 +75,19 @@ Gameplay / UI Context Snapshot
                     -> Python Service
 ```
 
-- Gameplay/UI 构造并提交当前对话快照，消费成功/失败结果。
+- Gameplay/UI 构造并提交当前对话快照，可显式提供稳定 Memory scope，并消费成功/失败结果。
 - 协议结构体可被 Client 使用，但不得依赖具体 UI 或 NPC 类型。
 - Subsystem 不持有 NPC Actor 的强引用，不直接修改世界状态。
 - 旧 `ZL.AI.DialogueDemo <npc_id> <player_input>` 入口继续作为无上下文回归；上下文演示入口只依赖插件公开类型。
 - `ZL.AI.DialogueContextDemo <persona|world|history> <npc_id>` 使用固定脱敏输入和快照验证人格、世界和历史三类上下文；M3-07 已用真实 Kimi 验证三类受控匹配均通过。日志只记录关联元数据、匹配结果和长度，不记录完整输入、上下文或回复。
+- M4-07 计划增加同级 Memory 演示入口，覆盖连续轮次、scope/NPC 隔离和重启恢复；命令与日志不得输出完整 scope 或对话正文。
 
 ## 生命周期与异步约束
 
 - Client 使用 `UGameInstanceSubsystem`，生命周期覆盖关卡切换且不依赖特定 Actor。
 - 每个请求由客户端生成唯一 `request_id`。
 - 回调必须区分网络失败、超时、HTTP 错误和解析错误。
-- 上下文在发送前完成协议边界校验；校验失败不得创建 HTTP 请求，并只触发一次 Client 失败回调。
+- 上下文和 Memory 范围在发送前完成协议边界校验；校验失败不得创建 HTTP 请求，并只触发一次 Client 失败回调。
 - 回调触发前确认上下文仍有效；不允许悬空 UObject 引用。
 - 回复仍只包含 `reply`，不得从文本中解析 Gameplay 命令。
 
@@ -85,3 +96,5 @@ Gameplay / UI Context Snapshot
 现有 AI Runtime 类型已通过 UE 编译、协议/失败处理自动化测试和真实 Kimi 端到端演示验证。Milestone 2 进一步验证了字符串 Provider 前向兼容、`429`/`502`/`503`/`504` 错误保留，以及成功和失败回调各自恰好完成一次；证据见 [Milestone2Validation.md](./Validation/Milestone2Validation.md)。
 
 Milestone 3 上下文结构、协议边界校验和 JSON 序列化已在 M3-02 实现。M3-06 已完成兼容请求重载、上下文 Game 演示和本地 HTTP 集成；`ZLEditor` 编译、完整 `ZLAIRuntime` 自动化 8/8、旧/新入口与非法上下文单次完成均已验证。证据见 [Milestone3Validation.md](./Validation/Milestone3Validation.md)。
+
+Milestone 4 的 Memory 类型、请求入口和演示尚未实现；所有相关验证均记录为未验证，后续证据只写入 [Milestone4Validation.md](./Validation/Milestone4Validation.md)。

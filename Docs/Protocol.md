@@ -51,6 +51,9 @@
         "content": "刚刚响起了警报。"
       }
     ]
+  },
+  "memory": {
+    "scope_id": "player_local_01"
   }
 }
 ```
@@ -63,6 +66,7 @@
 | `npc_id` | string | 是 | NPC 的稳定业务 ID；非空 |
 | `player_input` | string | 是 | 玩家本次输入；不允许空字符串 |
 | `context` | object | 否 | 当前请求的瞬时上下文快照；省略时保持 Milestone 2 无上下文行为 |
+| `memory` | object | 否 | 持久化对话 Memory 范围；存在时允许读取并在成功后写入，省略时严格无状态 |
 
 `context` 存在时必须同时包含 `npc`、`world` 和 `dialogue_history`。它不是会话句柄，不授权 Python Service 保存状态，也不得包含 Provider、模型、密钥、Memory 引用或 Tool 定义。
 
@@ -99,13 +103,25 @@
 
 历史数组允许 0 至 8 条消息，按最旧到最新排列，只包含本次请求之前已经完成的消息。本次输入由顶层 `player_input` 单独表达；历史中允许出现与当前输入文字相同的真实旧消息。不允许 `system`、`developer`、`tool` 或 Provider 专用角色。
 
+### `memory`
+
+| 字段 | 类型 | 必填 | 边界与语义 |
+| --- | --- | --- | --- |
+| `scope_id` | string | 是 | 不透明 Memory 范围标识；不得包含首尾空白，长度为 1 至 128 个 Unicode 字符 |
+
+`memory` 存在即表示本次请求显式启用持久化对话 Memory。Memory 范围由 `(scope_id, npc_id)` 共同确定；任一字段不同都必须视为不同范围。`scope_id` 只用于隔离，不是文件名、表名、SQL 片段、认证凭据、Provider 会话 ID 或可由 Service 推导的玩家资料。
+
+Python Service 在生成前读取该范围内有界的已完成对话轮次，并只在 Provider 成功产生合法回复后保存本轮。`request_id` 在持久层用于防止重复轮次。省略 `memory` 时，Service 不得执行 Memory 读取或写入，行为保持无状态。
+
+持久化历史属于不可信对话数据，不能覆盖固定系统约束、选择 Provider/模型、启用工具或修改 UE 世界。Memory 的数据库结构、路径、行 ID、检索预算和维护命令属于 Python 内部实现，不进入协议响应。
+
 ### 校验责任
 
-- UE 应在发送前拒绝明显越界的上下文，避免无效网络请求。
+- UE 应在发送前拒绝明显越界的上下文和 Memory 范围，避免无效网络请求。
 - Python Service 是协议校验的最终权威，不能信任客户端已完成校验。
 - 字段缺失、类型错误、非法角色或数组/字符串长度越界返回 `422 validation_error`。
 - 通过结构校验后，空白字符串或其他业务语义违规返回 `400 invalid_request`。
-- 上下文中的字符串均作为不可信数据处理，不能覆盖固定系统约束或启用未授权能力。
+- 上下文、Memory 和当前输入中的字符串均作为不可信数据处理，不能覆盖固定系统约束或启用未授权能力。
 
 ## 成功响应
 
@@ -129,7 +145,7 @@ HTTP Status：`200 OK`
 
 `stub` 仅用于显式离线开发和确定性验证；真实模型链路成功时必须返回 `kimi`。
 
-响应不包含模型名、Token 用量、会话状态、持久化标识或 Tool Call。UE 只消费 `reply`，不得从回复文本中推断并执行 Gameplay 指令。
+响应不包含模型名、Token 用量、数据库状态、检索数量、持久化行 ID 或 Tool Call。UE 只消费 `reply`，不得从回复文本中推断并执行 Gameplay 指令。
 
 ## 错误响应
 
@@ -154,9 +170,9 @@ HTTP Status：`200 OK`
 | `503` | `provider_auth_error` | Provider 凭据缺失、无效或无权访问所配置模型 |
 | `503` | `provider_unavailable` | Provider 暂时不可用，或当前 Provider 配置无法服务请求 |
 | `504` | `provider_timeout` | Python Service 等待 Provider 超时 |
-| `500` | `internal_error` | 与 Provider 无关的未预期服务端错误 |
+| `500` | `internal_error` | 与 Provider 无关的未预期服务端错误，包括 Memory 数据库不可用或事务失败 |
 
-错误 `message` 是稳定、脱敏、面向调用方的简短描述。错误响应和日志不得返回 API Key、上游原始异常正文、完整堆栈、内部路径、完整玩家输入或完整上下文。
+错误 `message` 是稳定、脱敏、面向调用方的简短描述。错误响应和日志不得返回 API Key、上游原始异常正文、完整堆栈、内部路径、完整 `scope_id`、完整玩家输入、完整上下文或持久化对话。
 
 UE 必须记录自己的 `request_id`、HTTP 状态与错误码，并以可恢复方式提示失败。UE 不需要把新增 Provider 错误码编译为枚举；未知错误码仍按通用 HTTP 失败处理。
 
@@ -170,8 +186,9 @@ UE 必须记录自己的 `request_id`、HTTP 状态与错误码，并以可恢�
 ## 兼容性规则
 
 - `context` 是 v1 的可选兼容扩展；旧客户端可继续只发送 `request_id`、`npc_id` 和 `player_input`。
+- `memory` 是 v1 的可选兼容扩展；省略时严格保持既有无状态语义，提供时才允许按 `(scope_id, npc_id)` 读取和写入持久化对话。
 - v1 内允许新增可选字段、`provider` 标识和错误码，不改变已有字段的类型或核心含义。
 - `provider` 表示逻辑生成来源，不表示具体模型版本；模型替换不需要修改 UE 协议。
 - 删除字段、修改字段类型、把当前可选字段改为必填或改变字段核心语义时创建新版本。
 - UE 解析响应时忽略未知字段，并将未知服务错误码保留为字符串。
-- 后续加入持久化 Memory、会话句柄、Tool Call 或流式事件前，必须重新评估是否仍适合在 `v1` 内兼容扩展。
+- 后续增加 Memory 管理端点、服务端会话句柄、Tool Call 或流式事件前，必须重新评估是否仍适合在 `v1` 内兼容扩展。

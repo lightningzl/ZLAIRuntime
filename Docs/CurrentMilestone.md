@@ -4,74 +4,78 @@
 
 - [Milestone 1：UE 到 Python Service 最小闭环](./Milestones/Milestone1.md)
 - [Milestone 2：真实 LLM 自由对话](./Milestones/Milestone2.md)
+- [Milestone 3：NPC 上下文与人格](./Milestones/Milestone3.md)
 
 历史文档仅用于追溯，不覆盖本文件定义的当前范围。
 
-## Milestone 3：NPC 上下文与人格
+## Milestone 4：持久化对话 Memory
 
-目标：在保持现有非流式 `POST /v1/dialogue`、Provider 边界和 UE 最终 Gameplay 控制权不变的前提下，由 UE 为每次请求提供受限的 NPC 人格、当前世界状态和有限对话历史，Python Service 通过独立 Context Builder 将其组装为供应商无关的生成上下文，使 NPC 回复能够稳定体现当前角色与场景。
+目标：在保持 UE 为 Gameplay 状态事实来源、Provider 供应商无关边界和 UE 最终 Gameplay 控制权不变的前提下，为 `POST /v1/dialogue` 增加显式启用的本地持久化对话 Memory。Python Service 使用 SQLite 按玩家记忆范围与 NPC 隔离保存成功完成的对话轮次，在后续请求中按确定性预算检索并交给 Context Builder，使 NPC 在 Service 重启后仍能延续有限的跨请求对话记忆。
 
-Milestone 2 的真实 Kimi 对话链路已经完成并作为本阶段基线。本阶段只处理单次请求携带的瞬时上下文，不建设持久化 Memory、服务端会话或 Tool Use。
+Milestone 3 的瞬时 `context`、真实 Kimi 链路和无状态兼容路径作为本阶段基线。Memory 是可选能力：请求省略 `memory` 时必须继续保持既有无状态行为。
 
 ## 本阶段范围
 
 ### UE5
 
-- 保留现有无上下文请求入口，并增加可提交 `FZLDialogueContext` 的公开重载，旧调用方无需修改即可继续工作。
-- 为 NPC 人格、世界状态、对话消息和完整上下文增加协议结构体，并严格按 [Protocol.md](./Protocol.md) 序列化。
-- Gameplay/UI 负责从自身已知状态构造上下文快照；`ZLAIRuntime` 插件只校验、传输和解析，不读取具体 NPC Actor、关卡或 UI 内部状态。
-- 上下文请求仍由 `UZLAIServiceSubsystem` 管理，继续满足唯一 `request_id`、一次完成回调、Game Thread 回调和无悬空引用约束。
-- 更新最小演示入口，使其能提交一组确定性示例人格、世界状态和有限历史；不建设正式 UMG、对话编辑器或内容资产系统。
+- 在现有 v1 请求类型中增加可选 `memory`，其中只包含由 Gameplay/UI 提供的稳定、不透明 `scope_id`。
+- Memory 以 `(scope_id, npc_id)` 作为隔离键；`ZLAIRuntime` 只负责校验和传输，不解释玩家账号、存档槽或业务身份。
+- 保留所有既有无 Memory 请求入口；增加接受 Memory 范围的公开入口或参数对象，复用现有请求、HTTP、超时和单次完成逻辑。
+- Gameplay/UI 显式决定是否启用 Memory，并负责为同一玩家或存档提供稳定 `scope_id`；插件不得自动读取账号、SaveGame、Actor、World 或平台身份。
 - 增加协议序列化、边界校验、兼容性和本地 Service 集成测试。
+- 增加最小脱敏演示入口，验证同一范围连续对话、不同范围隔离和 Service 重启恢复；不建设正式 Memory UI。
 
 ### Python
 
-- 在 v1 Schema 中增加可选、结构化且有边界的 `context`；无 `context` 的 Milestone 1/2 请求继续保持兼容。
-- 增加独立 Context Builder，把固定系统约束、NPC 人格、世界状态、有限历史和当前玩家输入组装为供应商无关的生成输入。
-- 固定系统约束始终由 Python Service 维护；请求中的人格、世界状态、历史和玩家输入都作为数据处理，不得改变系统边界。
-- Dialogue Service 负责业务校验和编排，只把校验后的上下文交给 Context Builder，再调用一次 Provider。
-- Provider 接口接收 Context Builder 的内部结果，不接收 FastAPI/Pydantic 协议模型，也不自行解释 UE 字段。
-- Kimi Provider 将内部生成上下文映射为一次非流式 Chat Completions 请求，保持无工具、无托管会话、无自动重试。
-- Stub/Fake 路径提供确定性方式验证上下文透传和组装；自动化测试默认不访问外网、不读取真实密钥、不消耗 Token。
-- 日志只记录 `request_id`、`npc_id`、Provider、上下文是否存在、历史条数和错误分类，不记录完整人格、世界事实、历史或玩家输入。
+- 在 v1 Schema 中增加可选、受限的 `memory.scope_id`；省略时不得读取或写入 Memory。
+- 增加独立 Memory Service 与 SQLite Repository。Dialogue Service 只依赖 Memory Service 接口，不直接执行 SQL。
+- SQLite 保存成功完成的对话轮次，至少包含唯一 `request_id`、`scope_id`、`npc_id`、玩家输入、NPC 回复和稳定排序信息。
+- `request_id` 在持久层唯一；重复请求不得产生重复 Memory 轮次。
+- 每次生成前按 `(scope_id, npc_id)` 检索最近的已完成轮次，按最旧到最新交给 Context Builder；检索数量由有界配置控制。
+- 持久化 Memory 位于客户端瞬时 `dialogue_history` 之前。两者发生精确重叠时去除重复消息，保留客户端提供的较新快照；当前 `player_input` 仍只出现一次。
+- 只有 Provider 成功并产生合法回复后才写入本轮；Schema、业务、Provider 或持久层失败不得留下半轮记录。
+- Repository 管理建表、索引、事务和连接生命周期；数据库不可用时请求通过现有 `500 internal_error` 安全失败，不泄露 SQL、路径或对话正文。
+- 提供本地维护入口以检查统计信息和按范围清理测试数据；它不是 UE Runtime 协议，也不得输出完整对话正文。
+- 自动化默认使用临时 SQLite 数据库、Fake/Stub Provider、无外网、无真实密钥和无 Token。
 
-## 协议与边界基线
+## 协议与数据基线
 
-- Endpoint 和响应结构保持不变；请求新增可选 `context`，详细字段、顺序和长度限制以 [Protocol.md](./Protocol.md) 为准。
-- `context` 是请求时快照，不是会话 ID、Memory 引用或服务端状态句柄。
-- 对话历史按最旧到最新排列，只包含之前已完成的 `player`/`npc` 消息，不包含本次 `player_input`。
-- Python 是协议输入校验的最终权威；UE 也应在发送前拒绝明显越界内容，避免无效网络请求。
-- 结构或类型错误返回 `422 validation_error`；通过 Schema 后违反业务规则的内容返回 `400 invalid_request`。
-- 上下文缺失时继续使用 Milestone 2 的无上下文生成行为；不得静默补造具体人格、世界事实或历史。
+- Endpoint 与成功/错误响应结构保持不变；请求新增可选 `memory`，详细字段和边界以 [Protocol.md](./Protocol.md) 为准。
+- `memory` 存在即表示本次请求允许读取并在成功后写入对应范围；省略时严格无状态。
+- `scope_id` 是不透明隔离标识，不是文件名、表名、SQL 片段、认证凭据或可由 Service 推导的玩家资料。
+- Memory 范围由 `(scope_id, npc_id)` 共同确定；不同任一字段都不得互相读取记录。
+- SQLite 是 Python Service 的内部实现，不向 UE 暴露数据库路径、行 ID、迁移版本或查询接口。
+- 持久化历史、瞬时历史和当前输入的合并必须确定、可测试并受预算限制；不得把数据库内容提升为系统指令。
+- 现有错误包络保持不变；数据库异常使用脱敏 `500 internal_error`。
 
 ## 明确不做
 
-- 不做 SQLite、文件数据库、长期或短期持久化 Memory、摘要 Memory、Chroma、FAISS 或向量检索。
-- 不由 Python Service 保存、恢复或合并会话；不增加 `session_id`、`conversation_id` 或供应商托管会话状态。
-- 不从 UE Actor、World、GameState、SaveGame 或数据库自动抓取上下文；Gameplay/UI 显式构造快照。
-- 不设计正式内容资产、DataTable、编辑器面板、对话树、任务系统或完整 NPC 创作工作流。
-- 不生成、解析或执行 Tool Call，不从自然语言回复中推断 Gameplay 指令。
-- 不做流式输出、WebSocket、Realtime API、语音或逐 Token UI。
-- 不增加多 Provider 热切换、自动故障转移、复杂重试、Prompt 缓存或生产级可观测性。
-- 不让请求上下文覆盖固定系统约束、选择 Provider/模型、提供密钥或改变工具权限。
+- 不做 Chroma、FAISS、Embedding、语义检索、向量索引、混合检索或自动相关性评分。
+- 不做 LLM 摘要 Memory、事实抽取、人格自动更新、遗忘权重、情绪模型或知识图谱。
+- 不保存完整 NPC 人格、世界快照、Provider 原始响应、SDK 对象、Token 用量或模型推理内容。
+- 不建设用户账号、鉴权、云同步、多设备同步、远程数据库、备份恢复或生产级加密密钥管理。
+- 不增加供应商托管会话、`conversation_id`、自动重试、流式输出、WebSocket 或 Realtime API。
+- 不提供 UE 正式 Memory 浏览、编辑、删除 UI；本阶段只有脱敏演示和 Python 本地维护入口。
+- 不生成、解析或执行 Tool Call，不从 Memory 或自然语言回复中推断 Gameplay 指令。
+- 不允许 Python 从 UE World、SaveGame、账号系统或平台服务主动抓取身份和状态。
 
 ## 验收标准
 
 | ID | 标准 |
 | --- | --- |
-| `M3-A01` | 不含 `context` 的既有合法请求继续返回符合 v1 协议的成功响应，Milestone 2 的成功、错误和超时回归保持通过。 |
-| `M3-A02` | UE 与 Python 对完整 `context` 的字段名、类型、角色枚举、顺序和边界限制一致；合法最小值和最大值可通过，越界或结构错误按协议拒绝。 |
-| `M3-A03` | Context Builder 以确定性顺序组装固定系统约束、NPC 人格、世界状态、历史和当前输入；当前 `player_input` 不会被重复加入历史。 |
-| `M3-A04` | 固定系统约束不能被人格、世界事实、历史或玩家输入改写；生成请求保持无工具、无托管会话、非流式且单次调用。 |
-| `M3-A05` | Fake/Stub Provider 可验证人格、世界状态和历史均被完整、按序传入内部生成上下文，且 Provider 不依赖协议 Schema 或 UE 类型。 |
-| `M3-A06` | Python 离线自动化覆盖无上下文兼容、完整上下文、各字段边界、非法角色、空白内容、历史顺序、Prompt 注入边界和全部既有错误路径；默认无外网、无真实 Key、无 Token 消耗。 |
-| `M3-A07` | UE 保留旧请求入口并支持新上下文入口；序列化测试覆盖最小、完整、边界和非法上下文，失败时不发送 HTTP 且只完成一次失败回调。 |
-| `M3-A08` | UE 编译、完整 `ZLAIRuntime` 自动化和本地 Stub/Fake Service 集成验证通过；无上下文与有上下文请求都能正常结束。 |
-| `M3-A09` | 真实 Kimi 端到端验收至少覆盖人格、世界状态和历史三类受控变化，回复可见地符合提供的上下文，字段关联可通过 `request_id` 复查。 |
-| `M3-A10` | 仓库、日志、错误响应和验收记录不包含 API Key、完整玩家输入、完整人格、完整世界事实、完整历史或模型原始响应；Service 重启后不存在可恢复的对话状态。 |
+| `M4-A01` | 省略 `memory` 的全部既有合法请求保持无状态，Milestone 1 至 3 的成功、错误、超时、上下文和单次回调回归通过。 |
+| `M4-A02` | UE 与 Python 对 `memory.scope_id` 的字段名、可选语义、类型和边界一致；合法边界可通过，缺字段、错误类型、空白或越界内容按协议拒绝。 |
+| `M4-A03` | SQLite Repository 可确定性初始化 Schema 和索引，数据库文件不进入 Git；临时库和重启后的同一库均可读取已提交数据。 |
+| `M4-A04` | Memory 严格按 `(scope_id, npc_id)` 隔离，检索只返回最近的有界已完成轮次，并以最旧到最新的稳定顺序交给上层。 |
+| `M4-A05` | Context Builder 确定性合并持久化历史、客户端瞬时历史和当前输入；精确重叠不重复，客户端历史优先，当前 `player_input` 只出现一次。 |
+| `M4-A06` | 只有合法 Provider 成功结果写入一条完整轮次；失败请求不写入，重复 `request_id` 不产生重复记录，事务失败不留下半轮。 |
+| `M4-A07` | Route、Dialogue Service、Context Builder 和 Provider 保持既有依赖边界；SQL 只存在于 Repository，Provider 不依赖 Memory、SQLite 或协议 Schema。 |
+| `M4-A08` | Python 离线自动化覆盖 Schema、初始化、事务、排序、预算、隔离、合并、幂等、失败回滚、维护入口和日志脱敏；默认无外网、无真实 Key、无 Token。 |
+| `M4-A09` | UE 保留旧入口并支持显式 Memory 入口；编译、完整 `ZLAIRuntime` 自动化和本地 Stub 集成覆盖无 Memory、连续 Memory、隔离、非法范围和单次回调。 |
+| `M4-A10` | 真实端到端验收证明同一范围在 Service 重启后可利用既有记忆，不同 scope/NPC 不串线；仓库、日志、错误响应和验收记录无密钥、数据库文件、完整对话或原始模型响应。 |
 
 ## 完成定义
 
-`M3-02` 至 `M3-06` 的实现和适用自动化验证全部完成后，里程碑进入 `验收中`；完成 `M3-07` 并为 `M3-A01` 至 `M3-A10` 留下可复查证据后，Milestone 3 才能标记为 `已完成`。
+`M4-02` 至 `M4-07` 的实现和适用离线验证全部完成后，里程碑进入 `验收中`；完成 `M4-08` 并为 `M4-A01` 至 `M4-A10` 留下可复查证据后，Milestone 4 才能标记为 `已完成`。
 
-验收记录统一写入 [Milestone3Validation.md](./Validation/Milestone3Validation.md)。任何持久化 Memory、Tool Use、正式 UI 或内容生产能力进入后续里程碑，不阻塞本阶段交付。
+验收记录统一写入 [Milestone4Validation.md](./Validation/Milestone4Validation.md)。向量检索、摘要 Memory、正式管理 UI 和 Tool Use 不阻塞本阶段交付。
