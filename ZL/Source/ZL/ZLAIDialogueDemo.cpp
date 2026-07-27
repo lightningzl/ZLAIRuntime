@@ -98,42 +98,60 @@ namespace
 	FZLDialogueContext BuildDemoContext(const FString& Scenario)
 	{
 		FZLDialogueContext Context;
-		Context.Npc.DisplayName = TEXT("Gate Keeper");
+		Context.Npc.DisplayName = TEXT("Guard");
 		Context.Npc.Role = TEXT("city gate guard");
-		Context.Npc.Personality = Scenario == TEXT("persona")
-			? TArray<FString>{TEXT("warm"), TEXT("talkative")}
-			: TArray<FString>{TEXT("careful"), TEXT("formal")};
-		Context.Npc.SpeakingStyle = Scenario == TEXT("persona")
-			? TEXT("friendly and expressive")
-			: TEXT("brief and official");
+		Context.Npc.Personality = {TEXT("careful"), TEXT("formal")};
+		Context.Npc.SpeakingStyle = TEXT("brief and official");
 		Context.Npc.Goals = {TEXT("protect the city gate")};
 		Context.World.Location = TEXT("north city gate");
-		Context.World.Situation = Scenario == TEXT("world")
-			? TEXT("the gate has reopened for escorted visitors")
-			: TEXT("the gate is closed after an alarm");
-		Context.World.Facts = Scenario == TEXT("world")
-			? TArray<FString>{TEXT("an escort is waiting nearby")}
-			: TArray<FString>{TEXT("entry currently requires authorization")};
+		Context.World.Situation = TEXT("the gate is closed after an alarm");
+		Context.World.Facts = {TEXT("entry currently requires authorization")};
+
+		if (Scenario == TEXT("persona"))
+		{
+			Context.Npc.DisplayName = TEXT("Mira");
+			Context.Npc.Personality = {TEXT("warm"), TEXT("talkative")};
+			Context.Npc.SpeakingStyle = TEXT("friendly and expressive");
+		}
+		else if (Scenario == TEXT("world"))
+		{
+			Context.World.Location = TEXT("Silver Bridge");
+			Context.World.Situation = TEXT("Silver Bridge has reopened for escorted visitors");
+			Context.World.Facts = {TEXT("an escort is waiting at Silver Bridge")};
+		}
 		if (Scenario == TEXT("history"))
 		{
 			FZLDialogueHistoryMessage PlayerHistory;
 			PlayerHistory.Role = TEXT("player");
-			PlayerHistory.Content = TEXT("I helped the patrol earlier.");
+			PlayerHistory.Content = TEXT("I returned the Amber Token earlier.");
 			Context.DialogueHistory.Add(PlayerHistory);
 			FZLDialogueHistoryMessage NpcHistory;
 			NpcHistory.Role = TEXT("npc");
-			NpcHistory.Content = TEXT("I remember your assistance.");
+			NpcHistory.Content = TEXT("I remember receiving the Amber Token.");
 			Context.DialogueHistory.Add(NpcHistory);
 		}
 		return Context;
 	}
 
+	FString DemoExpectedMarker(const FString& Scenario)
+	{
+		if (Scenario == TEXT("persona"))
+		{
+			return TEXT("Mira");
+		}
+		if (Scenario == TEXT("world"))
+		{
+			return TEXT("Silver Bridge");
+		}
+		return TEXT("Amber Token");
+	}
+
 	void RunDialogueContextDemo(const TArray<FString>& Args, UWorld* World)
 	{
-		if (Args.Num() < 3)
+		if (Args.Num() < 2)
 		{
 			const FString Usage = TEXT(
-				"Usage: ZL.AI.DialogueContextDemo <persona|world|history> <npc_id> <player_input>");
+				"Usage: ZL.AI.DialogueContextDemo <persona|world|history> <npc_id>");
 			UE_LOG(LogZL, Warning, TEXT("AI Context Dialogue Failed code=invalid_demo_arguments"));
 			ShowDemoMessage(Usage, FColor::Red);
 			return;
@@ -159,33 +177,36 @@ namespace
 		}
 
 		const FString NpcId = Args[1];
-		FString PlayerInput = Args[2];
-		for (int32 Index = 3; Index < Args.Num(); ++Index)
-		{
-			PlayerInput += TEXT(" ");
-			PlayerInput += Args[Index];
-		}
-
+		const FString PlayerInput = TEXT(
+			"In one short sentence, mention the most distinctive proper name or object from the context.");
 		const FZLDialogueContext Context = BuildDemoContext(Scenario);
+		const FString ExpectedMarker = DemoExpectedMarker(Scenario);
 		const TWeakObjectPtr<UGameInstance> WeakGameInstance(GameInstance);
 		const FString RequestId = ServiceSubsystem->SendDialogueRequest(
 			NpcId,
 			PlayerInput,
 			Context,
-			FZLDialogueSuccessDelegate::CreateLambda([WeakGameInstance](const FZLDialogueResponse& Response)
+			FZLDialogueSuccessDelegate::CreateLambda(
+				[WeakGameInstance, Scenario, ExpectedMarker](const FZLDialogueResponse& Response)
 			{
 				if (!WeakGameInstance.IsValid())
 				{
 					return;
 				}
 
+				const bool bContextMatched = Response.Reply.Contains(
+					ExpectedMarker,
+					ESearchCase::IgnoreCase);
 				UE_LOG(
 					LogZL,
 					Display,
-					TEXT("AI Context Dialogue Reply request_id=%s npc_id=%s provider=%s reply_length=%d"),
+					TEXT("AI Context Dialogue Reply request_id=%s npc_id=%s provider=%s "
+						"scenario=%s context_match=%s reply_length=%d"),
 					*Response.RequestId,
 					*Response.NpcId,
 					*Response.Provider,
+					*Scenario,
+					bContextMatched ? TEXT("true") : TEXT("false"),
 					Response.Reply.Len());
 				ShowDemoMessage(
 					FString::Printf(TEXT("AI Context Reply [%s]: %s"), *Response.NpcId, *Response.Reply),
@@ -231,6 +252,6 @@ namespace
 	FAutoConsoleCommandWithWorldAndArgs DialogueContextDemoCommand(
 		TEXT("ZL.AI.DialogueContextDemo"),
 		TEXT("Send a contextual demo request. Usage: ZL.AI.DialogueContextDemo "
-			"<persona|world|history> <npc_id> <player_input>"),
+			"<persona|world|history> <npc_id>"),
 		FConsoleCommandWithWorldAndArgsDelegate::CreateStatic(&RunDialogueContextDemo));
 }

@@ -68,7 +68,7 @@ Gameplay / UI Context Snapshot
 - 协议结构体可被 Client 使用，但不得依赖具体 UI 或 NPC 类型。
 - Subsystem 不持有 NPC Actor 的强引用，不直接修改世界状态。
 - 旧 `ZL.AI.DialogueDemo <npc_id> <player_input>` 入口继续作为无上下文回归；上下文演示入口只依赖插件公开类型。
-- `ZL.AI.DialogueContextDemo <persona|world|history> <npc_id> <player_input>` 使用固定脱敏快照验证人格、世界和历史三类上下文；日志只记录关联元数据和长度，不记录完整输入、上下文或回复。
+- `ZL.AI.DialogueContextDemo <persona|world|history> <npc_id>` 使用固定脱敏输入和快照验证人格、世界和历史三类上下文；M3-07 已用真实 Kimi 验证三类受控匹配均通过。日志只记录关联元数据、匹配结果和长度，不记录完整输入、上下文或回复。
 
 ## 生命周期与异步约束
 

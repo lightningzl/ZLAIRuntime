@@ -28,7 +28,7 @@
 | `M3-04` | `已完成` | Dialogue Service 与 Kimi Provider 接线 | Service 编排、内部生成输入、Kimi 消息映射、Stub/Fake 上下文路径 | `M3-03` | Provider 不依赖协议模型；上下文完整按序传入；保持一次非流式无工具调用 |
 | `M3-05` | `已完成` | Python 离线回归与安全验证 | Schema、Builder、Service、Provider、API 和日志测试 | `M3-02`、`M3-04` | 覆盖全部 M3 Python 验收路径，默认无外网、无真实密钥、无 Token 消耗 |
 | `M3-06` | `已完成` | UE 上下文入口、演示与集成验证 | 兼容重载、最小上下文演示、自动化和本地 HTTP 集成测试、UE 模块文档 | `M3-02`、`M3-04` | 旧/新入口均可用；非法上下文不发请求；UE 编译与完整插件自动化通过 |
-| `M3-07` | `待开始` | 真实端到端验收与交付记录 | 真实 Kimi 受控场景、状态重启检查、安全审计和 M3 验收记录 | `M3-05`、`M3-06` | `M3-A01` 至 `M3-A10` 均有可复查证据 |
+| `M3-07` | `已完成` | 真实端到端验收与交付记录 | 真实 Kimi 受控场景、状态重启检查、安全审计和 M3 验收记录 | `M3-05`、`M3-06` | `M3-A01` 至 `M3-A10` 均有可复查证据 |
 
 ## 工作包明细
 
@@ -119,6 +119,8 @@
 - 将实际证据记录到 [Milestone3Validation.md](./Validation/Milestone3Validation.md)。
 
 验证：只按 [CurrentMilestone.md](./CurrentMilestone.md) 中 `M3-A01` 至 `M3-A10` 记录证据；未执行或失败的项目保持未验证。
+
+验证记录（2026-07-27）：使用不入库的进程级密钥和 `kimi-k2.6` 完成人格、世界状态、历史三类真实 UE→Service→Kimi→UE 受控验收；三类场景均返回 `provider=kimi`、受控匹配为真且 request ID 一一对应。Service 重启后的无上下文请求返回 `200`，未出现重启前场景标记。最终 Python 离线测试 `92 passed`、`pip check`、字节码编译、`ZLEditor` 编译和完整 `ZLAIRuntime` 自动化 8/8 均通过；仓库、日志、错误响应和验收记录安全审计通过。`M3-A01` 至 `M3-A10` 全部验证，Milestone 3 已完成。
 
 ## 推荐执行顺序
 
