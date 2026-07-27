@@ -23,7 +23,23 @@ public:
 		FZLDialogueSuccessDelegate OnSuccess,
 		FZLDialogueFailureDelegate OnFailure);
 
+	/**
+	 * Sends one dialogue request with a complete transient context snapshot.
+	 * The snapshot is validated before any HTTP request is created.
+	 */
+	FString SendDialogueRequest(
+		const FString& NpcId,
+		const FString& PlayerInput,
+		const FZLDialogueContext& Context,
+		FZLDialogueSuccessDelegate OnSuccess,
+		FZLDialogueFailureDelegate OnFailure);
+
 private:
+	FString SendDialogueRequest(
+		FZLDialogueRequest DialogueRequest,
+		FZLDialogueSuccessDelegate OnSuccess,
+		FZLDialogueFailureDelegate OnFailure);
+
 	void CompleteRequest(
 		const FString& ExpectedRequestId,
 		const FString& ExpectedNpcId,

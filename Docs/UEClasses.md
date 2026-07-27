@@ -17,7 +17,7 @@
 
 | 类型 | 状态 | 职责 | 不负责 |
 | --- | --- | --- | --- |
-| `UZLAIServiceSubsystem` | 已实现 | 生成请求 ID；从设置读取地址与超时；构造并发送 HTTP 请求；分类、记录并返回成功或失败 | UI、NPC 行为、Prompt、Memory、Tool Call、持久配置 |
+| `UZLAIServiceSubsystem` | M3-06 已调整 | 生成请求 ID；提供无上下文和完整上下文重载；在创建 HTTP 前校验；共享构造、发送、超时和单次完成逻辑 | UI、NPC 行为、Prompt、Memory、Tool Call、持久配置 |
 | `UZLAIServiceSettings` | 已实现 | 通过 UE Config 提供 Base URL 和请求超时 | 运行时请求状态或密钥管理 |
 | `FZLDialogueRequest` | M3-02 已调整 | 表示 `request_id`、`npc_id`、`player_input` 和可选瞬时上下文 | 保存跨请求对话状态 |
 | `FZLDialogueResponse` | 已实现 | 表示 `request_id`、`npc_id`、`reply`、`provider` | 推断或执行 Gameplay 指令 |
@@ -27,7 +27,7 @@
 
 实际实现名称如需调整，必须在同一任务中更新本文件；字段不得偏离 [Protocol.md](./Protocol.md)。
 
-## Milestone 3 计划类型
+## Milestone 3 上下文类型
 
 | 类型 | 状态 | 职责 | 不负责 |
 | --- | --- | --- | --- |
@@ -39,13 +39,13 @@
 
 协议中的 `context` 可选，但存在时必须完整。UE 结构应能明确区分“未提供上下文”和“提供完整上下文”，不得用空对象替代缺失字段。
 
-## 当前演进约束
+## 当前实现约束
 
 Milestone 3 只扩展供应商无关的协议类型和请求入口，不把 Kimi/OpenAI 兼容 SDK、API Key、模型配置或 Prompt 引入 UE。现有公开类型按以下方式继续使用：
 
-| 类型 | 计划 |
+| 类型 | 实现 |
 | --- | --- |
-| `UZLAIServiceSubsystem` | 保留现有 `NpcId + PlayerInput` 入口，增加接受完整上下文的重载；共享 HTTP、超时和单次完成逻辑 |
+| `UZLAIServiceSubsystem` | 已保留现有 `NpcId + PlayerInput` 入口，并增加接受完整上下文的重载；共享 HTTP、超时和单次完成逻辑 |
 | `UZLAIServiceSettings` | UE 外层请求超时为 30 秒，明确大于 Python Provider 默认 20 秒；不增加模型或密钥设置 |
 | `FZLDialogueRequest` | 可选携带完整上下文；不加入 Provider、模型、密钥、Memory ID 或 Tool 定义 |
 | `FZLDialogueResponse` | `Provider` 继续使用字符串，接受 `stub`、`kimi` 和未来未知标识，不加入模型名 |
@@ -68,6 +68,7 @@ Gameplay / UI Context Snapshot
 - 协议结构体可被 Client 使用，但不得依赖具体 UI 或 NPC 类型。
 - Subsystem 不持有 NPC Actor 的强引用，不直接修改世界状态。
 - 旧 `ZL.AI.DialogueDemo <npc_id> <player_input>` 入口继续作为无上下文回归；上下文演示入口只依赖插件公开类型。
+- `ZL.AI.DialogueContextDemo <persona|world|history> <npc_id> <player_input>` 使用固定脱敏快照验证人格、世界和历史三类上下文；日志只记录关联元数据和长度，不记录完整输入、上下文或回复。
 
 ## 生命周期与异步约束
 
@@ -82,4 +83,4 @@ Gameplay / UI Context Snapshot
 
 现有 AI Runtime 类型已通过 UE 编译、协议/失败处理自动化测试和真实 Kimi 端到端演示验证。Milestone 2 进一步验证了字符串 Provider 前向兼容、`429`/`502`/`503`/`504` 错误保留，以及成功和失败回调各自恰好完成一次；证据见 [Milestone2Validation.md](./Validation/Milestone2Validation.md)。
 
-Milestone 3 上下文结构、协议边界校验和 JSON 序列化已在 M3-02 实现，并通过 UE 编译与 5 项协议自动化；兼容请求重载和本地 HTTP 集成留给 M3-06。证据见 [Milestone3Validation.md](./Validation/Milestone3Validation.md)。
+Milestone 3 上下文结构、协议边界校验和 JSON 序列化已在 M3-02 实现。M3-06 已完成兼容请求重载、上下文 Game 演示和本地 HTTP 集成；`ZLEditor` 编译、完整 `ZLAIRuntime` 自动化 8/8、旧/新入口与非法上下文单次完成均已验证。证据见 [Milestone3Validation.md](./Validation/Milestone3Validation.md)。

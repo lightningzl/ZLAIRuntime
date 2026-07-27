@@ -61,14 +61,37 @@ FString UZLAIServiceSubsystem::SendDialogueRequest(
 	FZLDialogueSuccessDelegate OnSuccess,
 	FZLDialogueFailureDelegate OnFailure)
 {
-	const UZLAIServiceSettings* Settings = GetDefault<UZLAIServiceSettings>();
-	const FString ServiceBaseUrl = Settings->ServiceBaseUrl;
-	const float RequestTimeoutSeconds = FMath::Max(Settings->RequestTimeoutSeconds, 0.1f);
-
 	FZLDialogueRequest DialogueRequest;
 	DialogueRequest.RequestId = FGuid::NewGuid().ToString(EGuidFormats::DigitsWithHyphens);
 	DialogueRequest.NpcId = NpcId;
 	DialogueRequest.PlayerInput = PlayerInput;
+	return SendDialogueRequest(MoveTemp(DialogueRequest), MoveTemp(OnSuccess), MoveTemp(OnFailure));
+}
+
+FString UZLAIServiceSubsystem::SendDialogueRequest(
+	const FString& NpcId,
+	const FString& PlayerInput,
+	const FZLDialogueContext& Context,
+	FZLDialogueSuccessDelegate OnSuccess,
+	FZLDialogueFailureDelegate OnFailure)
+{
+	FZLDialogueRequest DialogueRequest;
+	DialogueRequest.RequestId = FGuid::NewGuid().ToString(EGuidFormats::DigitsWithHyphens);
+	DialogueRequest.NpcId = NpcId;
+	DialogueRequest.PlayerInput = PlayerInput;
+	DialogueRequest.bHasContext = true;
+	DialogueRequest.Context = Context;
+	return SendDialogueRequest(MoveTemp(DialogueRequest), MoveTemp(OnSuccess), MoveTemp(OnFailure));
+}
+
+FString UZLAIServiceSubsystem::SendDialogueRequest(
+	FZLDialogueRequest DialogueRequest,
+	FZLDialogueSuccessDelegate OnSuccess,
+	FZLDialogueFailureDelegate OnFailure)
+{
+	const UZLAIServiceSettings* Settings = GetDefault<UZLAIServiceSettings>();
+	const FString ServiceBaseUrl = Settings->ServiceBaseUrl;
+	const float RequestTimeoutSeconds = FMath::Max(Settings->RequestTimeoutSeconds, 0.1f);
 
 	const FString Endpoint = BuildDialogueEndpoint(ServiceBaseUrl);
 	if (ServiceBaseUrl.TrimStartAndEnd().IsEmpty())
