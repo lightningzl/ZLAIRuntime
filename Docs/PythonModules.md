@@ -4,7 +4,7 @@
 
 Milestone 2 的 Route、协议 Schema、集中 Settings、Provider 接口与 Factory、确定性 Stub Provider、Kimi Chat Completions API 适配器、可注入的 Dialogue Service、Provider 错误分类、协议错误映射和自动化回归测试已经完成。
 
-Milestone 3 的 v1 可选 `context` Schema、字段边界和空白业务校验已经实现。独立 Context Builder 和 Provider 内部生成上下文仍按 M3-03/M3-04 待实现。
+Milestone 3 的 v1 可选 `context` Schema、字段边界、空白业务校验、无状态 Context Builder 和供应商无关内部生成类型已经实现。Dialogue Service 与 Provider 接线仍按 M3-04 待实现。
 
 ## 目标目录
 
@@ -59,9 +59,9 @@ PythonService/
 | `app.api.dialogue` | M2-02 已调整 | 提供 `POST /v1/dialogue` 的 HTTP 适配，将已经校验的请求交给应用持有的 Dialogue Service，不直接调用 Provider SDK |
 | `app.core.settings` | M2-02 已实现 | 从环境读取 Provider、密钥、模型、超时和输出上限；完成类型、范围、组合与脱敏校验 |
 | `app.schemas.dialogue` | M3-02 已调整 | 定义 v1 请求、可选上下文、成功响应和统一错误响应；声明所有字段边界、角色枚举、`stub`/`kimi` 成功来源和协议错误码 |
-| `app.services.context_builder` | M3-03 待实现 | 把固定系统约束、NPC 人格、世界状态、有限历史和当前输入组装为确定性的供应商无关生成上下文；不访问网络、数据库、Settings 或具体 Provider |
+| `app.services.context_builder` | M3-03 已实现 | 把固定系统约束、NPC 人格、世界状态、有限历史和当前输入组装为确定性的供应商无关生成上下文；不访问网络、数据库、Settings 或具体 Provider |
 | `app.services.dialogue_service` | M3-02 已增加上下文业务校验；M3-04 待接线 | 拒绝空白上下文字段；后续调用 Context Builder，只调用一次注入的 Dialogue Provider，将内部结果转换为协议响应 |
-| `app.providers.base` | M3-04 待调整 | 定义与 FastAPI、Pydantic 协议 Schema、UE 类型和供应商 SDK 解耦的 Provider 接口、内部生成上下文与结果类型 |
+| `app.providers.base` | M3-03 已增加内部生成类型；M3-04 待调整接口 | 定义与 FastAPI、Pydantic 协议 Schema、UE 类型和供应商 SDK 解耦的 Provider 接口、内部生成上下文与结果类型 |
 | `app.providers.errors` | M2-04 已实现 | 定义鉴权、限流、超时、不可用、无效响应和通用 Provider 内部异常，不包含 HTTP 状态码 |
 | `app.providers.factory` | M2-07 已调整 | 根据 Settings 创建 Kimi 或显式 Stub Provider，并支持注入 Kimi 构造器；不静默回退 |
 | `app.providers.kimi_provider` | M3-04 待调整 | 使用 OpenAI 兼容 Python SDK 和 Kimi Chat Completions API，把内部生成上下文映射为一次非流式消息生成，提取非空回复并分类 SDK 异常 |
