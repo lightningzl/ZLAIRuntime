@@ -26,8 +26,9 @@
 
 | 验证 | 命令或入口 | 结果 | 证据摘要 |
 | --- | --- | --- | --- |
-| Python 完整测试 | `PythonService/.venv/Scripts/python -m pytest -q -p no:cacheprovider` | 通过 | 88 passed；上下文 Schema、Builder、Service、Kimi 映射与既有回归通过 |
+| Python 完整测试 | `PythonService/.venv/Scripts/python -m pytest -q -p no:cacheprovider` | 通过 | 92 passed；上下文 Schema/边界、Builder、Service、Provider、API、日志脱敏与既有回归通过 |
 | Python 依赖检查 | `PythonService/.venv/Scripts/python -m pip check` | 通过 | No broken requirements found |
+| Python 字节码编译 | `PythonService/.venv/Scripts/python -m compileall -q app tests` | 通过 | 应用与测试模块编译通过 |
 | UE 编译 | `ZLEditor Win64 Development` | 通过 | UnrealBuildTool Result: Succeeded |
 | UE 自动化测试 | `ZLAIRuntime.Protocol` | 部分通过 | 协议子集 5/5 成功；完整插件自动化留待 M3-06 |
 | UE Game 上下文演示 | 未执行 | 未验证 | 未验证 |
@@ -41,7 +42,7 @@
 | `M3-A03` | 通过 | Context Builder 专项 5/5；固定系统约束、JSON 上下文数据、历史角色/顺序和末尾当前输入均以不可变内部类型确定性组装 |
 | `M3-A04` | 通过 | Fake SDK 验证固定系统约束不能被请求数据改写；请求保持单次、非流式、无工具、无托管会话和无自动重试 |
 | `M3-A05` | 通过 | Capturing/Fake Provider 验证人格、世界状态、历史和当前输入完整按序进入 `DialogueGenerationContext`，Provider 不依赖协议 Schema |
-| `M3-A06` | 未验证 | 未验证 |
+| `M3-A06` | 通过 | 完整离线测试 92/92；覆盖无上下文兼容、完整上下文、全部字段边界、非法角色、空白内容、历史顺序、注入边界、日志脱敏和既有错误路径；全局移除真实 Key 并拦截非本机网络 |
 | `M3-A07` | 未验证 | 未验证 |
 | `M3-A08` | 未验证 | 未验证 |
 | `M3-A09` | 未验证 | 未验证 |

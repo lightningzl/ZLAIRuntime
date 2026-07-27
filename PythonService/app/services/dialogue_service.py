@@ -1,8 +1,13 @@
 """Dialogue orchestration independent of HTTP and concrete Provider concerns."""
 
+import logging
+
 from app.providers.base import DialogueProvider
 from app.schemas.dialogue import DialogueRequest, DialogueResponse
 from app.services.context_builder import build_dialogue_generation_context
+
+
+LOGGER = logging.getLogger(__name__)
 
 
 class InvalidDialogueRequest(ValueError):
@@ -28,7 +33,27 @@ class DialogueService:
             )
         self._validate_context(request)
 
+        history_count = (
+            len(request.context.dialogue_history) if request.context is not None else 0
+        )
+        LOGGER.info(
+            "Dialogue generation started request_id=%s npc_id=%s has_context=%s "
+            "history_count=%d",
+            request.request_id,
+            request.npc_id,
+            request.context is not None,
+            history_count,
+        )
         result = self._provider.generate(build_dialogue_generation_context(request))
+        LOGGER.info(
+            "Dialogue generation completed request_id=%s npc_id=%s provider=%s "
+            "has_context=%s history_count=%d",
+            request.request_id,
+            request.npc_id,
+            result.provider,
+            request.context is not None,
+            history_count,
+        )
         return DialogueResponse(
             request_id=request.request_id,
             npc_id=request.npc_id,

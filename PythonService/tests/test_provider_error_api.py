@@ -21,6 +21,23 @@ VALID_REQUEST = {
     "request_id": "req-provider-error",
     "npc_id": "npc-1",
     "player_input": "hello",
+    "context": {
+        "npc": {
+            "display_name": "LOG_SECRET_DISPLAY_NAME",
+            "role": "LOG_SECRET_ROLE",
+            "personality": ["LOG_SECRET_PERSONALITY"],
+            "speaking_style": "LOG_SECRET_STYLE",
+            "goals": ["LOG_SECRET_GOAL"],
+        },
+        "world": {
+            "location": "LOG_SECRET_LOCATION",
+            "situation": "LOG_SECRET_SITUATION",
+            "facts": ["LOG_SECRET_FACT"],
+        },
+        "dialogue_history": [
+            {"role": "player", "content": "LOG_SECRET_HISTORY"}
+        ],
+    },
 }
 
 
@@ -103,5 +120,10 @@ def test_provider_errors_map_to_sanitized_protocol_responses(
     assert str(error) not in response.text
     assert str(error) not in caplog.text
     assert "request_id=req-provider-error" in caplog.text
+    assert "npc_id=npc-1" in caplog.text
     assert "provider=kimi" in caplog.text
+    assert "has_context=True" in caplog.text
+    assert "history_count=1" in caplog.text
     assert f"category={code}" in caplog.text
+    assert "LOG_SECRET_" not in caplog.text
+    assert VALID_REQUEST["player_input"] not in caplog.text

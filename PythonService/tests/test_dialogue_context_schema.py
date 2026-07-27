@@ -257,23 +257,38 @@ def test_blank_context_text_returns_business_error(
     }
 
 
-def test_blank_array_and_history_content_return_business_errors(
+@pytest.mark.parametrize(
+    ("section", "field"),
+    [
+        ("npc", "personality"),
+        ("npc", "goals"),
+        ("world", "facts"),
+    ],
+)
+def test_blank_array_content_returns_business_error(
     client: TestClient,
+    section: str,
+    field: str,
 ) -> None:
-    trait_payload = _request_with_context()
-    trait_payload["context"]["npc"]["personality"][0] = " "
-    history_payload = _request_with_context()
-    history_payload["context"]["dialogue_history"][0]["content"] = "\n"
+    payload = _request_with_context()
+    payload["context"][section][field][0] = " \t "
 
-    trait_response = client.post("/v1/dialogue", json=trait_payload)
-    history_response = client.post("/v1/dialogue", json=history_payload)
+    response = client.post("/v1/dialogue", json=payload)
 
-    assert trait_response.status_code == 400
-    assert trait_response.json()["error"]["message"] == (
-        "context.npc.personality[0] must not be blank"
+    assert response.status_code == 400
+    assert response.json()["error"]["message"] == (
+        f"context.{section}.{field}[0] must not be blank"
     )
-    assert history_response.status_code == 400
-    assert history_response.json()["error"]["message"] == (
+
+
+def test_blank_history_content_returns_business_error(client: TestClient) -> None:
+    payload = _request_with_context()
+    payload["context"]["dialogue_history"][0]["content"] = "\n"
+
+    response = client.post("/v1/dialogue", json=payload)
+
+    assert response.status_code == 400
+    assert response.json()["error"]["message"] == (
         "context.dialogue_history[0].content must not be blank"
     )
 

@@ -94,9 +94,13 @@ async def _handle_provider_error(
     request_id = getattr(request.state, "request_id", "")
     status_code, code, message = _provider_error_details(exception)
     LOGGER.warning(
-        "Dialogue provider failed request_id=%s provider=%s category=%s http_status=%d",
+        "Dialogue provider failed request_id=%s npc_id=%s provider=%s "
+        "has_context=%s history_count=%d category=%s http_status=%d",
         request_id,
+        getattr(request.state, "npc_id", ""),
         exception.provider,
+        getattr(request.state, "has_context", False),
+        getattr(request.state, "history_count", 0),
         code,
         status_code,
     )

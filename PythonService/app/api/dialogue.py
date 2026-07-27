@@ -28,5 +28,12 @@ def create_dialogue(
 ) -> DialogueResponse:
     """Adapt a validated HTTP request to the dialogue service."""
     http_request.state.request_id = dialogue_request.request_id
+    http_request.state.npc_id = dialogue_request.npc_id
+    http_request.state.has_context = dialogue_request.context is not None
+    http_request.state.history_count = (
+        len(dialogue_request.context.dialogue_history)
+        if dialogue_request.context is not None
+        else 0
+    )
     service: DialogueService = http_request.app.state.dialogue_service
     return service.build_response(dialogue_request)
