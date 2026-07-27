@@ -12,6 +12,7 @@
 - 现有 `AZLCharacter`、`AZLPlayerController`、`AZLGameMode` 及 `Variant_*` 类型属于 UE 模板/玩法示例。
 - `ASideScrollingNPC` 等现有 AI 示例不包含 LLM Service 通信能力。
 - `ZLAIRuntime` 插件提供 AI Service Client、协议类型和 JSON 转换能力，不依赖 `ZL` 游戏模块。
+- `ZL/Config/DefaultEngine.ini` 通过 `[HTTP] HttpNoProxy` 自动绕过 `127.0.0.1`、`localhost` 和 `::1`，确保 UE 直连本机 Python Service；命令行参数仍可覆盖该配置。
 
 ## 当前类型
 
