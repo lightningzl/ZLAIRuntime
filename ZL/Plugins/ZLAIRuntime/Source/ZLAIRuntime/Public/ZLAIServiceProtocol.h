@@ -6,6 +6,8 @@
 
 namespace ZLAIServiceProtocol
 {
+	ZLAIRUNTIME_API bool ValidateDialogueRequest(const FZLDialogueRequest& Request, FString& OutError);
+
 	ZLAIRUNTIME_API bool SerializeDialogueRequest(const FZLDialogueRequest& Request, FString& OutJson);
 
 	ZLAIRUNTIME_API bool TryParseDialogueResponse(const FString& Json, FZLDialogueResponse& OutResponse);

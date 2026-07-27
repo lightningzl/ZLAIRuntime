@@ -19,7 +19,7 @@
 | --- | --- | --- | --- |
 | `UZLAIServiceSubsystem` | 已实现 | 生成请求 ID；从设置读取地址与超时；构造并发送 HTTP 请求；分类、记录并返回成功或失败 | UI、NPC 行为、Prompt、Memory、Tool Call、持久配置 |
 | `UZLAIServiceSettings` | 已实现 | 通过 UE Config 提供 Base URL 和请求超时 | 运行时请求状态或密钥管理 |
-| `FZLDialogueRequest` | 已实现 | 表示 `request_id`、`npc_id`、`player_input` | 保存对话历史 |
+| `FZLDialogueRequest` | M3-02 已调整 | 表示 `request_id`、`npc_id`、`player_input` 和可选瞬时上下文 | 保存跨请求对话状态 |
 | `FZLDialogueResponse` | 已实现 | 表示 `request_id`、`npc_id`、`reply`、`provider` | 推断或执行 Gameplay 指令 |
 | `FZLServiceError` | 已实现 | 表示错误分类、错误码、消息、请求 ID 和 HTTP 状态码 | 暴露底层堆栈或内部路径 |
 
@@ -31,11 +31,11 @@
 
 | 类型 | 状态 | 职责 | 不负责 |
 | --- | --- | --- | --- |
-| `FZLDialogueNpcContext` | M3-02 待实现 | 表示显示名、场景身份、人格特征、说话风格和当前目标 | 从 `npc_id` 或 Actor 自动推导设定 |
-| `FZLDialogueWorldContext` | M3-02 待实现 | 表示地点、局势和 UE 已确认的事实 | 持有或查询 `UWorld`、`GameState`、任务系统 |
-| `FZLDialogueHistoryMessage` | M3-02 待实现 | 表示一条 `player`/`npc` 历史消息 | 表示 system、tool 或供应商专用消息 |
-| `FZLDialogueContext` | M3-02 待实现 | 聚合 NPC、世界和按序有限历史快照 | 持久化会话、Memory 或自动收集 Gameplay 状态 |
-| `FZLDialogueRequest` | M3-02 待调整 | 在现有字段基础上可选携带 `FZLDialogueContext` | 保存跨请求状态 |
+| `FZLDialogueNpcContext` | M3-02 已实现 | 表示显示名、场景身份、人格特征、说话风格和当前目标 | 从 `npc_id` 或 Actor 自动推导设定 |
+| `FZLDialogueWorldContext` | M3-02 已实现 | 表示地点、局势和 UE 已确认的事实 | 持有或查询 `UWorld`、`GameState`、任务系统 |
+| `FZLDialogueHistoryMessage` | M3-02 已实现 | 表示一条 `player`/`npc` 历史消息 | 表示 system、tool 或供应商专用消息 |
+| `FZLDialogueContext` | M3-02 已实现 | 聚合 NPC、世界和按序有限历史快照 | 持久化会话、Memory 或自动收集 Gameplay 状态 |
+| `FZLDialogueRequest` | M3-02 已调整 | 通过 `bHasContext` 区分省略与完整 `FZLDialogueContext` | 保存跨请求状态 |
 
 协议中的 `context` 可选，但存在时必须完整。UE 结构应能明确区分“未提供上下文”和“提供完整上下文”，不得用空对象替代缺失字段。
 
@@ -82,4 +82,4 @@ Gameplay / UI Context Snapshot
 
 现有 AI Runtime 类型已通过 UE 编译、协议/失败处理自动化测试和真实 Kimi 端到端演示验证。Milestone 2 进一步验证了字符串 Provider 前向兼容、`429`/`502`/`503`/`504` 错误保留，以及成功和失败回调各自恰好完成一次；证据见 [Milestone2Validation.md](./Validation/Milestone2Validation.md)。
 
-Milestone 3 上下文结构、兼容重载和相关测试尚未实现，当前均为“未验证”；后续证据只写入 [Milestone3Validation.md](./Validation/Milestone3Validation.md)。
+Milestone 3 上下文结构、协议边界校验和 JSON 序列化已在 M3-02 实现，并通过 UE 编译与 5 项协议自动化；兼容请求重载和本地 HTTP 集成留给 M3-06。证据见 [Milestone3Validation.md](./Validation/Milestone3Validation.md)。

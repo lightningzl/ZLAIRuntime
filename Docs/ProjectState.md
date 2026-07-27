@@ -10,9 +10,9 @@
 | 当前里程碑 | Milestone 3：NPC 上下文与人格 |
 | 里程碑状态 | `进行中` |
 | 当前活动任务 | 无 |
-| 下一候选任务 | `M3-02`：两端协议类型与边界校验 |
+| 下一候选任务 | `M3-03`：Python Context Builder |
 | 已知阻塞 | 无 |
-| 验收进度 | 0/10 项已验证 |
+| 验收进度 | 1/10 项已验证 |
 
 ## 实现基线
 
@@ -22,4 +22,5 @@
 - 当前真实 LLM 运行时依赖仅为 Python Service 中用于 Kimi OpenAI 兼容接口的 SDK；不存在数据库、向量库、Memory 或 Tool Use 运行时依赖。
 - Milestone 2 已使用 `kimi-k2.6` 完成真实 UE→Python Service→Kimi→UE 闭环、三请求同会话验证和真实 Provider 超时验证；完整证据见 [Milestone2Validation.md](./Validation/Milestone2Validation.md)。
 - Milestone 2 范围定稿已归档到 [Milestone2.md](./Milestones/Milestone2.md)。
-- Milestone 3 的可选 v1 `context` 协议、Context Builder 边界、工作包和验收模板已经定稿；运行时代码尚未开始修改，所有 M3 验收项均未验证。
+- Milestone 3 的可选 v1 `context` 协议、Context Builder 边界、工作包和验收模板已经定稿。
+- M3-02 已完成：Python 与 UE 的上下文协议类型、边界校验和 UE JSON 序列化已实现；`M3-A02` 已验证，Context Builder 与 Provider 接线尚未开始。

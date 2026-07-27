@@ -83,6 +83,18 @@ FString UZLAIServiceSubsystem::SendDialogueRequest(
 	}
 
 	FString RequestBody;
+	FString ValidationError;
+	if (!ZLAIServiceProtocol::ValidateDialogueRequest(DialogueRequest, ValidationError))
+	{
+		FZLServiceError Error;
+		Error.Category = EZLServiceErrorCategory::Client;
+		Error.RequestId = DialogueRequest.RequestId;
+		Error.Code = TEXT("client_error");
+		Error.Message = MoveTemp(ValidationError);
+		DispatchFailure(MoveTemp(Error), MoveTemp(OnFailure));
+		return DialogueRequest.RequestId;
+	}
+
 	if (!ZLAIServiceProtocol::SerializeDialogueRequest(DialogueRequest, RequestBody))
 	{
 		FZLServiceError Error;

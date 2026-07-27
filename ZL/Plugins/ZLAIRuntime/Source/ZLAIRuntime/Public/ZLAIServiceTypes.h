@@ -15,6 +15,69 @@ enum class EZLServiceErrorCategory : uint8
 };
 
 USTRUCT(BlueprintType)
+struct ZLAIRUNTIME_API FZLDialogueNpcContext
+{
+	GENERATED_BODY()
+
+	UPROPERTY(BlueprintReadWrite, Category = "ZL|AI")
+	FString DisplayName;
+
+	UPROPERTY(BlueprintReadWrite, Category = "ZL|AI")
+	FString Role;
+
+	UPROPERTY(BlueprintReadWrite, Category = "ZL|AI")
+	TArray<FString> Personality;
+
+	UPROPERTY(BlueprintReadWrite, Category = "ZL|AI")
+	FString SpeakingStyle;
+
+	UPROPERTY(BlueprintReadWrite, Category = "ZL|AI")
+	TArray<FString> Goals;
+};
+
+USTRUCT(BlueprintType)
+struct ZLAIRUNTIME_API FZLDialogueWorldContext
+{
+	GENERATED_BODY()
+
+	UPROPERTY(BlueprintReadWrite, Category = "ZL|AI")
+	FString Location;
+
+	UPROPERTY(BlueprintReadWrite, Category = "ZL|AI")
+	FString Situation;
+
+	UPROPERTY(BlueprintReadWrite, Category = "ZL|AI")
+	TArray<FString> Facts;
+};
+
+USTRUCT(BlueprintType)
+struct ZLAIRUNTIME_API FZLDialogueHistoryMessage
+{
+	GENERATED_BODY()
+
+	UPROPERTY(BlueprintReadWrite, Category = "ZL|AI")
+	FString Role;
+
+	UPROPERTY(BlueprintReadWrite, Category = "ZL|AI")
+	FString Content;
+};
+
+USTRUCT(BlueprintType)
+struct ZLAIRUNTIME_API FZLDialogueContext
+{
+	GENERATED_BODY()
+
+	UPROPERTY(BlueprintReadWrite, Category = "ZL|AI")
+	FZLDialogueNpcContext Npc;
+
+	UPROPERTY(BlueprintReadWrite, Category = "ZL|AI")
+	FZLDialogueWorldContext World;
+
+	UPROPERTY(BlueprintReadWrite, Category = "ZL|AI")
+	TArray<FZLDialogueHistoryMessage> DialogueHistory;
+};
+
+USTRUCT(BlueprintType)
 struct ZLAIRUNTIME_API FZLDialogueRequest
 {
 	GENERATED_BODY()
@@ -27,6 +90,12 @@ struct ZLAIRUNTIME_API FZLDialogueRequest
 
 	UPROPERTY(BlueprintReadOnly, Category = "ZL|AI")
 	FString PlayerInput;
+
+	UPROPERTY(BlueprintReadWrite, Category = "ZL|AI")
+	bool bHasContext = false;
+
+	UPROPERTY(BlueprintReadWrite, Category = "ZL|AI")
+	FZLDialogueContext Context;
 };
 
 USTRUCT(BlueprintType)

@@ -25,6 +25,7 @@ class DialogueService:
                 request_id=request.request_id,
                 message="player_input must not be empty",
             )
+        self._validate_context(request)
 
         result = self._provider.generate(
             DialogueProviderRequest(
@@ -38,3 +39,40 @@ class DialogueService:
             reply=result.reply,
             provider=result.provider,
         )
+
+    @staticmethod
+    def _validate_context(request: DialogueRequest) -> None:
+        context = request.context
+        if context is None:
+            return
+
+        fields = [
+            ("context.npc.display_name", context.npc.display_name),
+            ("context.npc.role", context.npc.role),
+            ("context.npc.speaking_style", context.npc.speaking_style),
+            ("context.world.location", context.world.location),
+            ("context.world.situation", context.world.situation),
+        ]
+        fields.extend(
+            (f"context.npc.personality[{index}]", value)
+            for index, value in enumerate(context.npc.personality)
+        )
+        fields.extend(
+            (f"context.npc.goals[{index}]", value)
+            for index, value in enumerate(context.npc.goals)
+        )
+        fields.extend(
+            (f"context.world.facts[{index}]", value)
+            for index, value in enumerate(context.world.facts)
+        )
+        fields.extend(
+            (f"context.dialogue_history[{index}].content", message.content)
+            for index, message in enumerate(context.dialogue_history)
+        )
+
+        for field_name, value in fields:
+            if value.strip() == "":
+                raise InvalidDialogueRequest(
+                    request_id=request.request_id,
+                    message=f"{field_name} must not be blank",
+                )
