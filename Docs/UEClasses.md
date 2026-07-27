@@ -27,24 +27,36 @@
 
 实际实现名称如需调整，必须在同一任务中更新本文件；字段不得偏离 [Protocol.md](./Protocol.md)。
 
+## Milestone 3 计划类型
+
+| 类型 | 状态 | 职责 | 不负责 |
+| --- | --- | --- | --- |
+| `FZLDialogueNpcContext` | M3-02 待实现 | 表示显示名、场景身份、人格特征、说话风格和当前目标 | 从 `npc_id` 或 Actor 自动推导设定 |
+| `FZLDialogueWorldContext` | M3-02 待实现 | 表示地点、局势和 UE 已确认的事实 | 持有或查询 `UWorld`、`GameState`、任务系统 |
+| `FZLDialogueHistoryMessage` | M3-02 待实现 | 表示一条 `player`/`npc` 历史消息 | 表示 system、tool 或供应商专用消息 |
+| `FZLDialogueContext` | M3-02 待实现 | 聚合 NPC、世界和按序有限历史快照 | 持久化会话、Memory 或自动收集 Gameplay 状态 |
+| `FZLDialogueRequest` | M3-02 待调整 | 在现有字段基础上可选携带 `FZLDialogueContext` | 保存跨请求状态 |
+
+协议中的 `context` 可选，但存在时必须完整。UE 结构应能明确区分“未提供上下文”和“提供完整上下文”，不得用空对象替代缺失字段。
+
 ## 当前演进约束
 
-真实 LLM 接入不计划新增 UE Runtime 类型，也不把 Kimi/OpenAI 兼容 SDK、API Key、模型配置或 Prompt 引入 UE。现有公开类型按以下方式继续使用：
+Milestone 3 只扩展供应商无关的协议类型和请求入口，不把 Kimi/OpenAI 兼容 SDK、API Key、模型配置或 Prompt 引入 UE。现有公开类型按以下方式继续使用：
 
 | 类型 | 计划 |
 | --- | --- |
-| `UZLAIServiceSubsystem` | 保持请求入口和异步委托；已验证新增 Provider HTTP 错误路径和单次完成回调 |
+| `UZLAIServiceSubsystem` | 保留现有 `NpcId + PlayerInput` 入口，增加接受完整上下文的重载；共享 HTTP、超时和单次完成逻辑 |
 | `UZLAIServiceSettings` | UE 外层请求超时为 30 秒，明确大于 Python Provider 默认 20 秒；不增加模型或密钥设置 |
-| `FZLDialogueRequest` | 字段保持不变，不加入 Provider、模型、人格、历史或世界状态 |
+| `FZLDialogueRequest` | 可选携带完整上下文；不加入 Provider、模型、密钥、Memory ID 或 Tool 定义 |
 | `FZLDialogueResponse` | `Provider` 继续使用字符串，接受 `stub`、`kimi` 和未来未知标识，不加入模型名 |
 | `FZLServiceError` | `Code` 继续使用字符串，保留新增 Provider 错误码；`Category` 仍归类为 HTTP，不新增供应商专用枚举 |
 
-UE 当前工作的重点是协议兼容和真实链路验证，而不是扩展 Gameplay 能力。控制台命令 `ZL.AI.DialogueDemo` 继续作为最小演示入口；正式 UMG、NPC 人格、多轮对话和行为执行不在当前范围。
+Gameplay/UI 负责显式构造上下文快照，插件不得依赖具体 NPC Actor、关卡、UI、DataTable 或内容资产。控制台演示只使用固定脱敏示例验证链路；正式 UMG、内容创作工具、持久化会话和行为执行不在当前范围。
 
 ## 依赖方向
 
 ```text
-Gameplay / UI
+Gameplay / UI Context Snapshot
     -> ZLAIRuntime Plugin
         -> UZLAIServiceSubsystem
             -> ZLAIServiceProtocol
@@ -52,19 +64,22 @@ Gameplay / UI
                     -> Python Service
 ```
 
-- Gameplay/UI 只提交对话请求并消费成功/失败结果。
+- Gameplay/UI 构造并提交当前对话快照，消费成功/失败结果。
 - 协议结构体可被 Client 使用，但不得依赖具体 UI 或 NPC 类型。
 - Subsystem 不持有 NPC Actor 的强引用，不直接修改世界状态。
-- 游戏模块通过 `ZL.AI.DialogueDemo <npc_id> <player_input>` 控制台命令提供最小演示入口；命令只依赖插件公开接口。
+- 旧 `ZL.AI.DialogueDemo <npc_id> <player_input>` 入口继续作为无上下文回归；上下文演示入口只依赖插件公开类型。
 
 ## 生命周期与异步约束
 
 - Client 使用 `UGameInstanceSubsystem`，生命周期覆盖关卡切换且不依赖特定 Actor。
 - 每个请求由客户端生成唯一 `request_id`。
 - 回调必须区分网络失败、超时、HTTP 错误和解析错误。
+- 上下文在发送前完成协议边界校验；校验失败不得创建 HTTP 请求，并只触发一次 Client 失败回调。
 - 回调触发前确认上下文仍有效；不允许悬空 UObject 引用。
-- 当前阶段只输出 `reply`，不得从文本中解析 Gameplay 命令。
+- 回复仍只包含 `reply`，不得从文本中解析 Gameplay 命令。
 
 ## 已有实现验证基线
 
-现有 AI Runtime 类型已通过 UE 编译、协议/失败处理自动化测试和 Stub Service 端到端演示验证。Milestone 2 进一步验证了字符串 Provider 前向兼容、`429`/`502`/`503`/`504` 错误保留，以及成功和失败回调各自恰好完成一次。可复查证据见 [Milestone2Validation.md](./Validation/Milestone2Validation.md)，历史基线见 [Milestone1Validation.md](./Validation/Milestone1Validation.md)。
+现有 AI Runtime 类型已通过 UE 编译、协议/失败处理自动化测试和真实 Kimi 端到端演示验证。Milestone 2 进一步验证了字符串 Provider 前向兼容、`429`/`502`/`503`/`504` 错误保留，以及成功和失败回调各自恰好完成一次；证据见 [Milestone2Validation.md](./Validation/Milestone2Validation.md)。
+
+Milestone 3 上下文结构、兼容重载和相关测试尚未实现，当前均为“未验证”；后续证据只写入 [Milestone3Validation.md](./Validation/Milestone3Validation.md)。

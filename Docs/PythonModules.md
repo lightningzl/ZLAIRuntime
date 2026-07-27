@@ -2,7 +2,9 @@
 
 ## 当前状态
 
-Route、协议 Schema、集中 Settings、Provider 接口与 Factory、确定性 Stub Provider、Kimi Chat Completions API 适配器、可注入的 Dialogue Service、Provider 错误分类、协议错误映射和自动化回归测试已经完成。
+Milestone 2 的 Route、协议 Schema、集中 Settings、Provider 接口与 Factory、确定性 Stub Provider、Kimi Chat Completions API 适配器、可注入的 Dialogue Service、Provider 错误分类、协议错误映射和自动化回归测试已经完成。
+
+Milestone 3 已完成开发前置设计，但运行时代码尚未实现：v1 请求将增加可选 `context`，Python 将增加独立 Context Builder，并把 Provider 输入从最小单轮文本扩展为供应商无关的结构化生成上下文。
 
 ## 目标目录
 
@@ -29,6 +31,7 @@ PythonService/
       dialogue.py
     services/
       __init__.py
+      context_builder.py
       dialogue_service.py
     providers/
       __init__.py
@@ -40,6 +43,7 @@ PythonService/
   tests/
     conftest.py
     test_dialogue_api.py
+    test_context_builder.py
     test_kimi_api_integration.py
     test_provider_error_api.py
     test_provider_factory.py
@@ -54,25 +58,33 @@ PythonService/
 | `app.main` | M2-04 已调整 | 创建 FastAPI App，在启动阶段组装 Settings/Provider/Service、注册 Route，并统一映射业务、Provider 和内部异常；支持 Provider 注入且模块导入时不读取配置或访问网络 |
 | `app.api.dialogue` | M2-02 已调整 | 提供 `POST /v1/dialogue` 的 HTTP 适配，将已经校验的请求交给应用持有的 Dialogue Service，不直接调用 Provider SDK |
 | `app.core.settings` | M2-02 已实现 | 从环境读取 Provider、密钥、模型、超时和输出上限；完成类型、范围、组合与脱敏校验 |
-| `app.schemas.dialogue` | M2-07 已调整 | 定义 v1 请求、成功响应和统一错误响应；声明 `stub`/`kimi` 成功来源和全部协议错误码 |
-| `app.services.dialogue_service` | M2-04 已调整 | 执行业务校验，构造最小生成输入，只调用一次注入的 Dialogue Provider，将内部结果转换为协议响应 |
-| `app.providers.base` | M2-02 已实现 | 定义与 FastAPI、Pydantic 协议 Schema 和供应商 SDK 解耦的 Provider 接口与内部结果类型 |
+| `app.schemas.dialogue` | M3-02 待调整 | 定义 v1 请求、可选上下文、成功响应和统一错误响应；声明所有字段边界、角色枚举、`stub`/`kimi` 成功来源和协议错误码 |
+| `app.services.context_builder` | M3-03 待实现 | 把固定系统约束、NPC 人格、世界状态、有限历史和当前输入组装为确定性的供应商无关生成上下文；不访问网络、数据库、Settings 或具体 Provider |
+| `app.services.dialogue_service` | M3-04 待调整 | 执行业务校验，调用 Context Builder，只调用一次注入的 Dialogue Provider，将内部结果转换为协议响应 |
+| `app.providers.base` | M3-04 待调整 | 定义与 FastAPI、Pydantic 协议 Schema、UE 类型和供应商 SDK 解耦的 Provider 接口、内部生成上下文与结果类型 |
 | `app.providers.errors` | M2-04 已实现 | 定义鉴权、限流、超时、不可用、无效响应和通用 Provider 内部异常，不包含 HTTP 状态码 |
 | `app.providers.factory` | M2-07 已调整 | 根据 Settings 创建 Kimi 或显式 Stub Provider，并支持注入 Kimi 构造器；不静默回退 |
-| `app.providers.kimi_provider` | M2-07 已调整 | 使用 OpenAI 兼容 Python SDK 和 Kimi Chat Completions API 完成一次非流式文本生成，提取非空回复并把 SDK 异常转换为内部 Provider 分类 |
-| `app.providers.stub_provider` | M2-02 已实现 | 提供确定性离线回复，仅用于显式本地模式和联调，不满足真实 LLM 验收 |
-| `tests.*` | M2-07 已调整 | 全局移除真实 `MOONSHOT_API_KEY` 并拦截非本机套接字连接；离线覆盖配置、Factory、Stub/Kimi 成功响应、SDK 到 HTTP 的完整错误映射、API 回归、单次调用和脱敏 |
+| `app.providers.kimi_provider` | M3-04 待调整 | 使用 OpenAI 兼容 Python SDK 和 Kimi Chat Completions API，把内部生成上下文映射为一次非流式消息生成，提取非空回复并分类 SDK 异常 |
+| `app.providers.stub_provider` | M3-04 待调整 | 提供确定性离线回复和上下文验证能力，仅用于显式本地模式和联调，不满足真实 LLM 验收 |
+| `tests.*` | M3-05 待扩展 | 全局移除真实 `MOONSHOT_API_KEY` 并拦截非本机套接字连接；在 M2 回归基础上覆盖上下文 Schema、Builder、Service、Provider 映射、API、日志和安全边界 |
 
 ## 内部类型边界
 
-Provider 接口概念上接收一次生成所需的最小内部输入，并返回：
+Context Builder 输出一次生成所需的供应商无关内部输入，概念上包含：
+
+- 固定系统约束。
+- 结构化的 NPC 人格和世界状态数据。
+- 按最旧到最新排列的有限 `player`/`npc` 历史。
+- 只出现一次的当前玩家输入。
+
+Provider 接口接收该内部输入，并返回：
 
 - 非空 `reply` 文本。
 - 稳定逻辑标识 `provider`。
 
-Provider 接口不得接收 FastAPI `Request`、构造 `JSONResponse`、返回 Pydantic 协议模型，或暴露供应商 SDK 的 Request、Response、Usage、异常和 ID 类型。
+Provider 接口不得接收 FastAPI `Request`、构造 `JSONResponse`、返回 Pydantic 协议模型、依赖 UE 类型，或暴露供应商 SDK 的 Request、Response、Usage、异常和 ID 类型。
 
-Dialogue Service 负责把协议请求转换为 Provider 输入，并把内部结果转换为 `DialogueResponse`。HTTP 状态码只在应用错误映射层确定。
+Dialogue Service 负责业务校验和编排；协议请求到内部生成上下文的转换只通过 Context Builder 完成。Service 把 Provider 结果转换为 `DialogueResponse`，HTTP 状态码只在应用错误映射层确定。
 
 ## 依赖方向
 
@@ -87,8 +99,12 @@ app.api.dialogue
   -> app.schemas.dialogue
 
 app.services.dialogue_service
+  -> app.services.context_builder
   -> app.providers.base
   -> app.schemas.dialogue
+
+app.services.context_builder
+  -> app.providers.base
 
 app.providers.factory
   -> app.providers.kimi_provider
@@ -101,8 +117,9 @@ app.providers.kimi_provider
 
 OpenAI 兼容 Python SDK 运行依赖锁定为 `openai>=2.46,<3.0`。Kimi Client 从 Settings 接收 API Key、固定 Base URL、超时并设置 `max_retries=0`；Provider 每次只调用一次 `chat.completions.create`。
 
-- Route 可以依赖 Schema 和 Service，但不能依赖具体 Provider。
-- Service 只依赖 Provider 接口和内部异常，不依赖供应商 SDK 或 FastAPI HTTP 类型。
+- Route 可以依赖 Schema 和 Service，但不能依赖 Context Builder 内部类型或具体 Provider。
+- Service 依赖 Context Builder、Provider 接口和内部异常，不依赖供应商 SDK 或 FastAPI HTTP 类型。
+- Context Builder 可以接收已校验的协议数据，但输出必须是自有内部类型；不得依赖具体 Provider、Settings、网络或数据库。
 - Provider 实现不依赖 Route、协议 Schema 或 UE 字段结构。
 - Settings 不依赖 Provider 实现；Factory 负责把配置转换为具体 Provider。
 - 测试通过应用工厂、Factory 或 Service 构造参数注入 Fake Provider，不通过 monkeypatch 真实网络作为主要测试方式。
@@ -123,14 +140,16 @@ OpenAI 兼容 Python SDK 运行依赖锁定为 `openai>=2.46,<3.0`。Kimi Client
 - 自动化测试不读取开发者真实密钥；测试环境应删除或屏蔽 `MOONSHOT_API_KEY`。
 - `.env` 可作为开发者本地工具，但不得成为运行必需，也不得提交真实文件；可提交的示例只包含变量名和占位值。
 
-## Prompt 基线
+## Context Builder 与 Prompt 基线
 
-- 只维护一个集中、短小的静态指令。
+- 只维护一组集中、短小、可测试的固定系统约束。
 - 输出为简洁纯文本 NPC 回复，不要求 JSON。
-- 不声称知道未提供的人格、世界状态、玩家历史或 Memory。
+- 只使用本次请求明确提供的人格、世界状态、历史和当前输入；缺失 `context` 时不得补造具体设定。
 - 不生成 Tool Call、Gameplay 指令或系统操作建议。
-- 玩家输入是不可信数据，不能改变系统边界。
-- `npc_id` 仅作稳定标识，不推导角色设定。
+- 人格、世界事实、历史和玩家输入均为不可信数据，必须以明确边界和确定性顺序表示，不能改变系统约束。
+- 历史仅接受 `player`/`npc`，当前输入只出现一次且位于历史之后。
+- `npc_id` 仅作稳定标识，不推导角色设定；Provider 不自行重新解释协议字段。
+- Builder 不保存输入或输出，不生成会话 ID，不访问持久化介质。
 
 ## 错误边界
 
@@ -141,10 +160,12 @@ Provider 内部异常按以下类别向上层表达：鉴权、限流、超时�
 ## 验证要求
 
 - Settings：默认值、合法覆盖、非法类型/范围、缺少密钥、显式 Stub 和脱敏。
-- Provider：请求参数、模型选择、非流式输出提取、空输出和所有 SDK 异常分类。
+- Schema：无上下文兼容、完整上下文、所有字段边界、非法角色和未知字段兼容。
+- Context Builder：确定性顺序、角色映射、空可选数组、当前输入不重复、注入边界和无状态。
+- Provider：消息映射、模型选择、非流式输出提取、无工具/会话参数、空输出和所有 SDK 异常分类。
 - Service/API：字段透传、`provider`、业务校验、全部协议错误码和单次调用。
-- 安全：无外网测试、无真实 Token、无密钥、无原始异常正文。
+- 安全：无外网测试、无真实 Token、无密钥、无完整上下文日志、无原始异常正文。
 - 依赖：完整测试和 `pip check` 通过。
 - 真实网络：仅在最终端到端验收中使用用户本地环境配置执行，并记录脱敏结果。
 
-历史通信闭环验证保留在 [Milestone1Validation.md](./Validation/Milestone1Validation.md)，当前真实 LLM 接入结果记录到 [Milestone2Validation.md](./Validation/Milestone2Validation.md)。
+历史通信闭环和真实 LLM 接入结果分别保留在 [Milestone1Validation.md](./Validation/Milestone1Validation.md) 与 [Milestone2Validation.md](./Validation/Milestone2Validation.md)。Milestone 3 的实际验证结果只记录到 [Milestone3Validation.md](./Validation/Milestone3Validation.md)。

@@ -232,3 +232,49 @@ Milestone 2 的首个真实 LLM Provider 从 OpenAI Responses API 切换为 Kimi
 参考：
 - [Kimi 模型列表](https://platform.kimi.com/docs/models)
 - [Kimi Chat Completions API](https://platform.kimi.com/docs/api/chat)
+
+## 2026-07-27：v1 使用客户端提供的受限瞬时上下文
+
+决定：
+Milestone 3 继续使用 `POST /v1/dialogue`，在现有 v1 请求中增加可选 `context`。该对象完整包含 NPC 人格、当前世界状态和最多 8 条按序对话历史，并对每个字符串和数组设置明确上限。旧请求可以省略 `context`；响应结构、Provider 标识和错误包络保持不变。
+
+上下文由 UE Gameplay/UI 根据自身已知状态显式构造，每次请求携带完整快照。Python Service 不保存会话、不读取 UE World，也不引入 `session_id`、数据库或供应商托管会话。
+
+原因：
+- UE 是 Gameplay 状态的事实来源，显式快照可以避免 Python 反向依赖 UE 内部类型或主动读取世界。
+- 可选字段符合 v1 的兼容扩展规则，Milestone 1/2 客户端和回归请求可以继续工作。
+- 严格的字段、角色和长度边界让两端能够确定性校验输入，并控制 Prompt 大小和日志风险。
+- 将持久化 Memory 与瞬时上下文分开，可以先验证人格、世界状态和有限历史的实际价值，再决定后续存储方案。
+
+取舍：
+- 每次请求会重复传输上下文，Gameplay/UI 需要负责构造一致的快照。
+- Service 重启或客户端未携带历史时不会保留对话连续性。
+- v1 的固定结构不支持任意嵌套 Gameplay 数据；新增语义需要再次评估协议兼容性。
+
+状态：
+已接受
+
+重要性：
+重要
+
+## 2026-07-27：由独立 Context Builder 组装模型输入
+
+决定：
+Python Service 新增独立 Context Builder。它以确定性顺序组合固定系统约束、NPC 人格、世界状态、有限历史和当前玩家输入，输出供应商无关的内部生成上下文。Dialogue Service 负责调用 Builder 和 Provider；Kimi Provider 只负责把内部上下文映射为 SDK 请求。
+
+固定系统约束只由 Python 维护。请求中的人格、世界事实、历史和玩家输入全部作为数据处理，不能启用 Tool、Memory、供应商会话或覆盖系统边界。
+
+原因：
+- 避免 Route、Service 和 Provider 分别拼接 Prompt，保持单一职责和可测试的依赖方向。
+- 供应商无关的内部类型让 Stub/Fake 能离线验证上下文顺序，也避免 Kimi SDK 类型扩散到业务层。
+- 集中的系统/数据边界便于测试 Prompt 注入、当前输入重复和日志泄露风险。
+
+取舍：
+- 增加一个内部模块和类型转换步骤。
+- Builder 的输出结构需要与 Provider 接口共同演进，但不得反向改变公开 HTTP 协议。
+
+状态：
+已接受
+
+重要性：
+重要
