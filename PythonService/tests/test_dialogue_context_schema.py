@@ -7,6 +7,7 @@ from fastapi.testclient import TestClient
 import pytest
 
 from app.main import create_app
+from app.providers.base import DialogueGenerationContext, DialogueProviderResult
 from app.providers.stub_provider import StubDialogueProvider
 
 
@@ -56,6 +57,36 @@ def test_full_context_is_accepted_without_changing_response_shape(
 
     assert response.status_code == 200
     assert response.json().keys() == {"request_id", "npc_id", "reply", "provider"}
+
+
+def test_service_passes_supplier_neutral_context_to_injected_provider() -> None:
+    captured_contexts: list[DialogueGenerationContext] = []
+
+    class CapturingProvider:
+        def generate(
+            self,
+            context: DialogueGenerationContext,
+        ) -> DialogueProviderResult:
+            captured_contexts.append(context)
+            return DialogueProviderResult(reply="captured", provider="stub")
+
+    with TestClient(create_app(provider=CapturingProvider())) as capturing_client:
+        response = capturing_client.post(
+            "/v1/dialogue",
+            json=_request_with_context(),
+        )
+
+    assert response.status_code == 200
+    assert len(captured_contexts) == 1
+    captured_context = captured_contexts[0]
+    assert '"display_name":"城门守卫"' in captured_context.context_data_json
+    assert '"location":"北城门"' in captured_context.context_data_json
+    assert [message.role for message in captured_context.messages] == [
+        "user",
+        "assistant",
+        "user",
+    ]
+    assert captured_context.messages[-1].content == VALID_REQUEST["player_input"]
 
 
 def test_unknown_context_fields_are_ignored_for_v1_compatibility(

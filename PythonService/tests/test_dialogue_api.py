@@ -7,7 +7,11 @@ import pytest
 
 from app.core.settings import Settings
 from app.main import create_app
-from app.providers.base import DialogueProviderRequest, DialogueProviderResult
+from app.providers.base import (
+    DialogueGenerationContext,
+    DialogueGenerationMessage,
+    DialogueProviderResult,
+)
 from app.providers.stub_provider import STUB_REPLY, StubDialogueProvider
 
 
@@ -106,7 +110,7 @@ def test_internal_error_does_not_expose_exception_details() -> None:
     class FailingProvider:
         def generate(
             self,
-            _request: DialogueProviderRequest,
+            _context: DialogueGenerationContext,
         ) -> DialogueProviderResult:
             raise RuntimeError("secret_token at C:/internal/service.py")
 
@@ -142,11 +146,14 @@ def test_injected_fake_provider_can_return_kimi_result() -> None:
     class FakeKimiProvider:
         def generate(
             self,
-            request: DialogueProviderRequest,
+            context: DialogueGenerationContext,
         ) -> DialogueProviderResult:
-            assert request == DialogueProviderRequest(
-                npc_id=VALID_REQUEST["npc_id"],
-                player_input=VALID_REQUEST["player_input"],
+            assert context.context_data_json == '{"npc_id":"npc_guard_01"}'
+            assert context.messages == (
+                DialogueGenerationMessage(
+                    role="user",
+                    content=VALID_REQUEST["player_input"],
+                ),
             )
             return DialogueProviderResult(reply="测试回复", provider="kimi")
 

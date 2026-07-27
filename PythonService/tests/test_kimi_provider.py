@@ -8,7 +8,11 @@ import openai
 import pytest
 
 from app.core.settings import Settings
-from app.providers.base import DialogueProviderRequest, DialogueProviderResult
+from app.providers.base import (
+    DialogueGenerationContext,
+    DialogueGenerationMessage,
+    DialogueProviderResult,
+)
 from app.providers.errors import (
     DialogueProviderError,
     ProviderAuthenticationError,
@@ -18,9 +22,10 @@ from app.providers.errors import (
     ProviderUnavailableError,
 )
 from app.providers.kimi_provider import (
-    KIMI_DIALOGUE_INSTRUCTIONS,
+    CONTEXT_DATA_MESSAGE_PREFIX,
     KimiDialogueProvider,
 )
+from app.services.context_builder import DIALOGUE_SYSTEM_INSTRUCTIONS
 
 
 class FakeChatCompletionsResource:
@@ -51,6 +56,21 @@ def _settings() -> Settings:
             "ZL_KIMI_TIMEOUT_SECONDS": "12.5",
             "ZL_KIMI_MAX_OUTPUT_TOKENS": "321",
         }
+    )
+
+
+def _generation_context() -> DialogueGenerationContext:
+    return DialogueGenerationContext(
+        system_instructions=DIALOGUE_SYSTEM_INSTRUCTIONS,
+        context_data_json=(
+            '{"npc_id":"npc_guard_01","npc":{"display_name":"城门守卫"},'
+            '"world":{"location":"北城门"}}'
+        ),
+        messages=(
+            DialogueGenerationMessage(role="user", content="城门为什么关了？"),
+            DialogueGenerationMessage(role="assistant", content="刚刚响起了警报。"),
+            DialogueGenerationMessage(role="user", content="发生了什么？"),
+        ),
     )
 
 
@@ -88,12 +108,7 @@ def test_generate_constructs_one_non_streaming_response_request() -> None:
     )
     provider = KimiDialogueProvider(_settings(), client=fake_client)
 
-    result = provider.generate(
-        DialogueProviderRequest(
-            npc_id="npc_guard_01",
-            player_input="发生了什么？",
-        )
-    )
+    result = provider.generate(_generation_context())
 
     assert result == DialogueProviderResult(
         reply="城门已经关闭。",
@@ -103,7 +118,16 @@ def test_generate_constructs_one_non_streaming_response_request() -> None:
         {
             "model": "test-model",
             "messages": [
-                {"role": "system", "content": KIMI_DIALOGUE_INSTRUCTIONS},
+                {"role": "system", "content": DIALOGUE_SYSTEM_INSTRUCTIONS},
+                {
+                    "role": "user",
+                    "content": (
+                        CONTEXT_DATA_MESSAGE_PREFIX
+                        + _generation_context().context_data_json
+                    ),
+                },
+                {"role": "user", "content": "城门为什么关了？"},
+                {"role": "assistant", "content": "刚刚响起了警报。"},
                 {"role": "user", "content": "发生了什么？"},
             ],
             "reasoning_effort": "low",
@@ -114,7 +138,7 @@ def test_generate_constructs_one_non_streaming_response_request() -> None:
     request_arguments = fake_client.chat.completions.calls[0]
     assert "tools" not in request_arguments
     assert "previous_response_id" not in str(request_arguments)
-    assert "npc_guard_01" not in str(request_arguments)
+    assert "npc_guard_01" in str(request_arguments)
 
 
 def test_k2_generation_disables_thinking_for_short_dialogue() -> None:
@@ -131,7 +155,7 @@ def test_k2_generation_disables_thinking_for_short_dialogue() -> None:
     )
     provider = KimiDialogueProvider(settings, client=fake_client)
 
-    provider.generate(DialogueProviderRequest(npc_id="npc-1", player_input="hello"))
+    provider.generate(_generation_context())
 
     request_arguments = fake_client.chat.completions.calls[0]
     assert request_arguments["extra_body"] == {"thinking": {"type": "disabled"}}
@@ -155,9 +179,7 @@ def test_empty_or_non_text_output_is_rejected(output_text: object) -> None:
         ProviderInvalidResponseError,
         match="Kimi Provider returned an empty reply",
     ):
-        provider.generate(
-            DialogueProviderRequest(npc_id="npc-1", player_input="hello")
-        )
+        provider.generate(_generation_context())
 
 
 def test_missing_output_text_is_rejected_without_sdk_type_leakage() -> None:
@@ -170,9 +192,7 @@ def test_missing_output_text_is_rejected_without_sdk_type_leakage() -> None:
         ProviderInvalidResponseError,
         match="Kimi Provider returned an invalid response",
     ):
-        provider.generate(
-            DialogueProviderRequest(npc_id="npc-1", player_input="hello")
-        )
+        provider.generate(_generation_context())
 
 
 def _status_error(error_type: type[openai.APIStatusError], status: int) -> Exception:
@@ -218,9 +238,7 @@ def test_sdk_errors_are_classified_without_raw_details(
     provider = KimiDialogueProvider(_settings(), client=fake_client)
 
     with pytest.raises(expected_type) as captured:
-        provider.generate(
-            DialogueProviderRequest(npc_id="npc-1", player_input="hello")
-        )
+        provider.generate(_generation_context())
 
     assert type(captured.value) is expected_type
     assert captured.value.provider == "kimi"

@@ -2,7 +2,8 @@
 
 from app.core.settings import Settings
 from app.providers.base import (
-    DialogueProviderRequest,
+    DialogueGenerationContext,
+    DialogueGenerationMessage,
     DialogueProviderResult,
 )
 from app.providers.factory import (
@@ -19,7 +20,11 @@ def test_explicit_stub_selection_returns_deterministic_provider() -> None:
 
     assert isinstance(provider, StubDialogueProvider)
     result = provider.generate(
-        DialogueProviderRequest(npc_id="npc-1", player_input="hello")
+        DialogueGenerationContext(
+            system_instructions="system",
+            context_data_json='{"npc_id":"npc-1"}',
+            messages=(DialogueGenerationMessage(role="user", content="hello"),),
+        )
     )
     assert result == DialogueProviderResult(reply=STUB_REPLY, provider="stub")
 
@@ -31,7 +36,7 @@ def test_kimi_selection_uses_injected_factory() -> None:
     class FakeKimiProvider:
         def generate(
             self,
-            _request: DialogueProviderRequest,
+            _context: DialogueGenerationContext,
         ) -> DialogueProviderResult:
             return DialogueProviderResult(reply="fake", provider="kimi")
 

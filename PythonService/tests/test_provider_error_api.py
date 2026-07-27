@@ -6,7 +6,7 @@ from fastapi.testclient import TestClient
 import pytest
 
 from app.main import create_app
-from app.providers.base import DialogueProviderRequest, DialogueProviderResult
+from app.providers.base import DialogueGenerationContext, DialogueProviderResult
 from app.providers.errors import (
     DialogueProviderError,
     ProviderAuthenticationError,
@@ -31,7 +31,7 @@ class FailingProvider:
 
     def generate(
         self,
-        _request: DialogueProviderRequest,
+        _context: DialogueGenerationContext,
     ) -> DialogueProviderResult:
         self.call_count += 1
         raise self._error

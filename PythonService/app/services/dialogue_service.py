@@ -1,7 +1,8 @@
 """Dialogue orchestration independent of HTTP and concrete Provider concerns."""
 
-from app.providers.base import DialogueProvider, DialogueProviderRequest
+from app.providers.base import DialogueProvider
 from app.schemas.dialogue import DialogueRequest, DialogueResponse
+from app.services.context_builder import build_dialogue_generation_context
 
 
 class InvalidDialogueRequest(ValueError):
@@ -27,12 +28,7 @@ class DialogueService:
             )
         self._validate_context(request)
 
-        result = self._provider.generate(
-            DialogueProviderRequest(
-                npc_id=request.npc_id,
-                player_input=request.player_input,
-            )
-        )
+        result = self._provider.generate(build_dialogue_generation_context(request))
         return DialogueResponse(
             request_id=request.request_id,
             npc_id=request.npc_id,

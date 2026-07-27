@@ -26,14 +26,6 @@ class DialogueGenerationContext:
 
 
 @dataclass(frozen=True, slots=True)
-class DialogueProviderRequest:
-    """Minimum internal input needed to generate one dialogue reply."""
-
-    npc_id: str
-    player_input: str
-
-
-@dataclass(frozen=True, slots=True)
 class DialogueProviderResult:
     """Supplier-neutral result returned by a dialogue Provider."""
 
@@ -44,6 +36,6 @@ class DialogueProviderResult:
 class DialogueProvider(Protocol):
     """Generate one non-streaming reply without HTTP or protocol model coupling."""
 
-    def generate(self, request: DialogueProviderRequest) -> DialogueProviderResult:
+    def generate(self, context: DialogueGenerationContext) -> DialogueProviderResult:
         """Generate a single dialogue result."""
         ...
