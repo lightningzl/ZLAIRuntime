@@ -244,6 +244,162 @@ namespace
 		ShowDemoMessage(TEXT("AI context dialogue request sent"), FColor::Yellow);
 	}
 
+	bool BuildMemoryDemoScenario(
+		const FString& Scenario,
+		FString& OutNpcId,
+		FString& OutScopeId,
+		FString& OutPlayerInput,
+		bool& bOutExpectedMarker)
+	{
+		const FString PrimaryNpcId = TEXT("npc_memory_demo_primary");
+		const FString PrimaryScopeId = TEXT("memory_demo_primary_scope");
+		if (Scenario == TEXT("seed"))
+		{
+			OutNpcId = PrimaryNpcId;
+			OutScopeId = PrimaryScopeId;
+			OutPlayerInput = TEXT(
+				"Remember this object for our next conversation and reply with its exact name: Copper Lantern.");
+			bOutExpectedMarker = true;
+			return true;
+		}
+		if (Scenario == TEXT("recall"))
+		{
+			OutNpcId = PrimaryNpcId;
+			OutScopeId = PrimaryScopeId;
+			OutPlayerInput = TEXT(
+				"Reply with the remembered object name, or UNKNOWN if no earlier object is available.");
+			bOutExpectedMarker = true;
+			return true;
+		}
+		if (Scenario == TEXT("other_scope"))
+		{
+			OutNpcId = PrimaryNpcId;
+			OutScopeId = TEXT("memory_demo_isolated_scope");
+			OutPlayerInput = TEXT(
+				"Reply with the remembered object name, or UNKNOWN if no earlier object is available.");
+			bOutExpectedMarker = false;
+			return true;
+		}
+		if (Scenario == TEXT("other_npc"))
+		{
+			OutNpcId = TEXT("npc_memory_demo_isolated");
+			OutScopeId = PrimaryScopeId;
+			OutPlayerInput = TEXT(
+				"Reply with the remembered object name, or UNKNOWN if no earlier object is available.");
+			bOutExpectedMarker = false;
+			return true;
+		}
+		return false;
+	}
+
+	void RunDialogueMemoryDemo(const TArray<FString>& Args, UWorld* World)
+	{
+		if (Args.IsEmpty())
+		{
+			const FString Usage = TEXT(
+				"Usage: ZL.AI.DialogueMemoryDemo <seed|recall|other_scope|other_npc>");
+			UE_LOG(LogZL, Warning, TEXT("AI Memory Dialogue Failed code=invalid_demo_arguments"));
+			ShowDemoMessage(Usage, FColor::Red);
+			return;
+		}
+
+		const FString Scenario = Args[0].ToLower();
+		FString NpcId;
+		FString ScopeId;
+		FString PlayerInput;
+		bool bExpectedMarker = false;
+		if (!BuildMemoryDemoScenario(
+			Scenario,
+			NpcId,
+			ScopeId,
+			PlayerInput,
+			bExpectedMarker))
+		{
+			UE_LOG(LogZL, Warning, TEXT("AI Memory Dialogue Failed code=invalid_demo_scenario"));
+			ShowDemoMessage(TEXT("Unknown Memory demo scenario"), FColor::Red);
+			return;
+		}
+
+		UGameInstance* GameInstance = World ? World->GetGameInstance() : nullptr;
+		UZLAIServiceSubsystem* ServiceSubsystem = GameInstance
+			? GameInstance->GetSubsystem<UZLAIServiceSubsystem>()
+			: nullptr;
+		if (!ServiceSubsystem)
+		{
+			UE_LOG(LogZL, Warning, TEXT("AI Memory Dialogue Failed code=missing_subsystem"));
+			ShowDemoMessage(TEXT("AI Memory Dialogue Failed: no active subsystem"), FColor::Red);
+			return;
+		}
+
+		FZLDialogueMemory Memory;
+		Memory.ScopeId = ScopeId;
+		const TWeakObjectPtr<UGameInstance> WeakGameInstance(GameInstance);
+		const FString RequestId = ServiceSubsystem->SendDialogueRequest(
+			NpcId,
+			PlayerInput,
+			Memory,
+			FZLDialogueSuccessDelegate::CreateLambda(
+				[WeakGameInstance, Scenario, bExpectedMarker](const FZLDialogueResponse& Response)
+			{
+				if (!WeakGameInstance.IsValid())
+				{
+					return;
+				}
+
+				const bool bMarkerMatched = Response.Reply.Contains(
+					TEXT("Copper Lantern"),
+					ESearchCase::IgnoreCase);
+				UE_LOG(
+					LogZL,
+					Display,
+					TEXT("AI Memory Dialogue Reply request_id=%s npc_id=%s provider=%s "
+						"scenario=%s memory_expected=%s memory_match=%s reply_length=%d"),
+					*Response.RequestId,
+					*Response.NpcId,
+					*Response.Provider,
+					*Scenario,
+					bExpectedMarker ? TEXT("true") : TEXT("false"),
+					bMarkerMatched ? TEXT("true") : TEXT("false"),
+					Response.Reply.Len());
+				ShowDemoMessage(
+					FString::Printf(
+						TEXT("AI Memory [%s] expected=%s matched=%s"),
+						*Scenario,
+						bExpectedMarker ? TEXT("true") : TEXT("false"),
+						bMarkerMatched ? TEXT("true") : TEXT("false")),
+					FColor::Green);
+			}),
+			FZLDialogueFailureDelegate::CreateLambda([WeakGameInstance](const FZLServiceError& Error)
+			{
+				if (!WeakGameInstance.IsValid())
+				{
+					return;
+				}
+
+				UE_LOG(
+					LogZL,
+					Warning,
+					TEXT("AI Memory Dialogue Failed request_id=%s code=%s http_status=%d"),
+					*Error.RequestId,
+					*Error.Code,
+					Error.HttpStatusCode);
+				ShowDemoMessage(
+					FString::Printf(TEXT("AI Memory Dialogue Failed [%s]"), *Error.Code),
+					FColor::Red);
+			}));
+
+		UE_LOG(
+			LogZL,
+			Display,
+			TEXT("AI Memory Dialogue Request request_id=%s npc_id=%s scenario=%s "
+				"has_memory=true input_length=%d"),
+			*RequestId,
+			*NpcId,
+			*Scenario,
+			PlayerInput.Len());
+		ShowDemoMessage(TEXT("AI Memory dialogue request sent"), FColor::Yellow);
+	}
+
 	FAutoConsoleCommandWithWorldAndArgs DialogueDemoCommand(
 		TEXT("ZL.AI.DialogueDemo"),
 		TEXT("Send a demo AI dialogue request. Usage: ZL.AI.DialogueDemo <npc_id> <player_input>"),
@@ -254,4 +410,10 @@ namespace
 		TEXT("Send a contextual demo request. Usage: ZL.AI.DialogueContextDemo "
 			"<persona|world|history> <npc_id>"),
 		FConsoleCommandWithWorldAndArgsDelegate::CreateStatic(&RunDialogueContextDemo));
+
+	FAutoConsoleCommandWithWorldAndArgs DialogueMemoryDemoCommand(
+		TEXT("ZL.AI.DialogueMemoryDemo"),
+		TEXT("Send a persistent Memory demo request. Usage: ZL.AI.DialogueMemoryDemo "
+			"<seed|recall|other_scope|other_npc>"),
+		FConsoleCommandWithWorldAndArgsDelegate::CreateStatic(&RunDialogueMemoryDemo));
 }

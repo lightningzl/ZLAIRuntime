@@ -80,7 +80,7 @@ Gameplay / UI Context Snapshot + Optional Memory Scope
 - Subsystem 不持有 NPC Actor 的强引用，不直接修改世界状态。
 - 旧 `ZL.AI.DialogueDemo <npc_id> <player_input>` 入口继续作为无上下文回归；上下文演示入口只依赖插件公开类型。
 - `ZL.AI.DialogueContextDemo <persona|world|history> <npc_id>` 使用固定脱敏输入和快照验证人格、世界和历史三类上下文；M3-07 已用真实 Kimi 验证三类受控匹配均通过。日志只记录关联元数据、匹配结果和长度，不记录完整输入、上下文或回复。
-- M4-07 计划增加同级 Memory 演示入口，覆盖连续轮次、scope/NPC 隔离和重启恢复；命令与日志不得输出完整 scope 或对话正文。
+- `ZL.AI.DialogueMemoryDemo <seed|recall|other_scope|other_npc>` 使用固定脱敏场景覆盖连续轮次、scope/NPC 隔离和重启恢复；日志只记录请求关联、场景、预期/实际匹配布尔值和回复长度，不输出完整 scope、输入或回复正文。
 
 ## 生命周期与异步约束
 
@@ -97,4 +97,4 @@ Gameplay / UI Context Snapshot + Optional Memory Scope
 
 Milestone 3 上下文结构、协议边界校验和 JSON 序列化已在 M3-02 实现。M3-06 已完成兼容请求重载、上下文 Game 演示和本地 HTTP 集成；`ZLEditor` 编译、完整 `ZLAIRuntime` 自动化 8/8、旧/新入口与非法上下文单次完成均已验证。证据见 [Milestone3Validation.md](./Validation/Milestone3Validation.md)。
 
-Milestone 4 的 Memory 类型、请求入口、边界校验和序列化已在 M4-02 实现；`ZLEditor` 编译和 `ZLAIRuntime.Protocol` 6/6 通过。Memory 演示和完整集成留待 M4-07，证据写入 [Milestone4Validation.md](./Validation/Milestone4Validation.md)。
+Milestone 4 的 Memory 类型、请求入口、边界校验和序列化已在 M4-02 实现。M4-07 已增加固定脱敏 Memory 演示并扩展本地 Stub 集成；`ZLEditor` 增量编译、完整 `ZLAIRuntime` 自动化 9/9、连续 Memory、scope/NPC 隔离、非法范围本地拦截和无界面 Game 回调均通过。证据见 [Milestone4Validation.md](./Validation/Milestone4Validation.md)。
