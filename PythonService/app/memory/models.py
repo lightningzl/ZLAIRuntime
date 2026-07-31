@@ -25,6 +25,15 @@ class MergedDialogueHistory:
 
 
 @dataclass(frozen=True, slots=True)
+class MemoryStatistics:
+    """Aggregate counts safe to expose through the local maintenance command."""
+
+    turn_count: int
+    scope_count: int
+    scope_npc_pair_count: int
+
+
+@dataclass(frozen=True, slots=True)
 class DialogueTurnToStore:
     """One complete successful dialogue turn awaiting persistence."""
 

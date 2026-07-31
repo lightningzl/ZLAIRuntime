@@ -1,12 +1,13 @@
 # Python AI Service
 
-Milestone 3 的本地 FastAPI AI Service。当前已完成集中配置、Dialogue Provider 接口、可注入的离线 Stub/Fake 边界、受限瞬时上下文 Schema、无状态 Context Builder，以及通过 OpenAI 兼容 Python SDK 调用 Kimi Chat Completions API 的非流式适配器。
+Milestone 4 的本地 FastAPI AI Service。当前已完成集中配置、Dialogue Provider 边界、受限瞬时上下文、显式可选的持久化对话 Memory、SQLite Repository、确定性历史合并，以及通过 OpenAI 兼容 Python SDK 调用 Kimi Chat Completions API 的非流式适配器。
 
 ## 环境要求
 
 - Python 3.12
-- Stub 模式不需要 API Key、数据库或外部服务
+- Stub 模式不需要 API Key 或外部服务
 - Kimi 模式只从进程环境读取 `MOONSHOT_API_KEY`
+- SQLite 驱动由 Python 3.12 标准库自带，不需要单独安装 SQLite
 
 ## 安装依赖
 
@@ -32,6 +33,8 @@ PythonService/.venv/Scripts/python -m pip install -r PythonService/requirements-
 | `ZL_KIMI_MODEL` | `kimi-k2.6` | 必须是非空字符串；K2.x 默认关闭思考以适配简短对话 |
 | `ZL_KIMI_TIMEOUT_SECONDS` | `20` | 必须大于 `0` 且小于 UE 外层基线 `30` 秒 |
 | `ZL_KIMI_MAX_OUTPUT_TOKENS` | `256` | 必须为正整数，硬上限为 `4096` |
+| `ZL_MEMORY_DATABASE_PATH` | `PythonService/data/zl_memory.sqlite3` | 非空本地路径；相对覆盖值按启动进程工作目录解释 |
+| `ZL_MEMORY_MAX_TURNS` | `4` | 每次检索最近的完整轮次，合法范围为 `1` 至 `16` |
 
 环境变量必须在启动进程前设置。本项目不要求 `.env` 文件，也不要把真实 Key 写入任何仓库文件。
 
@@ -52,9 +55,31 @@ $env:MOONSHOT_API_KEY = "<your-local-api-key>"
 PythonService/.venv/Scripts/python -m uvicorn app.main:app --app-dir PythonService --host 127.0.0.1 --port 8000
 ```
 
-Kimi 模式使用 `openai>=2.46,<3.0` 调用国内开放平台 `https://api.moonshot.cn/v1`，从集中配置读取模型、超时和输出上限，并显式禁用 SDK 自动重试。Context Builder 将固定系统约束、NPC/世界 JSON 数据、有限历史和当前输入组装为供应商无关输入；Provider 只负责映射到 Kimi 消息。单次请求不会启用流式输出、工具或托管会话状态，也不会在失败时回退到 Stub。
+Kimi 模式使用 `openai>=2.46,<3.0` 调用国内开放平台 `https://api.moonshot.cn/v1`，从集中配置读取模型、超时和输出上限，并显式禁用 SDK 自动重试。请求只有显式提供 `memory.scope_id` 时才读取并在合法 Provider 成功后写入 Memory；省略 `memory` 时保持无状态。Context Builder 将固定系统约束、NPC/世界 JSON 数据、合并后的有限历史和当前输入组装为供应商无关输入；Provider 只负责映射到 Kimi 消息。单次请求不会启用流式输出、工具或托管会话状态，也不会在失败时回退到 Stub。
 
 启动后，FastAPI 文档页面位于 `http://127.0.0.1:8000/docs`，对话接口为 `POST http://127.0.0.1:8000/v1/dialogue`。请求和响应格式见 [`Docs/Protocol.md`](../Docs/Protocol.md)。
+
+## Memory 本地维护
+
+维护入口只在本机命令行运行，不属于 HTTP API。统计命令仅输出轮次数、scope 数和 scope/NPC 分区数，不输出任何标识或对话正文：
+
+```powershell
+Set-Location PythonService
+.venv/Scripts/python -m app.memory.maintenance stats
+```
+
+清理必须同时提供精确 scope、NPC 和显式确认；输出只包含删除轮次数：
+
+```powershell
+Set-Location PythonService
+.venv/Scripts/python -m app.memory.maintenance clear --scope-id "<scope>" --npc-id "<npc>" --confirm
+```
+
+如果运行时通过 `ZL_MEMORY_DATABASE_PATH` 使用了其他数据库，维护命令通过全局参数选择同一路径：
+
+```powershell
+.venv/Scripts/python -m app.memory.maintenance --database-path "<path>" stats
+```
 
 ## 测试
 

@@ -6,7 +6,7 @@ Milestone 2 的 Route、协议 Schema、集中 Settings、Provider 接口与 Fac
 
 Milestone 3 的 v1 可选 `context` Schema、字段边界、空白业务校验、无状态 Context Builder、供应商无关内部生成类型，以及 Dialogue Service/Provider 接线已经实现。
 
-Milestone 4 已完成可选 `memory.scope_id` Schema、SQLite Repository、Memory Service、历史合并、Dialogue Service 编排、应用生命周期、错误映射和脱敏日志接线。
+Milestone 4 的 Python 实现已完成：可选 `memory.scope_id`、SQLite Repository、Memory Service、历史合并、Dialogue Service 编排、应用生命周期、错误映射、脱敏日志和本机维护入口均已通过最终离线回归。
 
 ## 目标目录
 
@@ -39,6 +39,7 @@ PythonService/
     memory/
       __init__.py
       base.py
+      maintenance.py
       models.py
       sqlite_repository.py
     providers/
@@ -72,15 +73,16 @@ PythonService/
 | `app.services.context_builder` | M4-04 已调整 | 把固定系统约束、NPC 人格、世界状态、显式合并历史和当前输入组装为确定性的供应商无关生成上下文；省略合并历史时保持既有快照行为，不访问网络、数据库、Settings 或具体 Provider |
 | `app.services.dialogue_service` | M4-05 已调整 | 校验请求业务语义；仅在 Memory 显式启用时协调读取、合并、单次 Provider 调用、合法响应构造和完整轮次写入，无 Memory 路径不调用 Memory Service |
 | `app.services.memory_service` | M4-04 已实现 | 通过 Repository 接口实现 `(scope_id, npc_id)` 二次隔离、检索预算、稳定排序、最长精确边界重叠消除和幂等完整轮次写入；不执行 SQL |
-| `app.memory.base` | M4-03 已实现 | 定义与 SQLite 解耦的 Repository 接口和脱敏持久化异常，供 Memory Service 注入和 Fake 测试 |
-| `app.memory.models` | M4-03 已实现 | 定义待保存轮次、已保存轮次和幂等写入结果等不可变内部类型，不暴露数据库行对象 |
-| `app.memory.sqlite_repository` | M4-03 已实现 | 独占 SQLite Schema v1、范围索引、WAL、连接、查询、事务、回滚、行映射和失败关闭 |
+| `app.memory.base` | M4-06 已调整 | 定义与 SQLite 解耦的读写、聚合统计、精确分区清理 Repository 接口和脱敏持久化异常，供 Service、维护入口和 Fake 测试注入 |
+| `app.memory.models` | M4-06 已调整 | 定义合并消息、聚合统计、待保存/已保存轮次和幂等写入结果等不可变内部类型，不暴露数据库行对象 |
+| `app.memory.sqlite_repository` | M4-06 已调整 | 独占 SQLite Schema v1、范围索引、WAL、连接、检索、统计、精确分区清理、事务、回滚、行映射和失败关闭 |
+| `app.memory.maintenance` | M4-06 已实现 | 提供本机命令行聚合统计和按精确 scope/NPC 清理；要求显式确认，不注册 HTTP Route，不输出标识、路径或对话正文 |
 | `app.providers.base` | M3-04 已调整 | 定义与 FastAPI、Pydantic 协议 Schema、UE 类型和供应商 SDK 解耦的 Provider 接口、内部生成上下文与结果类型 |
 | `app.providers.errors` | M2-04 已实现 | 定义鉴权、限流、超时、不可用、无效响应和通用 Provider 内部异常，不包含 HTTP 状态码 |
 | `app.providers.factory` | M2-07 已调整 | 根据 Settings 创建 Kimi 或显式 Stub Provider，并支持注入 Kimi 构造器；不静默回退 |
 | `app.providers.kimi_provider` | M3-04 已调整 | 使用 OpenAI 兼容 Python SDK 和 Kimi Chat Completions API，把内部生成上下文映射为一次非流式消息生成，提取非空回复并分类 SDK 异常 |
 | `app.providers.stub_provider` | M3-04 已调整 | 接收统一内部生成上下文并提供确定性离线回复，仅用于显式本地模式和联调，不满足真实 LLM 验收 |
-| `tests.*` | M4-04 已扩展；M4-06 待最终补齐 | 继续全局移除真实密钥并拦截非本机套接字；使用临时 SQLite/Fake Repository 覆盖 Memory 基础路径和既有回归 |
+| `tests.*` | M4-06 已完成 Python 最终回归 | 全局移除真实密钥并拦截非本机套接字；使用临时 SQLite/Fake Repository 覆盖 Memory 全路径、维护入口、日志安全和既有回归 |
 
 ## 内部类型边界
 
@@ -161,7 +163,7 @@ OpenAI 兼容 Python SDK 运行依赖锁定为 `openai>=2.46,<3.0`。Kimi Client
 | `ZL_KIMI_MODEL` | 默认 `kimi-k2.6`；只在 Python Provider 内消费；K2.x 简短对话关闭思考 |
 | `ZL_KIMI_TIMEOUT_SECONDS` | 默认 `20` 秒；正数并小于 UE 外层基线 `30` 秒 |
 | `ZL_KIMI_MAX_OUTPUT_TOKENS` | 默认 `256`；正整数，硬上限 `4096` |
-| `ZL_MEMORY_DATABASE_PATH` | 默认 `./data/zl_memory.sqlite3`，非空路径，只由 SQLite Repository 消费；数据库及伴随文件不得提交 |
+| `ZL_MEMORY_DATABASE_PATH` | 默认 `PythonService/data/zl_memory.sqlite3`，非空路径，只由 SQLite Repository 消费；数据库及伴随文件不得提交，Settings 表示中隐藏路径 |
 | `ZL_MEMORY_MAX_TURNS` | 默认检索最近 `4` 个完整轮次，合法范围 `1` 至 `16` |
 
 - 模块导入不得启动服务、读取网络或调用 Kimi。

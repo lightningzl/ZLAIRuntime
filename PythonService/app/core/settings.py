@@ -13,7 +13,9 @@ DEFAULT_KIMI_TIMEOUT_SECONDS = 20.0
 DEFAULT_KIMI_MAX_OUTPUT_TOKENS = 256
 KIMI_MAX_OUTPUT_TOKENS_HARD_LIMIT = 4096
 UE_REQUEST_TIMEOUT_SECONDS = 30.0
-DEFAULT_MEMORY_DATABASE_PATH = Path("data/zl_memory.sqlite3")
+DEFAULT_MEMORY_DATABASE_PATH = (
+    Path(__file__).resolve().parents[2] / "data" / "zl_memory.sqlite3"
+)
 DEFAULT_MEMORY_MAX_TURNS = 4
 MEMORY_MAX_TURNS_HARD_LIMIT = 16
 
@@ -59,7 +61,10 @@ class Settings:
     kimi_model: str = DEFAULT_KIMI_MODEL
     kimi_timeout_seconds: float = DEFAULT_KIMI_TIMEOUT_SECONDS
     kimi_max_output_tokens: int = DEFAULT_KIMI_MAX_OUTPUT_TOKENS
-    memory_database_path: Path = DEFAULT_MEMORY_DATABASE_PATH
+    memory_database_path: Path = field(
+        default=DEFAULT_MEMORY_DATABASE_PATH,
+        repr=False,
+    )
     memory_max_turns: int = DEFAULT_MEMORY_MAX_TURNS
 
     def __post_init__(self) -> None:

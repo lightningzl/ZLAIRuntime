@@ -5,6 +5,7 @@ from app.memory.models import (
     DialogueMemoryMessage,
     DialogueTurnToStore,
     MemoryWriteResult,
+    MemoryStatistics,
     MergedDialogueHistory,
     StoredDialogueTurn,
 )
@@ -16,6 +17,7 @@ __all__ = [
     "DialogueTurnToStore",
     "MemoryRepositoryError",
     "MemoryWriteResult",
+    "MemoryStatistics",
     "MergedDialogueHistory",
     "SQLiteDialogueMemoryRepository",
     "StoredDialogueTurn",

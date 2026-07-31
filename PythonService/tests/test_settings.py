@@ -150,11 +150,17 @@ def test_invalid_configuration_fails_safely(
 
 def test_api_key_is_excluded_from_repr_and_validation_errors() -> None:
     secret = "sensitive-placeholder"
+    private_database_path = Path("private/database/location.sqlite3")
     settings = Settings.from_env(
-        {"ZL_DIALOGUE_PROVIDER": "stub", "MOONSHOT_API_KEY": secret}
+        {
+            "ZL_DIALOGUE_PROVIDER": "stub",
+            "MOONSHOT_API_KEY": secret,
+            "ZL_MEMORY_DATABASE_PATH": str(private_database_path),
+        }
     )
 
     assert secret not in repr(settings)
+    assert str(private_database_path) not in repr(settings)
 
     with pytest.raises(SettingsError) as error:
         Settings.from_env(

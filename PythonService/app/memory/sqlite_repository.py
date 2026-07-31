@@ -8,6 +8,7 @@ from app.memory.base import MemoryRepositoryError
 from app.memory.models import (
     DialogueTurnToStore,
     MemoryWriteResult,
+    MemoryStatistics,
     StoredDialogueTurn,
 )
 
@@ -56,6 +57,25 @@ FROM (
     LIMIT ?
 )
 ORDER BY sequence ASC
+"""
+
+_SELECT_STATISTICS_SQL = f"""
+SELECT
+    COUNT(*) AS turn_count,
+    COUNT(DISTINCT scope_id) AS scope_count,
+    (
+        SELECT COUNT(*)
+        FROM (
+            SELECT DISTINCT scope_id, npc_id
+            FROM {_TABLE_NAME}
+        )
+    ) AS scope_npc_pair_count
+FROM {_TABLE_NAME}
+"""
+
+_DELETE_SCOPE_NPC_SQL = f"""
+DELETE FROM {_TABLE_NAME}
+WHERE scope_id = ? AND npc_id = ?
 """
 
 
@@ -152,6 +172,43 @@ class SQLiteDialogueMemoryRepository:
         if cursor.rowcount == 0:
             return MemoryWriteResult.DUPLICATE_REQUEST
         return MemoryWriteResult.INSERTED
+
+    def get_statistics(self) -> MemoryStatistics:
+        """Return aggregate counts without exposing persisted identifiers."""
+        with self._lock:
+            connection = self._require_connection()
+            try:
+                row = connection.execute(_SELECT_STATISTICS_SQL).fetchone()
+            except sqlite3.Error:
+                raise MemoryRepositoryError(
+                    "memory repository statistics failed"
+                ) from None
+
+        if row is None:
+            raise MemoryRepositoryError("memory repository statistics failed")
+        return MemoryStatistics(
+            turn_count=int(row["turn_count"]),
+            scope_count=int(row["scope_count"]),
+            scope_npc_pair_count=int(row["scope_npc_pair_count"]),
+        )
+
+    def delete_scope_npc(self, *, scope_id: str, npc_id: str) -> int:
+        """Atomically delete only the exact requested scope/NPC partition."""
+        with self._lock:
+            connection = self._require_connection()
+            try:
+                connection.execute("BEGIN IMMEDIATE")
+                cursor = connection.execute(
+                    _DELETE_SCOPE_NPC_SQL,
+                    (scope_id, npc_id),
+                )
+                connection.commit()
+            except sqlite3.Error:
+                self._rollback_quietly(connection)
+                raise MemoryRepositoryError(
+                    "memory repository delete failed"
+                ) from None
+        return cursor.rowcount
 
     def close(self) -> None:
         """Close the active connection; repeated close calls are harmless."""

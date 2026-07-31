@@ -228,3 +228,69 @@ def test_operations_require_initialization_and_close_is_idempotent(
 
     with pytest.raises(MemoryRepositoryError, match="not initialized"):
         repository.store_turn(_turn("after-close"))
+
+
+def test_statistics_are_aggregate_counts_without_identifiers(tmp_path: Path) -> None:
+    repository = _repository(tmp_path / "memory.sqlite3")
+    repository.store_turn(_turn("request-1"))
+    repository.store_turn(_turn("request-2"))
+    repository.store_turn(_turn("request-3", scope_id="save-b"))
+
+    statistics = repository.get_statistics()
+    repository.close()
+
+    assert statistics.turn_count == 3
+    assert statistics.scope_count == 2
+    assert statistics.scope_npc_pair_count == 2
+
+
+def test_delete_scope_npc_is_exact_idempotent_and_preserves_other_partitions(
+    tmp_path: Path,
+) -> None:
+    repository = _repository(tmp_path / "memory.sqlite3")
+    repository.store_turn(_turn("matching-1"))
+    repository.store_turn(_turn("matching-2"))
+    repository.store_turn(_turn("other-scope", scope_id="save-b"))
+    repository.store_turn(_turn("other-npc", npc_id="npc-smith"))
+
+    deleted = repository.delete_scope_npc(
+        scope_id="save-a",
+        npc_id="npc-keeper",
+    )
+    deleted_again = repository.delete_scope_npc(
+        scope_id="save-a",
+        npc_id="npc-keeper",
+    )
+
+    assert deleted == 2
+    assert deleted_again == 0
+    assert repository.load_recent(
+        scope_id="save-a", npc_id="npc-keeper", limit=8
+    ) == ()
+    assert len(
+        repository.load_recent(scope_id="save-b", npc_id="npc-keeper", limit=8)
+    ) == 1
+    assert len(
+        repository.load_recent(scope_id="save-a", npc_id="npc-smith", limit=8)
+    ) == 1
+    assert repository.get_statistics().turn_count == 2
+    repository.close()
+
+
+def test_delete_treats_scope_and_npc_as_opaque_values(tmp_path: Path) -> None:
+    repository = _repository(tmp_path / "memory.sqlite3")
+    opaque_scope = "save'; DELETE FROM dialogue_memory_turns;--"
+    repository.store_turn(_turn("opaque", scope_id=opaque_scope))
+    repository.store_turn(_turn("safe"))
+
+    deleted = repository.delete_scope_npc(
+        scope_id=opaque_scope,
+        npc_id="npc-keeper",
+    )
+
+    assert deleted == 1
+    assert repository.get_statistics().turn_count == 1
+    assert len(
+        repository.load_recent(scope_id="save-a", npc_id="npc-keeper", limit=8)
+    ) == 1
+    repository.close()

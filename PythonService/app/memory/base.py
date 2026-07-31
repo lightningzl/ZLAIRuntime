@@ -5,6 +5,7 @@ from typing import Protocol
 from app.memory.models import (
     DialogueTurnToStore,
     MemoryWriteResult,
+    MemoryStatistics,
     StoredDialogueTurn,
 )
 
@@ -30,6 +31,12 @@ class DialogueMemoryRepository(Protocol):
 
     def store_turn(self, turn: DialogueTurnToStore) -> MemoryWriteResult:
         """Persist one complete turn idempotently by request ID."""
+
+    def get_statistics(self) -> MemoryStatistics:
+        """Return aggregate counts without identifiers or dialogue content."""
+
+    def delete_scope_npc(self, *, scope_id: str, npc_id: str) -> int:
+        """Delete exactly one scope/NPC partition and return the deleted count."""
 
     def close(self) -> None:
         """Release repository resources; repeated calls are safe."""
