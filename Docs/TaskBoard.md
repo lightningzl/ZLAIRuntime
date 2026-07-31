@@ -23,7 +23,7 @@
 | ID | 状态 | 工作包 | 主要产物 | 依赖 | 完成条件 |
 | --- | --- | --- | --- | --- | --- |
 | `M4-01` | `已完成` | 里程碑范围、协议与开发准备定稿 | M3 归档、M4 范围、v1 Memory 协议、架构、任务板、状态、模块、决策和验收模板 | Milestone 3 | 用户确认协议扩展；开发前置文档职责清晰，链接和术语一致 |
-| `M4-02` | `待开始` | 两端 Memory 协议类型与兼容入口 | Python Schema、UE Memory 结构体、序列化、校验和兼容测试 | `M4-01` | 无 Memory 请求不变；合法范围可往返；非法结构和边界按协议拒绝 |
+| `M4-02` | `已完成` | 两端 Memory 协议类型与兼容入口 | Python Schema、UE Memory 结构体、序列化、校验和兼容测试 | `M4-01` | 无 Memory 请求不变；合法范围可往返；非法结构和边界按协议拒绝 |
 | `M4-03` | `待开始` | SQLite Repository 与配置 | Schema 初始化、索引、连接/事务、数据库路径和检索预算配置、临时库测试 | `M4-01` | 初始化和重启可重复；数据库不入库；Repository 外无 SQL |
 | `M4-04` | `待开始` | Memory Service 与历史合并 | Memory 内部类型、隔离检索、稳定排序、预算、重叠消除和幂等写入 | `M4-02`、`M4-03` | 满足隔离、顺序、预算、成功后写入、重复请求和失败回滚约束 |
 | `M4-05` | `待开始` | Dialogue Service 与 Context Builder 接线 | 读取→合并→生成→成功写入编排、错误映射和脱敏日志 | `M4-04` | 无 Memory 路径零读写；Provider 边界不变；数据库错误安全失败 |
@@ -52,6 +52,8 @@
 - 保留旧请求入口、成功响应、错误响应和未知字段兼容行为。
 
 验证：两端覆盖省略、最小/最大边界、空白、越界、缺字段、错误类型、未知字段和完整上下文组合。
+
+验证记录（2026-07-31）：Python 新增可选 `DialogueMemory`、显式 `null` 拒绝、Unicode 边界和空白业务校验；UE 新增 `FZLDialogueMemory`、`bHasMemory`、Memory/Context 兼容重载及 JSON 校验/序列化。Python 完整离线测试 105/105、`pip check`、`ZLEditor Win64 Development` 编译和 `ZLAIRuntime.Protocol` 6/6 均通过；`M4-A02` 已验证。
 
 ### M4-03：SQLite Repository 与配置
 

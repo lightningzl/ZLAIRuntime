@@ -32,6 +32,92 @@ bool FZLDialogueRequestSerializationTest::RunTest(const FString& Parameters)
 	TestEqual(TEXT("NPC ID uses protocol field"), RootObject->GetStringField(TEXT("npc_id")), Request.NpcId);
 	TestEqual(TEXT("Player input uses protocol field"), RootObject->GetStringField(TEXT("player_input")), Request.PlayerInput);
 	TestFalse(TEXT("Legacy request omits context"), RootObject->HasField(TEXT("context")));
+	TestFalse(TEXT("Legacy request omits memory"), RootObject->HasField(TEXT("memory")));
+	return true;
+}
+
+IMPLEMENT_SIMPLE_AUTOMATION_TEST(
+	FZLDialogueMemorySerializationTest,
+	"ZLAIRuntime.Protocol.SerializeDialogueMemory",
+	EAutomationTestFlags::EditorContext | EAutomationTestFlags::EngineFilter)
+
+bool FZLDialogueMemorySerializationTest::RunTest(const FString& Parameters)
+{
+	FZLDialogueRequest Request;
+	Request.RequestId = TEXT("request-memory-001");
+	Request.NpcId = TEXT("npc_guard_01");
+	Request.PlayerInput = TEXT("remember me");
+	Request.bHasMemory = true;
+	Request.Memory.ScopeId = TEXT("player-local-01");
+
+	FString Json;
+	TestTrue(TEXT("Memory request serializes"), ZLAIServiceProtocol::SerializeDialogueRequest(Request, Json));
+
+	TSharedPtr<FJsonObject> RootObject;
+	const TSharedRef<TJsonReader<>> Reader = TJsonReaderFactory<>::Create(Json);
+	if (!TestTrue(TEXT("Memory request is valid JSON"), FJsonSerializer::Deserialize(Reader, RootObject)))
+	{
+		return false;
+	}
+
+	const TSharedPtr<FJsonObject>* MemoryObject = nullptr;
+	if (!TestTrue(TEXT("Memory object exists"), RootObject->TryGetObjectField(TEXT("memory"), MemoryObject))
+		|| MemoryObject == nullptr)
+	{
+		return false;
+	}
+	TestEqual(
+		TEXT("Memory scope uses protocol field"),
+		(*MemoryObject)->GetStringField(TEXT("scope_id")),
+		Request.Memory.ScopeId);
+	TestFalse(TEXT("Memory-only request omits context"), RootObject->HasField(TEXT("context")));
+
+	Request.bHasContext = true;
+	Request.Context.Npc.DisplayName = TEXT("Guard");
+	Request.Context.Npc.Role = TEXT("gate guard");
+	Request.Context.Npc.Personality = {TEXT("careful")};
+	Request.Context.Npc.SpeakingStyle = TEXT("brief");
+	Request.Context.World.Location = TEXT("north gate");
+	Request.Context.World.Situation = TEXT("the gate is closed");
+	TestTrue(
+		TEXT("Memory and transient context serialize together"),
+		ZLAIServiceProtocol::SerializeDialogueRequest(Request, Json));
+	TSharedPtr<FJsonObject> CombinedRootObject;
+	const TSharedRef<TJsonReader<>> CombinedReader = TJsonReaderFactory<>::Create(Json);
+	if (!TestTrue(
+		TEXT("Combined request is valid JSON"),
+		FJsonSerializer::Deserialize(CombinedReader, CombinedRootObject)))
+	{
+		return false;
+	}
+	TestTrue(TEXT("Combined request includes context"), CombinedRootObject->HasField(TEXT("context")));
+	TestTrue(TEXT("Combined request includes Memory"), CombinedRootObject->HasField(TEXT("memory")));
+
+	FString Error;
+	Request.Memory.ScopeId = FString::ChrN(128, TEXT('m'));
+	TestTrue(TEXT("Maximum Memory scope passes"), ZLAIServiceProtocol::ValidateDialogueRequest(Request, Error));
+
+	FString EmojiScopeId;
+	for (int32 Index = 0; Index < 128; ++Index)
+	{
+		EmojiScopeId.AppendChar(static_cast<TCHAR>(0xD83D));
+		EmojiScopeId.AppendChar(static_cast<TCHAR>(0xDE00));
+	}
+	Request.Memory.ScopeId = EmojiScopeId;
+	TestTrue(
+		TEXT("Memory scope counts surrogate pairs as Unicode code points"),
+		ZLAIServiceProtocol::ValidateDialogueRequest(Request, Error));
+
+	Request.Memory.ScopeId = FString::ChrN(129, TEXT('m'));
+	TestFalse(TEXT("Oversized Memory scope fails"), ZLAIServiceProtocol::ValidateDialogueRequest(Request, Error));
+
+	Request.Memory.ScopeId = TEXT("  ");
+	TestFalse(TEXT("Blank Memory scope fails"), ZLAIServiceProtocol::ValidateDialogueRequest(Request, Error));
+
+	Request.Memory.ScopeId = TEXT(" player-local-01");
+	TestFalse(TEXT("Leading whitespace in Memory scope fails"), ZLAIServiceProtocol::ValidateDialogueRequest(Request, Error));
+	TestFalse(TEXT("Invalid Memory scope is not serialized"), ZLAIServiceProtocol::SerializeDialogueRequest(Request, Json));
+	TestTrue(TEXT("Failed Memory serialization leaves no JSON"), Json.IsEmpty());
 	return true;
 }
 

@@ -120,6 +120,13 @@ namespace
 		return ContextObject;
 	}
 
+	TSharedRef<FJsonObject> SerializeDialogueMemory(const FZLDialogueMemory& Memory)
+	{
+		const TSharedRef<FJsonObject> MemoryObject = MakeShared<FJsonObject>();
+		MemoryObject->SetStringField(TEXT("scope_id"), Memory.ScopeId);
+		return MemoryObject;
+	}
+
 	bool TryDeserializeObject(const FString& Json, TSharedPtr<FJsonObject>& OutObject)
 	{
 		const TSharedRef<TJsonReader<>> Reader = TJsonReaderFactory<>::Create(Json);
@@ -130,6 +137,19 @@ namespace
 bool ZLAIServiceProtocol::ValidateDialogueRequest(const FZLDialogueRequest& Request, FString& OutError)
 {
 	OutError.Reset();
+	if (Request.bHasMemory)
+	{
+		if (!ValidateContextText(Request.Memory.ScopeId, 128, TEXT("memory.scope_id"), OutError))
+		{
+			return false;
+		}
+		if (Request.Memory.ScopeId != Request.Memory.ScopeId.TrimStartAndEnd())
+		{
+			OutError = TEXT("memory.scope_id must not contain leading or trailing whitespace");
+			return false;
+		}
+	}
+
 	if (!Request.bHasContext)
 	{
 		return true;
@@ -203,6 +223,10 @@ bool ZLAIServiceProtocol::SerializeDialogueRequest(const FZLDialogueRequest& Req
 	if (Request.bHasContext)
 	{
 		RootObject->SetObjectField(TEXT("context"), SerializeDialogueContext(Request.Context));
+	}
+	if (Request.bHasMemory)
+	{
+		RootObject->SetObjectField(TEXT("memory"), SerializeDialogueMemory(Request.Memory));
 	}
 
 	OutJson.Reset();

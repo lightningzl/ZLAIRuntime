@@ -78,6 +78,15 @@ struct ZLAIRUNTIME_API FZLDialogueContext
 };
 
 USTRUCT(BlueprintType)
+struct ZLAIRUNTIME_API FZLDialogueMemory
+{
+	GENERATED_BODY()
+
+	UPROPERTY(BlueprintReadWrite, Category = "ZL|AI")
+	FString ScopeId;
+};
+
+USTRUCT(BlueprintType)
 struct ZLAIRUNTIME_API FZLDialogueRequest
 {
 	GENERATED_BODY()
@@ -96,6 +105,12 @@ struct ZLAIRUNTIME_API FZLDialogueRequest
 
 	UPROPERTY(BlueprintReadWrite, Category = "ZL|AI")
 	FZLDialogueContext Context;
+
+	UPROPERTY(BlueprintReadWrite, Category = "ZL|AI")
+	bool bHasMemory = false;
+
+	UPROPERTY(BlueprintReadWrite, Category = "ZL|AI")
+	FZLDialogueMemory Memory;
 };
 
 USTRUCT(BlueprintType)

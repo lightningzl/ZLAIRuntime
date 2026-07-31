@@ -85,6 +85,41 @@ FString UZLAIServiceSubsystem::SendDialogueRequest(
 }
 
 FString UZLAIServiceSubsystem::SendDialogueRequest(
+	const FString& NpcId,
+	const FString& PlayerInput,
+	const FZLDialogueMemory& Memory,
+	FZLDialogueSuccessDelegate OnSuccess,
+	FZLDialogueFailureDelegate OnFailure)
+{
+	FZLDialogueRequest DialogueRequest;
+	DialogueRequest.RequestId = FGuid::NewGuid().ToString(EGuidFormats::DigitsWithHyphens);
+	DialogueRequest.NpcId = NpcId;
+	DialogueRequest.PlayerInput = PlayerInput;
+	DialogueRequest.bHasMemory = true;
+	DialogueRequest.Memory = Memory;
+	return SendDialogueRequest(MoveTemp(DialogueRequest), MoveTemp(OnSuccess), MoveTemp(OnFailure));
+}
+
+FString UZLAIServiceSubsystem::SendDialogueRequest(
+	const FString& NpcId,
+	const FString& PlayerInput,
+	const FZLDialogueContext& Context,
+	const FZLDialogueMemory& Memory,
+	FZLDialogueSuccessDelegate OnSuccess,
+	FZLDialogueFailureDelegate OnFailure)
+{
+	FZLDialogueRequest DialogueRequest;
+	DialogueRequest.RequestId = FGuid::NewGuid().ToString(EGuidFormats::DigitsWithHyphens);
+	DialogueRequest.NpcId = NpcId;
+	DialogueRequest.PlayerInput = PlayerInput;
+	DialogueRequest.bHasContext = true;
+	DialogueRequest.Context = Context;
+	DialogueRequest.bHasMemory = true;
+	DialogueRequest.Memory = Memory;
+	return SendDialogueRequest(MoveTemp(DialogueRequest), MoveTemp(OnSuccess), MoveTemp(OnFailure));
+}
+
+FString UZLAIServiceSubsystem::SendDialogueRequest(
 	FZLDialogueRequest DialogueRequest,
 	FZLDialogueSuccessDelegate OnSuccess,
 	FZLDialogueFailureDelegate OnFailure)

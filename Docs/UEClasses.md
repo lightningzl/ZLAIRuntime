@@ -18,9 +18,9 @@
 
 | 类型 | 状态 | 职责 | 不负责 |
 | --- | --- | --- | --- |
-| `UZLAIServiceSubsystem` | M4-02 计划调整 | 保留既有入口并增加显式 Memory 范围入口；在创建 HTTP 前校验；共享构造、发送、超时和单次完成逻辑 | UI、NPC 行为、Prompt、Memory 存储检索、Tool Call、持久配置 |
+| `UZLAIServiceSubsystem` | M4-02 已调整 | 保留既有入口并增加显式 Memory 范围入口；在创建 HTTP 前校验；共享构造、发送、超时和单次完成逻辑 | UI、NPC 行为、Prompt、Memory 存储检索、Tool Call、持久配置 |
 | `UZLAIServiceSettings` | 已实现 | 通过 UE Config 提供 Base URL 和请求超时 | 运行时请求状态或密钥管理 |
-| `FZLDialogueRequest` | M4-02 计划调整 | 表示 `request_id`、`npc_id`、`player_input`、可选瞬时上下文和可选 Memory 范围 | 保存跨请求对话正文或访问数据库 |
+| `FZLDialogueRequest` | M4-02 已调整 | 表示 `request_id`、`npc_id`、`player_input`、可选瞬时上下文和可选 Memory 范围 | 保存跨请求对话正文或访问数据库 |
 | `FZLDialogueResponse` | 已实现 | 表示 `request_id`、`npc_id`、`reply`、`provider` | 推断或执行 Gameplay 指令 |
 | `FZLServiceError` | 已实现 | 表示错误分类、错误码、消息、请求 ID 和 HTTP 状态码 | 暴露底层堆栈或内部路径 |
 
@@ -44,9 +44,9 @@
 
 | 类型 | 状态 | 职责 | 不负责 |
 | --- | --- | --- | --- |
-| `FZLDialogueMemory` | M4-02 计划 | 表示稳定、不透明的 `scope_id`，与 `npc_id` 共同隔离持久化对话 | 解释账号、存档槽、平台身份或数据库位置 |
-| `FZLDialogueRequest` | M4-02 计划调整 | 明确区分省略 Memory 与提供完整 Memory 对象 | 持有历史记录、数据库连接或服务端行 ID |
-| `UZLAIServiceSubsystem` | M4-07 计划调整 | 提供显式 Memory 请求入口并复用现有 HTTP 与完成逻辑 | 自动生成业务 scope、清理数据库或展示 Memory |
+| `FZLDialogueMemory` | M4-02 已实现 | 表示稳定、不透明的 `scope_id`，与 `npc_id` 共同隔离持久化对话 | 解释账号、存档槽、平台身份或数据库位置 |
+| `FZLDialogueRequest` | M4-02 已调整 | 通过 `bHasMemory` 明确区分省略 Memory 与提供完整 Memory 对象 | 持有历史记录、数据库连接或服务端行 ID |
+| `UZLAIServiceSubsystem` | M4-02 已调整 | 提供 Memory-only 及 Context+Memory 入口并复用现有 HTTP 与完成逻辑 | 自动生成业务 scope、清理数据库或展示 Memory |
 
 协议中的 `memory` 可选。Gameplay/UI 必须显式提供稳定 scope；插件不得从账号、SaveGame、Actor、World 或平台服务自动推导。省略时请求必须保持既有无状态行为。
 
@@ -56,7 +56,7 @@ Milestone 4 只扩展供应商无关的协议类型和请求入口，不把 SQLi
 
 | 类型 | 实现 |
 | --- | --- |
-| `UZLAIServiceSubsystem` | 保留现有无 Memory 入口；计划增加接受 Memory 范围的入口并共享 HTTP、超时和单次完成逻辑 |
+| `UZLAIServiceSubsystem` | 保留现有无 Memory/Context 入口，并已增加 Memory-only 与 Context+Memory 重载；共享 HTTP、超时和单次完成逻辑 |
 | `UZLAIServiceSettings` | UE 外层请求超时为 30 秒，明确大于 Python Provider 默认 20 秒；不增加模型或密钥设置 |
 | `FZLDialogueRequest` | 可选携带完整上下文和 Memory 范围；不加入 Provider、模型、密钥、数据库行 ID 或 Tool 定义 |
 | `FZLDialogueResponse` | `Provider` 继续使用字符串，接受 `stub`、`kimi` 和未来未知标识，不加入模型名 |
@@ -97,4 +97,4 @@ Gameplay / UI Context Snapshot + Optional Memory Scope
 
 Milestone 3 上下文结构、协议边界校验和 JSON 序列化已在 M3-02 实现。M3-06 已完成兼容请求重载、上下文 Game 演示和本地 HTTP 集成；`ZLEditor` 编译、完整 `ZLAIRuntime` 自动化 8/8、旧/新入口与非法上下文单次完成均已验证。证据见 [Milestone3Validation.md](./Validation/Milestone3Validation.md)。
 
-Milestone 4 的 Memory 类型、请求入口和演示尚未实现；所有相关验证均记录为未验证，后续证据只写入 [Milestone4Validation.md](./Validation/Milestone4Validation.md)。
+Milestone 4 的 Memory 类型、请求入口、边界校验和序列化已在 M4-02 实现；`ZLEditor` 编译和 `ZLAIRuntime.Protocol` 6/6 通过。Memory 演示和完整集成留待 M4-07，证据写入 [Milestone4Validation.md](./Validation/Milestone4Validation.md)。

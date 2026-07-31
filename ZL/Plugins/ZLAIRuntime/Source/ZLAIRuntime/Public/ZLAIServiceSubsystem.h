@@ -34,6 +34,26 @@ public:
 		FZLDialogueSuccessDelegate OnSuccess,
 		FZLDialogueFailureDelegate OnFailure);
 
+	/**
+	 * Sends one dialogue request with an explicit persistent-memory scope.
+	 * The scope is validated before any HTTP request is created.
+	 */
+	FString SendDialogueRequest(
+		const FString& NpcId,
+		const FString& PlayerInput,
+		const FZLDialogueMemory& Memory,
+		FZLDialogueSuccessDelegate OnSuccess,
+		FZLDialogueFailureDelegate OnFailure);
+
+	/** Sends one dialogue request with both transient context and Memory. */
+	FString SendDialogueRequest(
+		const FString& NpcId,
+		const FString& PlayerInput,
+		const FZLDialogueContext& Context,
+		const FZLDialogueMemory& Memory,
+		FZLDialogueSuccessDelegate OnSuccess,
+		FZLDialogueFailureDelegate OnFailure);
+
 private:
 	FString SendDialogueRequest(
 		FZLDialogueRequest DialogueRequest,

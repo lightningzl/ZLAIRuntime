@@ -2,7 +2,7 @@
 
 from typing import Annotated, Literal
 
-from pydantic import AfterValidator, BaseModel, ConfigDict, Field
+from pydantic import AfterValidator, BaseModel, ConfigDict, Field, model_validator
 
 
 def _bounded_text(max_length: int):
@@ -24,6 +24,7 @@ WorldLocation = Annotated[str, _bounded_text(128)]
 WorldSituation = Annotated[str, _bounded_text(512)]
 WorldFact = Annotated[str, _bounded_text(256)]
 HistoryContent = Annotated[str, _bounded_text(512)]
+MemoryScopeId = Annotated[str, _bounded_text(128)]
 
 
 class ProtocolModel(BaseModel):
@@ -65,6 +66,12 @@ class DialogueContext(ProtocolModel):
     dialogue_history: Annotated[list[DialogueHistoryMessage], Field(max_length=8)]
 
 
+class DialogueMemory(ProtocolModel):
+    """Explicit persistent-memory scope supplied by UE."""
+
+    scope_id: MemoryScopeId
+
+
 class DialogueRequest(ProtocolModel):
     """Client request for one NPC dialogue turn."""
 
@@ -72,6 +79,14 @@ class DialogueRequest(ProtocolModel):
     npc_id: str
     player_input: str
     context: DialogueContext | None = None
+    memory: DialogueMemory | None = None
+
+    @model_validator(mode="before")
+    @classmethod
+    def reject_explicit_null_memory(cls, data: object) -> object:
+        if isinstance(data, dict) and "memory" in data and data["memory"] is None:
+            raise ValueError("memory must be an object when provided")
+        return data
 
 
 class DialogueResponse(ProtocolModel):

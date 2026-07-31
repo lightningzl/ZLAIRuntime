@@ -32,6 +32,7 @@ class DialogueService:
                 message="player_input must not be empty",
             )
         self._validate_context(request)
+        self._validate_memory(request)
 
         history_count = (
             len(request.context.dialogue_history) if request.context is not None else 0
@@ -97,3 +98,22 @@ class DialogueService:
                     request_id=request.request_id,
                     message=f"{field_name} must not be blank",
                 )
+
+    @staticmethod
+    def _validate_memory(request: DialogueRequest) -> None:
+        memory = request.memory
+        if memory is None:
+            return
+
+        if memory.scope_id.strip() == "":
+            raise InvalidDialogueRequest(
+                request_id=request.request_id,
+                message="memory.scope_id must not be blank",
+            )
+        if memory.scope_id != memory.scope_id.strip():
+            raise InvalidDialogueRequest(
+                request_id=request.request_id,
+                message=(
+                    "memory.scope_id must not contain leading or trailing whitespace"
+                ),
+            )

@@ -6,7 +6,7 @@ Milestone 2 的 Route、协议 Schema、集中 Settings、Provider 接口与 Fac
 
 Milestone 3 的 v1 可选 `context` Schema、字段边界、空白业务校验、无状态 Context Builder、供应商无关内部生成类型，以及 Dialogue Service/Provider 接线已经实现。
 
-Milestone 4 已完成开发准备，计划增加可选 `memory.scope_id`、Memory Service 和 SQLite Repository；运行时代码尚未实现，相关状态均为“计划”。
+Milestone 4 已完成可选 `memory.scope_id` Schema 和业务校验；Memory Service 与 SQLite Repository 尚未实现。
 
 ## 目标目录
 
@@ -68,9 +68,9 @@ PythonService/
 | `app.main` | M4-05 计划调整 | 创建 FastAPI App，在启动阶段组装 Settings、Repository、Memory Service、Provider 和 Dialogue Service；注册 Route 并统一映射业务、Provider、Memory 和内部异常 |
 | `app.api.dialogue` | M4-05 计划调整 | 提供 `POST /v1/dialogue` 的 HTTP 适配，将已经校验的请求交给应用持有的 Dialogue Service；错误上下文只保存允许的关联元数据 |
 | `app.core.settings` | M4-03 计划调整 | 在既有 Provider 配置上增加数据库路径和检索预算；完成类型、范围、组合与脱敏校验 |
-| `app.schemas.dialogue` | M4-02 计划 | 在既有 v1 请求和上下文基础上增加可选 `memory.scope_id`；响应与错误包络保持不变 |
+| `app.schemas.dialogue` | M4-02 已调整 | 在既有 v1 请求和上下文基础上增加可选 `memory.scope_id`，拒绝显式 `null` 并保持响应与错误包络不变 |
 | `app.services.context_builder` | M4-04 计划调整 | 把固定系统约束、NPC 人格、世界状态、已合并历史和当前输入组装为确定性的供应商无关生成上下文；不访问网络、数据库、Settings 或具体 Provider |
-| `app.services.dialogue_service` | M4-05 计划调整 | 在 Memory 显式启用时协调读取、合并、单次 Provider 调用和成功写入；无 Memory 时保持零数据库读写 |
+| `app.services.dialogue_service` | M4-02 已增加范围业务校验；M4-05 待接线 | 校验 scope 空白语义；后续在 Memory 显式启用时协调读取、合并、单次 Provider 调用和成功写入 |
 | `app.services.memory_service` | M4-04 计划 | 实现 `(scope_id, npc_id)` 隔离、检索预算、稳定排序、精确重叠消除和幂等轮次语义；不执行 SQL |
 | `app.memory.base` | M4-03 计划 | 定义与 SQLite 解耦的 Repository 接口，供 Memory Service 注入和 Fake 测试 |
 | `app.memory.models` | M4-03 计划 | 定义持久化对话轮次、检索结果和写入结果等内部类型，不暴露数据库行对象 |
