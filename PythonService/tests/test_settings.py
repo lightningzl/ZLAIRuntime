@@ -1,12 +1,17 @@
 """Tests for centralized dialogue Provider configuration."""
 
+from pathlib import Path
+
 import pytest
 
 from app.core.settings import (
     DEFAULT_KIMI_MAX_OUTPUT_TOKENS,
     DEFAULT_KIMI_MODEL,
     DEFAULT_KIMI_TIMEOUT_SECONDS,
+    DEFAULT_MEMORY_DATABASE_PATH,
+    DEFAULT_MEMORY_MAX_TURNS,
     KIMI_MAX_OUTPUT_TOKENS_HARD_LIMIT,
+    MEMORY_MAX_TURNS_HARD_LIMIT,
     UE_REQUEST_TIMEOUT_SECONDS,
     Settings,
     SettingsError,
@@ -20,6 +25,8 @@ def test_kimi_defaults_are_applied() -> None:
     assert settings.kimi_model == DEFAULT_KIMI_MODEL
     assert settings.kimi_timeout_seconds == DEFAULT_KIMI_TIMEOUT_SECONDS
     assert settings.kimi_max_output_tokens == DEFAULT_KIMI_MAX_OUTPUT_TOKENS
+    assert settings.memory_database_path == DEFAULT_MEMORY_DATABASE_PATH
+    assert settings.memory_max_turns == DEFAULT_MEMORY_MAX_TURNS
 
 
 def test_valid_environment_overrides_are_parsed() -> None:
@@ -30,6 +37,8 @@ def test_valid_environment_overrides_are_parsed() -> None:
             "ZL_KIMI_MODEL": "test-model",
             "ZL_KIMI_TIMEOUT_SECONDS": "12.5",
             "ZL_KIMI_MAX_OUTPUT_TOKENS": "512",
+            "ZL_MEMORY_DATABASE_PATH": "runtime/custom-memory.sqlite3",
+            "ZL_MEMORY_MAX_TURNS": "8",
         }
     )
 
@@ -37,6 +46,8 @@ def test_valid_environment_overrides_are_parsed() -> None:
     assert settings.kimi_model == "test-model"
     assert settings.kimi_timeout_seconds == 12.5
     assert settings.kimi_max_output_tokens == 512
+    assert settings.memory_database_path == Path("runtime/custom-memory.sqlite3")
+    assert settings.memory_max_turns == 8
 
 
 def test_explicit_stub_mode_does_not_require_api_key() -> None:
@@ -96,6 +107,34 @@ def test_explicit_stub_mode_does_not_require_api_key() -> None:
                 "ZL_KIMI_MAX_OUTPUT_TOKENS": str(
                     KIMI_MAX_OUTPUT_TOKENS_HARD_LIMIT + 1
                 ),
+            },
+            "hard limit",
+        ),
+        (
+            {
+                "MOONSHOT_API_KEY": "test-placeholder",
+                "ZL_MEMORY_DATABASE_PATH": " ",
+            },
+            "ZL_MEMORY_DATABASE_PATH",
+        ),
+        (
+            {
+                "MOONSHOT_API_KEY": "test-placeholder",
+                "ZL_MEMORY_MAX_TURNS": "1.5",
+            },
+            "ZL_MEMORY_MAX_TURNS",
+        ),
+        (
+            {
+                "MOONSHOT_API_KEY": "test-placeholder",
+                "ZL_MEMORY_MAX_TURNS": "0",
+            },
+            "ZL_MEMORY_MAX_TURNS",
+        ),
+        (
+            {
+                "MOONSHOT_API_KEY": "test-placeholder",
+                "ZL_MEMORY_MAX_TURNS": str(MEMORY_MAX_TURNS_HARD_LIMIT + 1),
             },
             "hard limit",
         ),

@@ -6,7 +6,7 @@ Milestone 2 的 Route、协议 Schema、集中 Settings、Provider 接口与 Fac
 
 Milestone 3 的 v1 可选 `context` Schema、字段边界、空白业务校验、无状态 Context Builder、供应商无关内部生成类型，以及 Dialogue Service/Provider 接线已经实现。
 
-Milestone 4 已完成可选 `memory.scope_id` Schema 和业务校验；Memory Service 与 SQLite Repository 尚未实现。
+Milestone 4 已完成可选 `memory.scope_id` Schema、业务校验、SQLite Repository、持久化内部类型和运行配置；Memory Service 与 Dialogue Service 接线尚未实现。
 
 ## 目标目录
 
@@ -67,14 +67,14 @@ PythonService/
 | --- | --- | --- |
 | `app.main` | M4-05 计划调整 | 创建 FastAPI App，在启动阶段组装 Settings、Repository、Memory Service、Provider 和 Dialogue Service；注册 Route 并统一映射业务、Provider、Memory 和内部异常 |
 | `app.api.dialogue` | M4-05 计划调整 | 提供 `POST /v1/dialogue` 的 HTTP 适配，将已经校验的请求交给应用持有的 Dialogue Service；错误上下文只保存允许的关联元数据 |
-| `app.core.settings` | M4-03 计划调整 | 在既有 Provider 配置上增加数据库路径和检索预算；完成类型、范围、组合与脱敏校验 |
+| `app.core.settings` | M4-03 已调整 | 在既有 Provider 配置上增加数据库路径和检索预算；完成类型、范围、组合与脱敏校验 |
 | `app.schemas.dialogue` | M4-02 已调整 | 在既有 v1 请求和上下文基础上增加可选 `memory.scope_id`，拒绝显式 `null` 并保持响应与错误包络不变 |
 | `app.services.context_builder` | M4-04 计划调整 | 把固定系统约束、NPC 人格、世界状态、已合并历史和当前输入组装为确定性的供应商无关生成上下文；不访问网络、数据库、Settings 或具体 Provider |
 | `app.services.dialogue_service` | M4-02 已增加范围业务校验；M4-05 待接线 | 校验 scope 空白语义；后续在 Memory 显式启用时协调读取、合并、单次 Provider 调用和成功写入 |
 | `app.services.memory_service` | M4-04 计划 | 实现 `(scope_id, npc_id)` 隔离、检索预算、稳定排序、精确重叠消除和幂等轮次语义；不执行 SQL |
-| `app.memory.base` | M4-03 计划 | 定义与 SQLite 解耦的 Repository 接口，供 Memory Service 注入和 Fake 测试 |
-| `app.memory.models` | M4-03 计划 | 定义持久化对话轮次、检索结果和写入结果等内部类型，不暴露数据库行对象 |
-| `app.memory.sqlite_repository` | M4-03 计划 | 独占 SQLite Schema、索引、连接、查询、事务、回滚和行映射 |
+| `app.memory.base` | M4-03 已实现 | 定义与 SQLite 解耦的 Repository 接口和脱敏持久化异常，供 Memory Service 注入和 Fake 测试 |
+| `app.memory.models` | M4-03 已实现 | 定义待保存轮次、已保存轮次和幂等写入结果等不可变内部类型，不暴露数据库行对象 |
+| `app.memory.sqlite_repository` | M4-03 已实现 | 独占 SQLite Schema v1、范围索引、WAL、连接、查询、事务、回滚、行映射和失败关闭 |
 | `app.providers.base` | M3-04 已调整 | 定义与 FastAPI、Pydantic 协议 Schema、UE 类型和供应商 SDK 解耦的 Provider 接口、内部生成上下文与结果类型 |
 | `app.providers.errors` | M2-04 已实现 | 定义鉴权、限流、超时、不可用、无效响应和通用 Provider 内部异常，不包含 HTTP 状态码 |
 | `app.providers.factory` | M2-07 已调整 | 根据 Settings 创建 Kimi 或显式 Stub Provider，并支持注入 Kimi 构造器；不静默回退 |
@@ -160,8 +160,8 @@ OpenAI 兼容 Python SDK 运行依赖锁定为 `openai>=2.46,<3.0`。Kimi Client
 | `ZL_KIMI_MODEL` | 默认 `kimi-k2.6`；只在 Python Provider 内消费；K2.x 简短对话关闭思考 |
 | `ZL_KIMI_TIMEOUT_SECONDS` | 默认 `20` 秒；正数并小于 UE 外层基线 `30` 秒 |
 | `ZL_KIMI_MAX_OUTPUT_TOKENS` | 默认 `256`；正整数，硬上限 `4096` |
-| `ZL_MEMORY_DATABASE_PATH` | M4-03 计划；默认 `./data/zl_memory.sqlite3`，只由 SQLite Repository 消费；数据库及伴随文件不得提交 |
-| `ZL_MEMORY_MAX_TURNS` | M4-03 计划；默认检索最近 `4` 个完整轮次，合法范围 `1` 至 `16` |
+| `ZL_MEMORY_DATABASE_PATH` | 默认 `./data/zl_memory.sqlite3`，非空路径，只由 SQLite Repository 消费；数据库及伴随文件不得提交 |
+| `ZL_MEMORY_MAX_TURNS` | 默认检索最近 `4` 个完整轮次，合法范围 `1` 至 `16` |
 
 - 模块导入不得启动服务、读取网络或调用 Kimi。
 - Kimi 模式在应用启动阶段完成配置校验；配置无效时明确失败。

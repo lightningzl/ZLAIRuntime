@@ -4,6 +4,7 @@ from collections.abc import Mapping
 from dataclasses import dataclass, field
 import math
 import os
+from pathlib import Path
 from typing import Literal, cast
 
 
@@ -12,6 +13,9 @@ DEFAULT_KIMI_TIMEOUT_SECONDS = 20.0
 DEFAULT_KIMI_MAX_OUTPUT_TOKENS = 256
 KIMI_MAX_OUTPUT_TOKENS_HARD_LIMIT = 4096
 UE_REQUEST_TIMEOUT_SECONDS = 30.0
+DEFAULT_MEMORY_DATABASE_PATH = Path("data/zl_memory.sqlite3")
+DEFAULT_MEMORY_MAX_TURNS = 4
+MEMORY_MAX_TURNS_HARD_LIMIT = 16
 
 DialogueProviderName = Literal["kimi", "stub"]
 
@@ -55,6 +59,8 @@ class Settings:
     kimi_model: str = DEFAULT_KIMI_MODEL
     kimi_timeout_seconds: float = DEFAULT_KIMI_TIMEOUT_SECONDS
     kimi_max_output_tokens: int = DEFAULT_KIMI_MAX_OUTPUT_TOKENS
+    memory_database_path: Path = DEFAULT_MEMORY_DATABASE_PATH
+    memory_max_turns: int = DEFAULT_MEMORY_MAX_TURNS
 
     def __post_init__(self) -> None:
         if self.dialogue_provider not in ("kimi", "stub"):
@@ -83,6 +89,18 @@ class Settings:
             raise SettingsError(
                 "ZL_KIMI_MAX_OUTPUT_TOKENS exceeds the supported hard limit"
             )
+        if not isinstance(self.memory_database_path, Path) or not str(
+            self.memory_database_path
+        ).strip():
+            raise SettingsError("ZL_MEMORY_DATABASE_PATH must not be empty")
+        if isinstance(self.memory_max_turns, bool) or not isinstance(
+            self.memory_max_turns, int
+        ):
+            raise SettingsError("ZL_MEMORY_MAX_TURNS must be an integer")
+        if self.memory_max_turns <= 0:
+            raise SettingsError("ZL_MEMORY_MAX_TURNS must be positive")
+        if self.memory_max_turns > MEMORY_MAX_TURNS_HARD_LIMIT:
+            raise SettingsError("ZL_MEMORY_MAX_TURNS exceeds the supported hard limit")
         if self.dialogue_provider == "kimi" and (
             not isinstance(self.moonshot_api_key, str)
             or not self.moonshot_api_key.strip()
@@ -102,6 +120,14 @@ class Settings:
         raw_api_key = source.get("MOONSHOT_API_KEY")
         api_key = raw_api_key.strip() if raw_api_key else None
         model = source.get("ZL_KIMI_MODEL", DEFAULT_KIMI_MODEL).strip()
+        raw_memory_database_path = source.get("ZL_MEMORY_DATABASE_PATH")
+        if raw_memory_database_path is None:
+            memory_database_path = DEFAULT_MEMORY_DATABASE_PATH
+        else:
+            normalized_memory_database_path = raw_memory_database_path.strip()
+            if not normalized_memory_database_path:
+                raise SettingsError("ZL_MEMORY_DATABASE_PATH must not be empty")
+            memory_database_path = Path(normalized_memory_database_path)
 
         return cls(
             dialogue_provider=cast(DialogueProviderName, provider_value),
@@ -116,5 +142,11 @@ class Settings:
                 source,
                 "ZL_KIMI_MAX_OUTPUT_TOKENS",
                 DEFAULT_KIMI_MAX_OUTPUT_TOKENS,
+            ),
+            memory_database_path=memory_database_path,
+            memory_max_turns=_parse_int(
+                source,
+                "ZL_MEMORY_MAX_TURNS",
+                DEFAULT_MEMORY_MAX_TURNS,
             ),
         )

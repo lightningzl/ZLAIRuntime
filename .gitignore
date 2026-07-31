@@ -40,6 +40,24 @@ venv/
 *.tmp
 *.temp
 
+# Local SQLite runtime data
+PythonService/data/
+*.sqlite
+*.sqlite3
+*.db
+*.sqlite-wal
+*.sqlite-shm
+*.sqlite-journal
+*.sqlite3-wal
+*.sqlite3-shm
+*.sqlite3-journal
+*.db-wal
+*.db-shm
+*.db-journal
+*.sqlite.bak
+*.sqlite3.bak
+*.db.bak
+
 # Operating system metadata
 .DS_Store
 Thumbs.db
