@@ -2,6 +2,7 @@
 
 import json
 
+from app.memory.models import DialogueMemoryMessage
 from app.providers.base import DialogueGenerationMessage
 from app.schemas.dialogue import DialogueRequest
 from app.services.context_builder import (
@@ -111,6 +112,39 @@ def test_current_player_input_is_appended_exactly_once_after_history() -> None:
         content="重复文字",
     )
     assert len(generation_context.messages) == 3
+
+
+def test_explicit_merged_history_precedes_current_input_and_replaces_snapshot() -> None:
+    request = _request(
+        player_input="current",
+        context=_context(
+            history=[{"role": "player", "content": "client-only snapshot"}]
+        ),
+    )
+    merged_history = (
+        DialogueMemoryMessage(role="player", content="persistent question"),
+        DialogueMemoryMessage(role="npc", content="persistent answer"),
+        DialogueMemoryMessage(role="player", content="client latest question"),
+    )
+
+    generation_context = build_dialogue_generation_context(
+        request,
+        dialogue_history=merged_history,
+    )
+
+    assert generation_context.messages == (
+        DialogueGenerationMessage(role="user", content="persistent question"),
+        DialogueGenerationMessage(role="assistant", content="persistent answer"),
+        DialogueGenerationMessage(role="user", content="client latest question"),
+        DialogueGenerationMessage(role="user", content="current"),
+    )
+    assert all(
+        message.content != "client-only snapshot"
+        for message in generation_context.messages
+    )
+    assert sum(
+        message.content == "current" for message in generation_context.messages
+    ) == 1
 
 
 def test_empty_optional_arrays_and_history_are_preserved_without_defaults() -> None:

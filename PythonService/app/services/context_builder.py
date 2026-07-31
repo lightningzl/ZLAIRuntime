@@ -1,8 +1,10 @@
 """Build deterministic supplier-neutral generation context from protocol data."""
 
 import json
+from collections.abc import Sequence
 from typing import Any
 
+from app.memory.models import DialogueMemoryMessage
 from app.providers.base import (
     DialogueGenerationContext,
     DialogueGenerationMessage,
@@ -34,11 +36,21 @@ def _build_context_data(request: DialogueRequest) -> dict[str, Any]:
 
 def build_dialogue_generation_context(
     request: DialogueRequest,
+    *,
+    dialogue_history: Sequence[DialogueMemoryMessage] | None = None,
 ) -> DialogueGenerationContext:
     """Convert one validated protocol request into immutable generation data."""
 
     messages: list[DialogueGenerationMessage] = []
-    if request.context is not None:
+    if dialogue_history is not None:
+        messages.extend(
+            DialogueGenerationMessage(
+                role="user" if message.role == "player" else "assistant",
+                content=message.content,
+            )
+            for message in dialogue_history
+        )
+    elif request.context is not None:
         messages.extend(
             DialogueGenerationMessage(
                 role="user" if message.role == "player" else "assistant",

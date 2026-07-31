@@ -2,6 +2,26 @@
 
 from dataclasses import dataclass
 from enum import Enum
+from typing import Literal
+
+
+DialogueMemoryRole = Literal["player", "npc"]
+
+
+@dataclass(frozen=True, slots=True)
+class DialogueMemoryMessage:
+    """One ordered, untrusted dialogue message used during history merging."""
+
+    role: DialogueMemoryRole
+    content: str
+
+
+@dataclass(frozen=True, slots=True)
+class MergedDialogueHistory:
+    """Merged history plus the number of persistent turns retrieved."""
+
+    messages: tuple[DialogueMemoryMessage, ...]
+    retrieved_turn_count: int
 
 
 @dataclass(frozen=True, slots=True)
