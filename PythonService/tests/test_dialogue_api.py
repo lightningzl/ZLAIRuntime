@@ -1,6 +1,7 @@
 """Protocol-level tests for the dialogue API."""
 
 from collections.abc import Iterator
+from pathlib import Path
 
 from fastapi.testclient import TestClient
 import pytest
@@ -133,8 +134,11 @@ def test_internal_error_does_not_expose_exception_details() -> None:
     assert "traceback" not in response.text.lower()
 
 
-def test_request_succeeds_without_api_key_or_network() -> None:
-    settings = Settings.from_env({"ZL_DIALOGUE_PROVIDER": "stub"})
+def test_request_succeeds_without_api_key_or_network(tmp_path: Path) -> None:
+    settings = Settings(
+        dialogue_provider="stub",
+        memory_database_path=tmp_path / "memory.sqlite3",
+    )
     with TestClient(create_app(settings=settings)) as offline_client:
         response = offline_client.post("/v1/dialogue", json=VALID_REQUEST)
 

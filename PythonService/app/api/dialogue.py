@@ -30,6 +30,7 @@ def create_dialogue(
     http_request.state.request_id = dialogue_request.request_id
     http_request.state.npc_id = dialogue_request.npc_id
     http_request.state.has_context = dialogue_request.context is not None
+    http_request.state.has_memory = dialogue_request.memory is not None
     http_request.state.history_count = (
         len(dialogue_request.context.dialogue_history)
         if dialogue_request.context is not None

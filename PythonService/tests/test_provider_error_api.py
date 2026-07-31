@@ -124,6 +124,7 @@ def test_provider_errors_map_to_sanitized_protocol_responses(
     assert "provider=kimi" in caplog.text
     assert "has_context=True" in caplog.text
     assert "history_count=1" in caplog.text
+    assert "has_memory=False" in caplog.text
     assert f"category={code}" in caplog.text
     assert "LOG_SECRET_" not in caplog.text
     assert VALID_REQUEST["player_input"] not in caplog.text

@@ -59,5 +59,8 @@ def test_success_logs_only_allowed_request_metadata(
     assert "provider=stub" in caplog.text
     assert "has_context=True" in caplog.text
     assert "history_count=1" in caplog.text
+    assert "has_memory=False" in caplog.text
+    assert "retrieved_turn_count=0" in caplog.text
+    assert "memory_write_result=skipped" in caplog.text
     for marker in SENSITIVE_MARKERS:
         assert marker not in caplog.text

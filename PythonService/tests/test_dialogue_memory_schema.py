@@ -1,12 +1,13 @@
 """Milestone 4 protocol validation for optional persistent-memory scope."""
 
 from collections.abc import Iterator
+from pathlib import Path
 
 from fastapi.testclient import TestClient
 import pytest
 
+from app.core.settings import Settings
 from app.main import create_app
-from app.providers.stub_provider import StubDialogueProvider
 
 
 VALID_REQUEST = {
@@ -17,8 +18,12 @@ VALID_REQUEST = {
 
 
 @pytest.fixture
-def client() -> Iterator[TestClient]:
-    with TestClient(create_app(provider=StubDialogueProvider())) as test_client:
+def client(tmp_path: Path) -> Iterator[TestClient]:
+    settings = Settings(
+        dialogue_provider="stub",
+        memory_database_path=tmp_path / "memory.sqlite3",
+    )
+    with TestClient(create_app(settings=settings)) as test_client:
         yield test_client
 
 

@@ -6,7 +6,7 @@ Milestone 2 的 Route、协议 Schema、集中 Settings、Provider 接口与 Fac
 
 Milestone 3 的 v1 可选 `context` Schema、字段边界、空白业务校验、无状态 Context Builder、供应商无关内部生成类型，以及 Dialogue Service/Provider 接线已经实现。
 
-Milestone 4 已完成可选 `memory.scope_id` Schema、业务校验、SQLite Repository、Memory Service、历史合并入口和运行配置；Dialogue Service 接线尚未实现。
+Milestone 4 已完成可选 `memory.scope_id` Schema、SQLite Repository、Memory Service、历史合并、Dialogue Service 编排、应用生命周期、错误映射和脱敏日志接线。
 
 ## 目标目录
 
@@ -65,12 +65,12 @@ PythonService/
 
 | 模块 | 状态 | 职责 |
 | --- | --- | --- |
-| `app.main` | M4-05 计划调整 | 创建 FastAPI App，在启动阶段组装 Settings、Repository、Memory Service、Provider 和 Dialogue Service；注册 Route 并统一映射业务、Provider、Memory 和内部异常 |
-| `app.api.dialogue` | M4-05 计划调整 | 提供 `POST /v1/dialogue` 的 HTTP 适配，将已经校验的请求交给应用持有的 Dialogue Service；错误上下文只保存允许的关联元数据 |
+| `app.main` | M4-05 已调整 | 创建 FastAPI App，在启动阶段组装 Settings、Repository、Memory Service、Provider 和 Dialogue Service，在关闭阶段释放 Repository；统一映射业务、Provider、Memory 和内部异常 |
+| `app.api.dialogue` | M4-05 已调整 | 提供 `POST /v1/dialogue` 的 HTTP 适配，将已校验请求交给应用持有的 Dialogue Service；错误上下文只保存 request/NPC ID、Context/Memory 开关和历史数量 |
 | `app.core.settings` | M4-03 已调整 | 在既有 Provider 配置上增加数据库路径和检索预算；完成类型、范围、组合与脱敏校验 |
 | `app.schemas.dialogue` | M4-02 已调整 | 在既有 v1 请求和上下文基础上增加可选 `memory.scope_id`，拒绝显式 `null` 并保持响应与错误包络不变 |
 | `app.services.context_builder` | M4-04 已调整 | 把固定系统约束、NPC 人格、世界状态、显式合并历史和当前输入组装为确定性的供应商无关生成上下文；省略合并历史时保持既有快照行为，不访问网络、数据库、Settings 或具体 Provider |
-| `app.services.dialogue_service` | M4-02 已增加范围业务校验；M4-05 待接线 | 校验 scope 空白语义；后续在 Memory 显式启用时协调读取、合并、单次 Provider 调用和成功写入 |
+| `app.services.dialogue_service` | M4-05 已调整 | 校验请求业务语义；仅在 Memory 显式启用时协调读取、合并、单次 Provider 调用、合法响应构造和完整轮次写入，无 Memory 路径不调用 Memory Service |
 | `app.services.memory_service` | M4-04 已实现 | 通过 Repository 接口实现 `(scope_id, npc_id)` 二次隔离、检索预算、稳定排序、最长精确边界重叠消除和幂等完整轮次写入；不执行 SQL |
 | `app.memory.base` | M4-03 已实现 | 定义与 SQLite 解耦的 Repository 接口和脱敏持久化异常，供 Memory Service 注入和 Fake 测试 |
 | `app.memory.models` | M4-03 已实现 | 定义待保存轮次、已保存轮次和幂等写入结果等不可变内部类型，不暴露数据库行对象 |
@@ -187,6 +187,8 @@ OpenAI 兼容 Python SDK 运行依赖锁定为 `openai>=2.46,<3.0`。Kimi Client
 Provider 内部异常按以下类别向上层表达：鉴权、限流、超时、不可用、无效/其他 Provider 错误。应用错误映射层再严格转换为 [Protocol.md](./Protocol.md) 的状态码和错误码。
 
 原始 SDK 异常可用于内部分类，但不得作为对外 `message`，也不得在普通错误日志中完整输出。单次请求不自动重试。
+
+Memory Repository 异常统一映射为 `500 internal_error`，响应和日志不包含异常正文、SQL、数据库路径、scope ID 或对话正文。Dialogue Service 只记录 request/NPC ID、Context/Memory 开关、客户端历史数量、检索轮数、写入结果、失败阶段和错误分类。
 
 ## 验证要求
 
