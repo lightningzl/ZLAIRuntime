@@ -1,6 +1,6 @@
 # Decision Log
 
-新增或调整决策前，必须遵守 [DocumentationRules.md](./DocumentationRules.md) 中的“Decision Log 规则”。
+新增或调整决策前，必须遵守 [DocumentationRules.md](../Process/DocumentationRules.md) 中的“Decision Log 规则”。
 
 ## 2026-07-16：使用 PythonService 作为 AI Runtime
 
@@ -153,7 +153,7 @@ UE 侧 AI Service Client、通信协议类型及后续同类 AI Runtime 能力�
 - 默认模型可能随成本、延迟和质量评估调整，因此真实验收必须记录实际模型配置，协议只暴露 `openai`。
 
 状态：
-已接受
+已取代；当前 Provider 决策见“2026-07-23：首个真实 Provider 切换为 Kimi K3”。
 
 重要性：
 重要
@@ -199,7 +199,7 @@ Milestone 2 的首个真实 LLM Provider 从 OpenAI Responses API 切换为 Kimi
 - 本次只替换首个真实 Provider，不建设多供应商热切换、自动故障转移或供应商专用 UE 类型。
 
 状态：
-已接受
+已取代；当前默认模型决策见“2026-07-23：Milestone 2 验收默认模型降级为 Kimi K2.6”。
 
 重要性：
 重要
@@ -297,6 +297,66 @@ Python Service 新增独立 Memory Service 与 SQLite Repository。Repository �
 - 本地 SQLite 保存对话明文，当前只适合受控 Demo 环境；生产级加密、备份、权限和合规删除需要后续设计。
 - 最近轮次检索不能提供语义相关性；本阶段明确不引入 Embedding、向量库或 LLM 摘要。
 - v1 响应不暴露 Memory 命中数量或数据库状态，运行验证依赖脱敏日志、测试和本地维护入口。
+
+状态：
+已接受
+
+重要性：
+重要
+
+## 2026-08-03：将项目演进为分层社会模拟 Runtime
+
+决定：
+项目长期目标从以对话链路为主的 AI NPC Demo 演进为 `ZLAI Social Simulation Runtime`。玩家行为先进入 UE 权威的 Event、Perception、State、Memory、Relationship 和 Rule Decision 链路；LLM 只服务少量 Important/Core NPC 的高层 Decision 和 Dialogue。Level 1 NPC 不调用 LLM，所有层级必须提供确定性降级。
+
+原因：
+- 高级 UE Gameplay/AI 岗位更需要证明运行时系统、性能、状态和行为执行能力，而不只是模型接入。
+- 三级 NPC 可以把成本和不确定性集中在少量叙事角色，同时保留 100+ NPC 的群体表现。
+- UE 权威和统一执行边界能够安全处理过期、非法或不可用的 AI 输出。
+
+取舍：
+- 增加社会模拟、调试和性能验证工作，完整 Demo 需要多个里程碑。
+- MVP 只做一个小场景、一个 Core NPC 和有限行为，不建设开放世界社会系统。
+
+状态：
+已接受
+
+重要性：
+重要
+
+## 2026-08-03：先实现纯 UE 确定性社会模拟
+
+决定：
+Milestone 5 只实现纯 UE 的 Event、空间查询、感知、Instant State、Short Memory 和 Rule/Utility Decision，不修改现有 Dialogue 协议，也不提前实现 ToolCall、Level 2/3 或 NPC 间二级传播。结构化 AI Decision 留到后续独立里程碑，并再次获得协议确认。
+
+原因：
+- 先验证 100+ NPC、事件传播和人格差异，可以将 Gameplay/性能风险与 LLM/协议风险分开。
+- Python 不可用时仍保持完整的基础社会反应和可测试降级路径。
+- 避免一次里程碑同时引入新 UE 模块、群体模拟、协议和模型结构化输出。
+
+取舍：
+- Milestone 5 尚不能展示模型驱动 Gameplay。
+- Relationship、Long Memory 和二级社会传播需要后续里程碑继续完成。
+
+状态：
+已接受
+
+重要性：
+重要
+
+## 2026-08-03：按文档生命周期重组 Docs
+
+决定：
+Docs 使用 `Planning`、`Current`、`Reference`、`Process`、`Interview`、`Milestones` 和 `Validation` 分离长期规划、实时执行、稳定参考、流程、展示、历史范围与证据。根 `Docs/README.md` 只提供导航。总规划和总设计位于同一目录，Current Milestone、Task Board 和 Project State 位于同一目录。
+
+原因：
+- 防止 Task Board、Project State 和 Validation 重复保存同一验收事实。
+- 防止目标设计被误读为当前已经实现或已经授权的范围。
+- 让 Agent 能从固定入口恢复长期方向、当前任务和强制流程。
+
+取舍：
+- 现有文档路径发生一次性变化，需要同步全部链接和 Agent 入口。
+- 目录层级增加一层，因此必须保留根导航并避免继续过度拆分。
 
 状态：
 已接受

@@ -2,7 +2,7 @@
 
 ## 文档职责
 
-本文档是 Python Service 本地 SQLite 数据库结构、约束、索引、事务和生命周期的唯一设计说明。UE/Python 通信字段以 [Protocol.md](./Protocol.md) 为准，Memory 模块边界以 [Architecture.md](./Architecture.md) 和 [PythonModules.md](./PythonModules.md) 为准。
+本文档是 Python Service 本地 SQLite 数据库结构、约束、索引、事务和生命周期的唯一设计说明。UE/Python 通信字段以 [Protocol.md](./Protocol.md) 为准，Memory 模块边界以 [Architecture.md](../Planning/Architecture.md) 和 [PythonModules.md](./PythonModules.md) 为准。
 
 当前数据库只保存显式启用 Memory 后成功完成的对话轮次。它不保存 UE 世界状态、NPC 人格、Provider 原始响应、模型推理过程或 Token 用量。
 
@@ -136,7 +136,7 @@ Repository 使用 `BEGIN IMMEDIATE` 开始事务，把玩家输入和 NPC 回复
 - 聚合统计：返回轮次数、不同 scope 数、不同 scope/NPC 分区数。
 - 精确清理：只删除给定 `(scope_id, npc_id)` 分区，使用事务提交或回滚。
 
-维护入口不输出数据库路径、标识符或对话正文，也不暴露为 HTTP API。具体命令见 [Python Service README](../PythonService/README.md#memory-维护)。
+维护入口不输出数据库路径、标识符或对话正文，也不暴露为 HTTP API。具体命令见 [Python Service README](../../PythonService/README.md#memory-维护)。
 
 ## 连接与事务设置
 

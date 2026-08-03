@@ -1,10 +1,12 @@
-# Current Milestone
+# Milestone 4 Archive
+
+本文档保存 Milestone 4 完成时的 `CurrentMilestone.md` 定稿内容。它只用于历史追溯，不定义当前开发范围；当前范围以 [CurrentMilestone.md](../Current/CurrentMilestone.md) 为准。
 
 历史里程碑定稿：
 
-- [Milestone 1：UE 到 Python Service 最小闭环](./Milestones/Milestone1.md)
-- [Milestone 2：真实 LLM 自由对话](./Milestones/Milestone2.md)
-- [Milestone 3：NPC 上下文与人格](./Milestones/Milestone3.md)
+- [Milestone 1：UE 到 Python Service 最小闭环](./Milestone1.md)
+- [Milestone 2：真实 LLM 自由对话](./Milestone2.md)
+- [Milestone 3：NPC 上下文与人格](./Milestone3.md)
 
 历史文档仅用于追溯，不覆盖本文件定义的当前范围。
 
@@ -40,7 +42,7 @@ Milestone 3 的瞬时 `context`、真实 Kimi 链路和无状态兼容路径作�
 
 ## 协议与数据基线
 
-- Endpoint 与成功/错误响应结构保持不变；请求新增可选 `memory`，详细字段和边界以 [Protocol.md](./Protocol.md) 为准。
+- Endpoint 与成功/错误响应结构保持不变；请求新增可选 `memory`，详细字段和边界以 [Protocol.md](../Reference/Protocol.md) 为准。
 - `memory` 存在即表示本次请求允许读取并在成功后写入对应范围；省略时严格无状态。
 - `scope_id` 是不透明隔离标识，不是文件名、表名、SQL 片段、认证凭据或可由 Service 推导的玩家资料。
 - Memory 范围由 `(scope_id, npc_id)` 共同确定；不同任一字段都不得互相读取记录。
@@ -78,4 +80,4 @@ Milestone 3 的瞬时 `context`、真实 Kimi 链路和无状态兼容路径作�
 
 `M4-02` 至 `M4-07` 的实现和适用离线验证全部完成后，里程碑进入 `验收中`；完成 `M4-08` 并为 `M4-A01` 至 `M4-A10` 留下可复查证据后，Milestone 4 才能标记为 `已完成`。
 
-验收记录统一写入 [Milestone4Validation.md](./Validation/Milestone4Validation.md)。向量检索、摘要 Memory、正式管理 UI 和 Tool Use 不阻塞本阶段交付。
+验收记录见 [Milestone4Validation.md](../Validation/Milestone4Validation.md)。Milestone 4 已于 2026-08-03 完成；本文件为归档定稿，不随当前协议和实现继续演进。

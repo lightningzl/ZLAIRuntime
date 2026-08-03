@@ -1,6 +1,6 @@
 # Milestone 2 Archive
 
-本文档保存 Milestone 2 完成时的 `CurrentMilestone.md` 定稿内容。它只用于历史追溯，不定义当前开发范围；当前范围始终以 [CurrentMilestone.md](../CurrentMilestone.md) 为准。
+本文档保存 Milestone 2 完成时的 `CurrentMilestone.md` 定稿内容。它只用于历史追溯，不定义当前开发范围；当前范围始终以 [CurrentMilestone.md](../Current/CurrentMilestone.md) 为准。
 
 ## Milestone 2：真实 LLM 自由对话
 
@@ -28,7 +28,7 @@ Milestone 1 的 Stub 通信闭环已经完成并作为本阶段基线；本阶�
 - API Key 仅从 `MOONSHOT_API_KEY` 读取，不接受请求字段、UE Config 或仓库文件中的密钥。
 - 为模型名称、Provider 超时和最大输出 Token 数提供集中配置与边界校验。
 - 使用最小静态指令生成简洁纯文本 NPC 回复；`npc_id` 在本阶段只作为稳定标识，不扩展为人格定义。
-- 将 Provider 鉴权、限流、超时、不可用和无效响应转换为完成时 [Protocol.md](../Protocol.md) 中的稳定错误。
+- 将 Provider 鉴权、限流、超时、不可用和无效响应转换为完成时 [Protocol.md](../Reference/Protocol.md) 中的稳定错误。
 - 日志保留 `request_id`、Provider、错误类别和必要状态，不记录密钥、完整玩家输入或上游原始异常正文。
 - 通过依赖注入或应用工厂让自动化测试使用 Fake/Stub Provider，默认测试不访问外网、不消耗真实 Token。
 
@@ -75,4 +75,4 @@ Milestone 1 的 Stub 通信闭环已经完成并作为本阶段基线；本阶�
 
 `M2-02` 至 `M2-07` 的实现和适用自动化验证全部完成后，里程碑进入 `验收中`；完成 `M2-08` 并为 `M2-A01` 至 `M2-A10` 留下可复查证据后，Milestone 2 标记为 `已完成`。
 
-验收记录见 [Milestone2Validation.md](../Validation/Milestone2Validation.md)。完成状态与实际模型降级原因以该验证记录和 [DecisionLog.md](../DecisionLog.md) 为准。
+验收记录见 [Milestone2Validation.md](../Validation/Milestone2Validation.md)。完成状态与实际模型降级原因以该验证记录和 [DecisionLog.md](../Planning/DecisionLog.md) 为准。

@@ -1,5 +1,9 @@
 # Architecture
 
+## 文档职责
+
+本文档只描述当前已经接受并实现的系统模块、职责边界和依赖方向。目标社会模拟设计见 [SocialSimulationDesign.md](./SocialSimulationDesign.md)；尚未进入当前实现的目标不得写成现有架构。
+
 ## 总体结构
 
 ```text
@@ -37,7 +41,7 @@ Python AI Service
 - 插件不从 Actor、World、GameState、SaveGame、账号、UI 或内容资产自动抓取上下文或 Memory 标识。
 - UE 不负责 Prompt、模型 SDK、Provider 选择、密钥、Memory 存储检索或 Python 生成编排。
 - 插件不得依赖 `ZL` 游戏模块、具体 UI 或 NPC Actor。
-- Gameplay Tool 的最终校验和执行权仍属于 UE，但 Tool Use 不在当前里程碑范围。
+- 未来 Gameplay Tool 的最终校验和执行权仍属于 UE；当前实现只消费纯文本 Dialogue 回复。
 
 ### Python AI Service
 
@@ -56,7 +60,7 @@ Python Service 负责 AI 推理编排，不直接访问或修改 UE 世界。
 
 ### Protocol
 
-[Protocol.md](./Protocol.md) 是 UE 与 Python 的唯一共享边界。两端不得依赖对方的内部类型、SDK 或目录结构。
+[Protocol.md](../Reference/Protocol.md) 是 UE 与 Python 的唯一共享边界。两端不得依赖对方的内部类型、SDK 或目录结构。
 
 ## 依赖方向
 
@@ -84,6 +88,6 @@ FastAPI Route -> Dialogue Service
 - **Tool Planner**：生成结构化 Tool Call。
 - **UE Tool Registry/Executor**：白名单校验、参数校验和 Gameplay 执行；最终执行权始终在 UE。
 
-Milestone 4 只引入 SQLite 结构化对话轮次和最近历史检索。Context Builder 接收 Memory Service 已准备的内部历史，但不承担存储、查询、事务、摘要或向量检索职责。
+当前 Memory 实现使用 SQLite 结构化对话轮次和最近历史检索。Context Builder 接收 Memory Service 已准备的内部历史，但不承担存储、查询、事务、摘要或向量检索职责。
 
-当前允许范围由 [CurrentMilestone.md](./CurrentMilestone.md) 定义；具体模块和类型见 [PythonModules.md](./PythonModules.md) 与 [UEClasses.md](./UEClasses.md)，SQLite 的物理结构和事务设计见 [DatabaseDesign.md](./DatabaseDesign.md)。
+当前允许范围由 [CurrentMilestone.md](../Current/CurrentMilestone.md) 定义；具体模块和类型见 [PythonModules.md](../Reference/PythonModules.md) 与 [UEClasses.md](../Reference/UEClasses.md)，SQLite 的物理结构和事务设计见 [DatabaseDesign.md](../Reference/DatabaseDesign.md)。

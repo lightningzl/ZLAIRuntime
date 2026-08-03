@@ -1,6 +1,6 @@
 # Milestone 3 Archive
 
-本文档保存 Milestone 3 完成时的 `CurrentMilestone.md` 定稿内容。它只用于历史追溯，不定义当前开发范围；当前范围始终以 [CurrentMilestone.md](../CurrentMilestone.md) 为准。
+本文档保存 Milestone 3 完成时的 `CurrentMilestone.md` 定稿内容。它只用于历史追溯，不定义当前开发范围；当前范围始终以 [CurrentMilestone.md](../Current/CurrentMilestone.md) 为准。
 
 ## Milestone 3：NPC 上下文与人格
 

@@ -1,6 +1,6 @@
 # Milestone 1 Archive
 
-本文档保存 Milestone 1 完成时的 `CurrentMilestone.md` 定稿内容。它只用于历史追溯，不定义当前开发范围；当前范围始终以 [CurrentMilestone.md](../CurrentMilestone.md) 为准。
+本文档保存 Milestone 1 完成时的 `CurrentMilestone.md` 定稿内容。它只用于历史追溯，不定义当前开发范围；当前范围始终以 [CurrentMilestone.md](../Current/CurrentMilestone.md) 为准。
 
 ## Milestone 1：UE 到 Python Service 最小闭环
 

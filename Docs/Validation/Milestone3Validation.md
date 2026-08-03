@@ -7,7 +7,7 @@
 - 最后更新：2026-07-27
 - 结论：通过
 
-本文件只记录实际执行过的验证和可复查证据。验收标准正文见 [CurrentMilestone.md](../CurrentMilestone.md)；未执行项目保持“未验证”。
+本文件只记录实际执行过的验证和可复查证据。历史验收标准正文见 [Milestone3.md](../Milestones/Milestone3.md)；未执行项目保持“未验证”。
 
 ## 环境记录
 

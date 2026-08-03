@@ -1,5 +1,7 @@
 # Milestone 1 验收记录
 
+本文档只记录 Milestone 1 实际执行的验证证据。历史验收标准见 [Milestone1.md](../Milestones/Milestone1.md)；本文不代表当前实现说明。
+
 ## 验收环境
 
 - 日期：2026-07-17

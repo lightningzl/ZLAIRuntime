@@ -35,7 +35,7 @@
 
 ## 协议与测试
 
-- 协议、模块边界和当前验收要求分别以 `Protocol.md`、`Architecture.md` 和 `CurrentMilestone.md` 为准。
+- 协议、模块边界和当前验收要求分别以 [Protocol.md](../Reference/Protocol.md)、[Architecture.md](../Planning/Architecture.md) 和 [CurrentMilestone.md](../Current/CurrentMilestone.md) 为准。
 - 测试必须可重复、隔离外部副作用，并覆盖当前范围要求的成功与失败路径。
 - 上下文边界测试必须覆盖最小值、最大值、越界、非法角色、空白内容、未知字段兼容和当前输入不重复。
 - 测试、普通日志和错误日志不得记录完整玩家输入、人格、世界事实、对话历史或供应商原始消息。

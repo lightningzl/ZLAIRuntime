@@ -1,5 +1,7 @@
 # Milestone 1 代码理解问题与答案
 
+> 历史资料：本文只描述 Milestone 1 完成时的代码与学习重点，不代表当前实现。当前模块职责见 [UEClasses.md](../../Reference/UEClasses.md) 与 [PythonModules.md](../../Reference/PythonModules.md)，历史范围见 [Milestone1.md](../../Milestones/Milestone1.md)。
+
 本文整理 Milestone 1 最小通信闭环的 8 个理解检查问题及参考答案，覆盖模块职责、调用链、数据结构、错误处理、设计原因、后续扩展、模块边界和故障排查。
 
 ## 1. 模块职责

@@ -38,7 +38,7 @@ PythonService/.venv/Scripts/python -m pip install -r PythonService/requirements-
 
 环境变量必须在启动进程前设置。本项目不要求 `.env` 文件，也不要把真实 Key 写入任何仓库文件。
 
-数据库的 Schema、字段、索引、事务和生命周期见 [Database Design](../Docs/DatabaseDesign.md)。
+数据库的 Schema、字段、索引、事务和生命周期见 [Database Design](../Docs/Reference/DatabaseDesign.md)。
 
 ## 启动
 
@@ -59,7 +59,7 @@ PythonService/.venv/Scripts/python -m uvicorn app.main:app --app-dir PythonServi
 
 Kimi 模式使用 `openai>=2.46,<3.0` 调用国内开放平台 `https://api.moonshot.cn/v1`，从集中配置读取模型、超时和输出上限，并显式禁用 SDK 自动重试。请求只有显式提供 `memory.scope_id` 时才读取并在合法 Provider 成功后写入 Memory；省略 `memory` 时保持无状态。Context Builder 将固定系统约束、NPC/世界 JSON 数据、合并后的有限历史和当前输入组装为供应商无关输入；Provider 只负责映射到 Kimi 消息。单次请求不会启用流式输出、工具或托管会话状态，也不会在失败时回退到 Stub。
 
-启动后，FastAPI 文档页面位于 `http://127.0.0.1:8000/docs`，对话接口为 `POST http://127.0.0.1:8000/v1/dialogue`。请求和响应格式见 [`Docs/Protocol.md`](../Docs/Protocol.md)。
+启动后，FastAPI 文档页面位于 `http://127.0.0.1:8000/docs`，对话接口为 `POST http://127.0.0.1:8000/v1/dialogue`。请求和响应格式见 [`Docs/Reference/Protocol.md`](../Docs/Reference/Protocol.md)。
 
 ## Memory 本地维护
 
