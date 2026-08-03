@@ -26,7 +26,7 @@
 | `M5-06` | `已完成` | Rule/Utility Decision | 候选 Intent、硬约束、优先级、迟滞、冷却和确定性平局 | `M5-04`、`M5-05` | 自动化覆盖 `M5-A07`、`M5-A08` |
 | `M5-07` | `已完成` | Gameplay Intent 集成 | `ZL` Event Producer、Intent Adapter、StateTree/AIController 演示 | `M5-06` | 一个无界面纵向切片闭环；不修改 Dialogue 协议 |
 | `M5-08` | `已完成` | 最小 Debug 与 100+ Agent 基准 | NPC Inspector/命令、聚合指标、固定场景性能记录 | `M5-07` | 满足 `M5-A10`，无敏感数据输出 |
-| `M5-09` | `进行中` | 最终回归与验收记录 | Python/UE 回归、编译、自动化、无界面集成、Validation 文档 | `M5-08` | `M5-A01` 至 `M5-A10` 均有可复查证据 |
+| `M5-09` | `已完成` | 最终回归与验收记录 | Python/UE 回归、编译、自动化、无界面集成、Validation 文档 | `M5-08` | `M5-A01` 至 `M5-A10` 均有可复查证据 |
 
 ## 推荐执行顺序
 

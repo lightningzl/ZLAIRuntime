@@ -48,6 +48,14 @@ bool FZLSocialEventRouterTest::RunTest(const FString& Parameters)
 	TestEqual(TEXT("Repeated route is deduplicated"), Result.Candidates.Num(), 0);
 	TestEqual(TEXT("Duplicate is counted"), Result.DuplicateCount, 1);
 	TestFalse(TEXT("Expired event is rejected"), Router.RouteEvent(Event, 13.0, Result));
+	FZLSocialEvent Gunshot;
+	TestTrue(TEXT("Gunshot uses a valid preset"), Router.CreateEvent(ZLSocialTags::Event_Gunshot, TEXT("player"), NAME_None, FVector::ZeroVector, 10.0, Gunshot));
+	TestEqual(TEXT("Gunshot radius is configured"), Gunshot.Radius, 10000.0f);
+	TestEqual(TEXT("Gunshot severity is extreme"), Gunshot.Severity, 1.0f);
+	FZLSocialEvent Help;
+	TestTrue(TEXT("Help uses a valid preset"), Router.CreateEvent(ZLSocialTags::Event_Help, TEXT("player"), TEXT("witness"), FVector::ZeroVector, 10.0, Help));
+	TestEqual(TEXT("Help radius is configured"), Help.Radius, 1200.0f);
+	TestTrue(TEXT("Targeted Help includes Direct channel"), Help.HasChannel(EZLSocialPerceptionChannel::Direct));
 	TestFalse(TEXT("Reserved event without milestone preset is rejected"), Router.CreateEvent(ZLSocialTags::Event_Steal, TEXT("player"), NAME_None, FVector::ZeroVector, 10.0, Event));
 	return true;
 }

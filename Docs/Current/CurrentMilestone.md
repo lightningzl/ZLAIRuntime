@@ -11,6 +11,8 @@
 
 ## Milestone 5：确定性社会模拟基础
 
+状态：`已完成`（2026-08-03，验收证据见 [Milestone5Validation.md](../Validation/Milestone5Validation.md)）。
+
 目标：在不修改现有 UE/Python Dialogue 协议、不引入 ToolCall 或新的 LLM 决策路径的前提下，建立纯 UE、事件驱动、可测试的社会模拟纵向切片：
 
 ```text

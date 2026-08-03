@@ -29,7 +29,9 @@ bool FZLSocialDecisionTest::RunTest(const FString& Parameters)
 	Observer.Curiosity = 1.0f;
 	FZLSocialInstantState Calm;
 	Calm.Fear = 0.1f;
-	TestTrue(TEXT("Curious personality observes"), DecidePunch(Observer, Calm) == ZLSocialTags::Intent_Observe);
+	const FGameplayTag FirstObserverDecision = DecidePunch(Observer, Calm);
+	TestTrue(TEXT("Curious personality observes"), FirstObserverDecision == ZLSocialTags::Intent_Observe);
+	TestTrue(TEXT("Identical input repeats deterministically"), DecidePunch(Observer, Calm) == FirstObserverDecision);
 
 	FZLSocialPersonalityTraits Fearful = Observer;
 	Fearful.Curiosity = 0.0f; Fearful.FearSensitivity = 1.0f;
@@ -53,7 +55,14 @@ bool FZLSocialDecisionTest::RunTest(const FString& Parameters)
 	TestTrue(TEXT("Initial decision is observe"), Engine.Evaluate(Punch, Agent, Calm, Perception, 1.0, History).Intent == ZLSocialTags::Intent_Observe);
 	Agent.Personality = Fearful;
 	TestTrue(TEXT("Cooldown prevents immediate switching"), Engine.Evaluate(Punch, Agent, Afraid, Perception, 1.1, History).bHeldByCooldown);
+	FZLSocialDecisionHistory HysteresisHistory;
+	const FZLSocialRuleDecisionEngine HysteresisEngine(0.0f, 0.2f);
+	Agent.Personality = Observer;
+	HysteresisEngine.Evaluate(Punch, Agent, Calm, Perception, 1.0, HysteresisHistory);
+	Agent.Personality = Reporter;
+	TestTrue(TEXT("Hysteresis rejects a marginal same-priority switch"), HysteresisEngine.Evaluate(Punch, Agent, Calm, Perception, 2.0, HysteresisHistory).bHeldByHysteresis);
 	FZLSocialEvent Gunshot; Gunshot.Type = ZLSocialTags::Event_Gunshot;
+	Agent.Personality = Fearful;
 	const FZLSocialDecisionResult Extreme = Engine.Evaluate(Gunshot, Agent, Afraid, Perception, 1.2, History);
 	TestTrue(TEXT("Extreme event overrides curiosity and cooldown"), Extreme.Intent == ZLSocialTags::Intent_Flee);
 	return true;

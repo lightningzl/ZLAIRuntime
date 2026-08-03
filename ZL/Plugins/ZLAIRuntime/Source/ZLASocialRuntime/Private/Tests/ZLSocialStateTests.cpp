@@ -9,10 +9,19 @@ IMPLEMENT_SIMPLE_AUTOMATION_TEST(FZLSocialStateTest, "ZL.Social.State.BoundsDeca
 bool FZLSocialStateTest::RunTest(const FString& Parameters)
 {
 	FZLSocialPersonalityTraits Personality;
+	Personality.Brave = -1.0f;
 	Personality.FearSensitivity = 1.0f;
-	Personality.Curiosity = 0.4f;
-	Personality.Justice = 0.6f;
-	Personality.Aggression = 0.3f;
+	Personality.Curiosity = 2.0f;
+	Personality.Justice = -0.5f;
+	Personality.Aggression = 1.5f;
+	Personality.Social = 2.0f;
+	Personality.Clamp();
+	TestEqual(TEXT("Brave clamps to zero"), Personality.Brave, 0.0f);
+	TestEqual(TEXT("FearSensitivity remains bounded"), Personality.FearSensitivity, 1.0f);
+	TestEqual(TEXT("Curiosity clamps to one"), Personality.Curiosity, 1.0f);
+	TestEqual(TEXT("Justice clamps to zero"), Personality.Justice, 0.0f);
+	TestEqual(TEXT("Aggression clamps to one"), Personality.Aggression, 1.0f);
+	TestEqual(TEXT("Social clamps to one"), Personality.Social, 1.0f);
 
 	FZLSocialAgentState State(3);
 	FZLSocialPerceptionResult Perception;
