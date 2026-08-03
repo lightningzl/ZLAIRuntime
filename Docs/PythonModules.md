@@ -75,7 +75,7 @@ PythonService/
 | `app.services.memory_service` | M4-04 已实现 | 通过 Repository 接口实现 `(scope_id, npc_id)` 二次隔离、检索预算、稳定排序、最长精确边界重叠消除和幂等完整轮次写入；不执行 SQL |
 | `app.memory.base` | M4-06 已调整 | 定义与 SQLite 解耦的读写、聚合统计、精确分区清理 Repository 接口和脱敏持久化异常，供 Service、维护入口和 Fake 测试注入 |
 | `app.memory.models` | M4-06 已调整 | 定义合并消息、聚合统计、待保存/已保存轮次和幂等写入结果等不可变内部类型，不暴露数据库行对象 |
-| `app.memory.sqlite_repository` | M4-06 已调整 | 独占 SQLite Schema v1、范围索引、WAL、连接、检索、统计、精确分区清理、事务、回滚、行映射和失败关闭 |
+| `app.memory.sqlite_repository` | M4-06 已调整 | 独占 SQLite Schema v1、范围索引、WAL、连接、检索、统计、精确分区清理、事务、回滚、行映射和失败关闭；结构详见 [DatabaseDesign.md](./DatabaseDesign.md) |
 | `app.memory.maintenance` | M4-06 已实现 | 提供本机命令行聚合统计和按精确 scope/NPC 清理；要求显式确认，不注册 HTTP Route，不输出标识、路径或对话正文 |
 | `app.providers.base` | M3-04 已调整 | 定义与 FastAPI、Pydantic 协议 Schema、UE 类型和供应商 SDK 解耦的 Provider 接口、内部生成上下文与结果类型 |
 | `app.providers.errors` | M2-04 已实现 | 定义鉴权、限流、超时、不可用、无效响应和通用 Provider 内部异常，不包含 HTTP 状态码 |

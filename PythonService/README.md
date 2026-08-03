@@ -38,6 +38,8 @@ PythonService/.venv/Scripts/python -m pip install -r PythonService/requirements-
 
 环境变量必须在启动进程前设置。本项目不要求 `.env` 文件，也不要把真实 Key 写入任何仓库文件。
 
+数据库的 Schema、字段、索引、事务和生命周期见 [Database Design](../Docs/DatabaseDesign.md)。
+
 ## 启动
 
 依赖安装完成后，可通过一条命令从仓库根目录启动 Service：

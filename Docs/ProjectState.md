@@ -27,3 +27,4 @@
 - `M4-06` 已完成：脱敏统计、精确分区清理、README、安全审计和 166 项 Python 最终离线回归通过；`M4-A08` 已验证。
 - `M4-07` 已完成：UE 固定脱敏 Memory 演示、本地 Stub 连续请求与 scope/NPC 隔离集成、非法范围本地拦截、`ZLEditor` 增量编译和完整自动化 9/9 通过；`M4-A01`、`M4-A09` 已验证。
 - `M4-08` 已完成：真实 Kimi seed、Service 重启后 recall、不同 scope 和不同 NPC 四个受控场景均符合预期；最终临时库为 4 轮、2 个 scope、3 个 scope/NPC 分区，安全审计通过，`M4-A10` 已验证。
+- `M4-09` 已完成：新增 [DatabaseDesign.md](./DatabaseDesign.md) 作为 SQLite Schema、字段、约束、索引、事务和生命周期的设计说明，并从主要文档入口建立链接；未改变协议或运行行为。

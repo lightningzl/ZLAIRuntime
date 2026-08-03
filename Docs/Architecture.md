@@ -86,4 +86,4 @@ FastAPI Route -> Dialogue Service
 
 Milestone 4 只引入 SQLite 结构化对话轮次和最近历史检索。Context Builder 接收 Memory Service 已准备的内部历史，但不承担存储、查询、事务、摘要或向量检索职责。
 
-当前允许范围由 [CurrentMilestone.md](./CurrentMilestone.md) 定义；具体模块和类型见 [PythonModules.md](./PythonModules.md) 与 [UEClasses.md](./UEClasses.md)。
+当前允许范围由 [CurrentMilestone.md](./CurrentMilestone.md) 定义；具体模块和类型见 [PythonModules.md](./PythonModules.md) 与 [UEClasses.md](./UEClasses.md)，SQLite 的物理结构和事务设计见 [DatabaseDesign.md](./DatabaseDesign.md)。

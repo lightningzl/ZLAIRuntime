@@ -37,4 +37,4 @@
 
 ## 当前状态
 
-当前执行状态见 [ProjectState.md](./ProjectState.md)。当前范围、验收标准和任务拆分分别见 [CurrentMilestone.md](./CurrentMilestone.md) 与 [TaskBoard.md](./TaskBoard.md)。
+当前执行状态见 [ProjectState.md](./ProjectState.md)。当前范围、验收标准和任务拆分分别见 [CurrentMilestone.md](./CurrentMilestone.md) 与 [TaskBoard.md](./TaskBoard.md)。SQLite 的存储结构见 [DatabaseDesign.md](./DatabaseDesign.md)。

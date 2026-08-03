@@ -17,6 +17,7 @@
 | `Validation/MilestoneNValidation.md` | 已执行验证的命令、环境、结果和证据 | 重新定义验收标准或任务计划 |
 | `UEClasses.md` | AI Runtime 相关 UE 类型、职责和依赖 | 系统级架构和任务状态 |
 | `PythonModules.md` | Python 模块、内部边界、运行配置和实现级验证要求 | UE 类型和 HTTP 协议语义 |
+| `DatabaseDesign.md` | SQLite 存储位置、Schema、字段、约束、索引、事务和生命周期 | HTTP 协议语义、Memory 编排和任务状态 |
 | `CodingStandards.md` | 代码风格、实现约束和通用测试约束 | 当前范围、架构选择和 Git 流程 |
 | `GitWorkflow.md` | 分支、暂存、提交和提交前验证流程 | 模块职责和当前任务状态 |
 | `DecisionLog.md` | 已接受的重要架构和取舍，以及“为什么” | 任务细节、临时实现笔记和状态快照 |
@@ -32,6 +33,7 @@
 - 任务状态和依赖以 `TaskBoard.md` 为准。
 - 当前活动任务、阻塞和验收进度以 `ProjectState.md` 为准；它必须从前述来源同步，不得反向覆盖。
 - UE/Python 类型或模块职责以对应模块文档为准；系统边界发生冲突时以 `Architecture.md` 为准并更新模块文档。
+- SQLite Schema、索引、事务和存储生命周期以 `DatabaseDesign.md` 为准；已执行行为仍以 Repository 代码和测试为准。
 - 已执行行为以代码、测试和运行结果为准。若证据与文档不一致，先将状态标为“未验证”，再修正文档。
 - `DecisionLog.md` 解释已接受决策的原因，不得单独改变协议、范围或状态。
 
