@@ -9,7 +9,9 @@
 - 游戏 Runtime Module：`ZL`。
 - AI Runtime Plugin：`ZL/Plugins/ZLAIRuntime`。
 - Plugin Runtime Module：`ZLAIRuntime`。
+- Social Runtime Module：`ZLASocialRuntime`。
 - `ZLAIRuntime` 提供 AI Service Client、协议类型和 JSON 转换，不依赖 `ZL` 游戏模块。
+- `ZLASocialRuntime` 提供社会 Gameplay Tags、Event、Level 1 Agent 和 Profile 基础类型，不依赖 `ZL` 或 HTTP Client 模块。
 - `AZLCharacter`、`AZLPlayerController`、`AZLGameMode` 和 `Variant_*` 属于 UE 模板/玩法示例。
 - `ASideScrollingNPC` 等模板 AI 示例不包含 LLM Service 通信能力。
 - `ZL/Config/DefaultEngine.ini` 为本机 Service 配置 HTTP No Proxy；命令行参数仍可覆盖。
@@ -25,6 +27,19 @@
 | `FZLServiceError` | 表示错误分类、错误码、消息、请求 ID 和 HTTP 状态 | 暴露底层堆栈、路径或原始 Provider 异常 |
 
 `ZLAIServiceProtocol` 命名空间负责请求序列化、成功响应解析和协议错误解析。字段必须与 [Protocol.md](./Protocol.md) 一致。
+
+## Social Runtime 基础类型
+
+| 类型 | 职责 |
+| --- | --- |
+| `FZLSocialEvent` | 表示具有唯一 ID、类型、来源/目标、位置、强度、通道和生命周期的 UE 权威事件 |
+| `FZLSocialAgentProfile` | 表示独立于具体 Actor 的 Level 1 Agent 标识、位置、能力和人格快照 |
+| `FZLSocialPersonalityTraits` | 表示六个有界人格 Trait，并提供统一 Clamp 行为 |
+| `UZLSocialEventArchetype` | 以 DataAsset 配置事件类型、范围、强度、通道和生命周期 |
+| `UZLSocialPersonalityArchetype` | 以 DataAsset 配置可复用人格 Trait |
+| `ZLSocialTags` | 定义 Event、Instant State 与 Intent 原生 Gameplay Tags |
+
+这些类型不包含 Actor、Widget、HTTP、Provider、Python 或 Dialogue Memory 引用。`ZL` 负责把具体 Gameplay 对象转换为稳定 ID 和位置快照。
 
 ## Context 类型
 

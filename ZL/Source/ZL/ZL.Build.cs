@@ -22,7 +22,8 @@ public class ZL : ModuleRules
 		});
 
 		PrivateDependencyModuleNames.AddRange(new string[] {
-			"ZLAIRuntime"
+			"ZLAIRuntime",
+			"ZLASocialRuntime"
 		});
 
 		PublicIncludePaths.AddRange(new string[] {

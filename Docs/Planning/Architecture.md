@@ -16,6 +16,9 @@ UE5 Runtime
   - ZLAIRuntime Plugin
     - AI Service Client
     - Protocol Types
+    - ZLASocialRuntime Module
+      - Social Gameplay Tags
+      - Event/Agent/Profile Types
     |
     | HTTP + versioned JSON
     v
@@ -42,6 +45,13 @@ Python AI Service
 - UE 不负责 Prompt、模型 SDK、Provider 选择、密钥、Memory 存储检索或 Python 生成编排。
 - 插件不得依赖 `ZL` 游戏模块、具体 UI 或 NPC Actor。
 - 未来 Gameplay Tool 的最终校验和执行权仍属于 UE；当前实现只消费纯文本 Dialogue 回复。
+
+`ZLASocialRuntime` 是同一插件内与 HTTP Client 隔离的 Runtime Module：
+
+- 公开社会 Event、Level 1 Agent、Personality Profile 和 DataAsset 基础类型。
+- 通过原生 Gameplay Tags 定义 Event、Instant State 和 Intent 的稳定扩展点。
+- 只依赖 UE Runtime 基础模块与 `GameplayTags`，不依赖 `ZL`、`ZLAIRuntime`、HTTP、Python、Provider、Widget 或具体 NPC Actor。
+- `ZL` 可以依赖并适配其公开接口；`ZLASocialRuntime` 不反向依赖游戏模块。
 
 ### Python AI Service
 

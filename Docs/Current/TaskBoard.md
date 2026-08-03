@@ -19,8 +19,8 @@
 | ID | 状态 | 工作包 | 主要产物 | 依赖 | 完成条件 |
 | --- | --- | --- | --- | --- | --- |
 | `M5-01` | `已完成` | 总规划、总设计与文档治理准备 | M4 归档、规划/设计/面试文档、目录和职责规则、M5 范围 | Milestone 4 | 文档职责明确，当前范围不修改协议，链接和术语检查通过 |
-| `M5-02` | `待开始` | UE 社会模拟模块与基础类型 | `ZLASocialRuntime`、Gameplay Tags、Event/Agent/Profile 基础类型 | `M5-01` | 受影响 Target 编译；模块依赖符合 `M5-A02` |
-| `M5-03` | `待开始` | Event Router 与空间索引 | 注册/移动更新、Cell 查询、Event 生命周期和去重 | `M5-02` | 自动化覆盖 `M5-A03`、`M5-A04` |
+| `M5-02` | `已完成` | UE 社会模拟模块与基础类型 | `ZLASocialRuntime`、Gameplay Tags、Event/Agent/Profile 基础类型 | `M5-01` | 受影响 Target 编译；模块依赖符合 `M5-A02` |
+| `M5-03` | `进行中` | Event Router 与空间索引 | 注册/移动更新、Cell 查询、Event 生命周期和去重 | `M5-02` | 自动化覆盖 `M5-A03`、`M5-A04` |
 | `M5-04` | `待开始` | Perception Filter | Direct/Visual/Auditory、距离衰减、过期和阈值 | `M5-03` | 自动化覆盖 `M5-A05` |
 | `M5-05` | `待开始` | Personality、Instant State 与 Short Memory | DataAsset/DataTable 边界、六 Trait、四 State、固定容量 Memory | `M5-02` | 自动化覆盖 `M5-A06` |
 | `M5-06` | `待开始` | Rule/Utility Decision | 候选 Intent、硬约束、优先级、迟滞、冷却和确定性平局 | `M5-04`、`M5-05` | 自动化覆盖 `M5-A07`、`M5-A08` |
