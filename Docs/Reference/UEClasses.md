@@ -41,6 +41,9 @@
 | `FZLSocialSpatialIndex` | 维护 Agent 到二维 Cell 的索引，并返回有界半径查询与候选统计 |
 | `FZLSocialEventRouter` | 创建受控事件、校验生命周期、执行空间查询并按 Event/Agent 去重 |
 | `FZLSocialPerceptionFilter` | 对空间候选执行 Direct/Visual/Auditory、距离衰减、视线、阈值和过期过滤 |
+| `FZLSocialInstantState` | 根据 Event、感知强度和 Personality 更新并衰减 Fear、Anger、Curiosity、Alert |
+| `FZLSocialShortMemory` | 维护固定容量、按时间可复查的 UE 社会事件环形缓冲区 |
+| `FZLSocialAgentState` | 聚合单个 Agent 的 Instant State 与 Short Memory 更新入口 |
 
 这些类型不包含 Actor、Widget、HTTP、Provider、Python 或 Dialogue Memory 引用。`ZL` 负责把具体 Gameplay 对象转换为稳定 ID 和位置快照。
 

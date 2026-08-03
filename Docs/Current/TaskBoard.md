@@ -22,8 +22,8 @@
 | `M5-02` | `已完成` | UE 社会模拟模块与基础类型 | `ZLASocialRuntime`、Gameplay Tags、Event/Agent/Profile 基础类型 | `M5-01` | 受影响 Target 编译；模块依赖符合 `M5-A02` |
 | `M5-03` | `已完成` | Event Router 与空间索引 | 注册/移动更新、Cell 查询、Event 生命周期和去重 | `M5-02` | 自动化覆盖 `M5-A03`、`M5-A04` |
 | `M5-04` | `已完成` | Perception Filter | Direct/Visual/Auditory、距离衰减、过期和阈值 | `M5-03` | 自动化覆盖 `M5-A05` |
-| `M5-05` | `进行中` | Personality、Instant State 与 Short Memory | DataAsset/DataTable 边界、六 Trait、四 State、固定容量 Memory | `M5-02` | 自动化覆盖 `M5-A06` |
-| `M5-06` | `待开始` | Rule/Utility Decision | 候选 Intent、硬约束、优先级、迟滞、冷却和确定性平局 | `M5-04`、`M5-05` | 自动化覆盖 `M5-A07`、`M5-A08` |
+| `M5-05` | `已完成` | Personality、Instant State 与 Short Memory | DataAsset/DataTable 边界、六 Trait、四 State、固定容量 Memory | `M5-02` | 自动化覆盖 `M5-A06` |
+| `M5-06` | `进行中` | Rule/Utility Decision | 候选 Intent、硬约束、优先级、迟滞、冷却和确定性平局 | `M5-04`、`M5-05` | 自动化覆盖 `M5-A07`、`M5-A08` |
 | `M5-07` | `待开始` | Gameplay Intent 集成 | `ZL` Event Producer、Intent Adapter、StateTree/AIController 演示 | `M5-06` | 一个无界面纵向切片闭环；不修改 Dialogue 协议 |
 | `M5-08` | `待开始` | 最小 Debug 与 100+ Agent 基准 | NPC Inspector/命令、聚合指标、固定场景性能记录 | `M5-07` | 满足 `M5-A10`，无敏感数据输出 |
 | `M5-09` | `待开始` | 最终回归与验收记录 | Python/UE 回归、编译、自动化、无界面集成、Validation 文档 | `M5-08` | `M5-A01` 至 `M5-A10` 均有可复查证据 |
