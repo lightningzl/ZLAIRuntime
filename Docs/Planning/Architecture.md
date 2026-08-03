@@ -20,6 +20,7 @@ UE5 Runtime
       - Social Gameplay Tags
       - Event/Agent/Profile Types
       - Event Router + 2D Spatial Index
+      - Perception Filter
     |
     | HTTP + versioned JSON
     v
@@ -55,6 +56,7 @@ Python AI Service
 - `ZL` 可以依赖并适配其公开接口；`ZLASocialRuntime` 不反向依赖游戏模块。
 - Agent 仅在注册、注销或跨 Cell 移动时更新二维网格；Event Router 只枚举半径覆盖的 Cell，再做精确二维距离过滤。
 - Router 为 Punch、Gunshot、Help 提供受控默认参数，拒绝非法/过期事件，并按 `(event_id, agent_id)` 确定性去重。
+- Perception Filter 在空间候选上执行 Direct/Visual/Auditory 能力、距离衰减、视线、阈值和过期检查；Direct Target 不受普通半径和遮挡过滤。
 
 ### Python AI Service
 

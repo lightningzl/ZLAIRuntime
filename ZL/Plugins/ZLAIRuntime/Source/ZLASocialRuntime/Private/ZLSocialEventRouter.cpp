@@ -35,6 +35,14 @@ bool FZLSocialEventRouter::RouteEvent(const FZLSocialEvent& Event, const double 
 
 	TArray<FZLSocialAgentProfile> QueriedAgents;
 	SpatialIndex.QueryRadius(Event.Position, Event.Radius, QueriedAgents, &OutResult.SpatialStats);
+	if (Event.HasChannel(EZLSocialPerceptionChannel::Direct) && !Event.TargetId.IsNone())
+	{
+		const FZLSocialAgentProfile* DirectTarget = SpatialIndex.FindAgent(Event.TargetId);
+		if (DirectTarget != nullptr && !QueriedAgents.ContainsByPredicate([&Event](const FZLSocialAgentProfile& Agent) { return Agent.AgentId == Event.TargetId; }))
+		{
+			QueriedAgents.Add(*DirectTarget);
+		}
+	}
 	TSet<FName>& DeliveredAgents = DeliveredAgentsByEvent.FindOrAdd(Event.EventId);
 	for (const FZLSocialAgentProfile& Agent : QueriedAgents)
 	{
