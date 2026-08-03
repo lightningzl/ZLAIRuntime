@@ -22,6 +22,7 @@ UE5 Runtime
       - Event Router + 2D Spatial Index
       - Perception Filter
       - Instant State + Short Social Memory
+      - Deterministic Rule Decision
     |
     | HTTP + versioned JSON
     v
@@ -60,6 +61,7 @@ Python AI Service
 - Perception Filter 在空间候选上执行 Direct/Visual/Auditory 能力、距离衰减、视线、阈值和过期检查；Direct Target 不受普通半径和遮挡过滤。
 - 感知结果按 Event 强度与 Personality 更新 Fear、Anger、Curiosity、Alert；状态值有界并按时间衰减。
 - Level 1 Short Social Memory 使用固定容量环形缓冲区，保存 UE 权威事件摘要，不持久化且不与 Python Dialogue Memory 同步。
+- Rule Decision 对 Ignore、Observe、Flee、Report、Assist、Confront 计算可复现候选分数；能力硬约束先于评分，高优先级极端事件可越过普通冷却，平分按 Tag 稳定排序。
 
 ### Python AI Service
 
