@@ -19,6 +19,7 @@ UE5 Runtime
     - ZLASocialRuntime Module
       - Social Gameplay Tags
       - Event/Agent/Profile Types
+      - Event Router + 2D Spatial Index
     |
     | HTTP + versioned JSON
     v
@@ -52,6 +53,8 @@ Python AI Service
 - 通过原生 Gameplay Tags 定义 Event、Instant State 和 Intent 的稳定扩展点。
 - 只依赖 UE Runtime 基础模块与 `GameplayTags`，不依赖 `ZL`、`ZLAIRuntime`、HTTP、Python、Provider、Widget 或具体 NPC Actor。
 - `ZL` 可以依赖并适配其公开接口；`ZLASocialRuntime` 不反向依赖游戏模块。
+- Agent 仅在注册、注销或跨 Cell 移动时更新二维网格；Event Router 只枚举半径覆盖的 Cell，再做精确二维距离过滤。
+- Router 为 Punch、Gunshot、Help 提供受控默认参数，拒绝非法/过期事件，并按 `(event_id, agent_id)` 确定性去重。
 
 ### Python AI Service
 

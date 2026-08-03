@@ -38,6 +38,8 @@
 | `UZLSocialEventArchetype` | 以 DataAsset 配置事件类型、范围、强度、通道和生命周期 |
 | `UZLSocialPersonalityArchetype` | 以 DataAsset 配置可复用人格 Trait |
 | `ZLSocialTags` | 定义 Event、Instant State 与 Intent 原生 Gameplay Tags |
+| `FZLSocialSpatialIndex` | 维护 Agent 到二维 Cell 的索引，并返回有界半径查询与候选统计 |
+| `FZLSocialEventRouter` | 创建受控事件、校验生命周期、执行空间查询并按 Event/Agent 去重 |
 
 这些类型不包含 Actor、Widget、HTTP、Provider、Python 或 Dialogue Memory 引用。`ZL` 负责把具体 Gameplay 对象转换为稳定 ID 和位置快照。
 

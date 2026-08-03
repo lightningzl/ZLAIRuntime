@@ -9,8 +9,8 @@
 | 最后更新 | 2026-08-03 |
 | 当前里程碑 | Milestone 5：确定性社会模拟基础 |
 | 里程碑状态 | `进行中` |
-| 当前活动任务 | `M5-03`：Event Router 与空间索引 |
-| 下一候选任务 | `M5-04`：Perception Filter |
+| 当前活动任务 | `M5-04`：Perception Filter |
+| 下一候选任务 | `M5-05`：Personality、Instant State 与 Short Memory |
 | 已知阻塞 | 无 |
 | 验收进度 | 0/10 项已验证 |
 
@@ -18,5 +18,5 @@
 
 - Milestone 1 至 4 已完成；范围与证据见 [Milestones](../Milestones/) 和 [Validation](../Validation/)。
 - 当前已验证 UE→Python→Kimi Dialogue、瞬时 Context 和 SQLite 对话 Memory。
-- 当前已建立独立 `ZLASocialRuntime` 模块、社会 Gameplay Tags 与 Event/Agent/Profile 基础类型；尚未实现事件路由和人格驱动的 Gameplay 决策。
+- 当前已建立独立 `ZLASocialRuntime` 模块、社会 Gameplay Tags 与基础类型，并实现二维空间索引、受控 Event Preset、生命周期和 Event/Agent 去重；尚未实现感知过滤和人格驱动决策。
 - Milestone 5 只建设纯 UE 的确定性社会模拟基础，现有协议保持不变。
