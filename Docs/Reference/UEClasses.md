@@ -45,6 +45,8 @@
 | `FZLSocialShortMemory` | 维护固定容量、按时间可复查的 UE 社会事件环形缓冲区 |
 | `FZLSocialAgentState` | 聚合单个 Agent 的 Instant State 与 Short Memory 更新入口 |
 | `FZLSocialRuleDecisionEngine` | 以 Personality、Instant State 和 Event 生成有界候选分数，并应用硬约束、优先级、冷却、迟滞和稳定平局规则 |
+| `FZLSocialSimulation` | 编排 Event Router、Perception、State、Memory 和 Rule Decision，输出不含具体 Actor 的 Intent Command |
+| `FZLSocialGameplayAdapter` | `ZL` 私有适配层；显式产生 Punch/Gunshot/Help Event，并把 Intent Command 交给 Gameplay 回调 |
 
 这些类型不包含 Actor、Widget、HTTP、Provider、Python 或 Dialogue Memory 引用。`ZL` 负责把具体 Gameplay 对象转换为稳定 ID 和位置快照。
 

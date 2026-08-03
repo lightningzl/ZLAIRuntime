@@ -13,6 +13,7 @@ Player / UI
 UE5 Runtime
   - ZL Gameplay/UI
     - Context Snapshot Source
+    - Social Event Producer + Intent Adapter
   - ZLAIRuntime Plugin
     - AI Service Client
     - Protocol Types
@@ -62,6 +63,7 @@ Python AI Service
 - 感知结果按 Event 强度与 Personality 更新 Fear、Anger、Curiosity、Alert；状态值有界并按时间衰减。
 - Level 1 Short Social Memory 使用固定容量环形缓冲区，保存 UE 权威事件摘要，不持久化且不与 Python Dialogue Memory 同步。
 - Rule Decision 对 Ignore、Observe、Flee、Report、Assist、Confront 计算可复现候选分数；能力硬约束先于评分，高优先级极端事件可越过普通冷却，平分按 Tag 稳定排序。
+- `FZLSocialSimulation` 编排模块内纵向链路并输出纯数据 Intent Command；`ZL` 的 Gameplay Adapter 显式产生受控 Event，并将 Intent 回调给 StateTree/AIController/Gameplay Handler，不反向泄露具体 Actor 到 Runtime 模块。
 
 ### Python AI Service
 
