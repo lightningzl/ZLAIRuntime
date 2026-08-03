@@ -258,7 +258,8 @@ namespace
 			OutNpcId = PrimaryNpcId;
 			OutScopeId = PrimaryScopeId;
 			OutPlayerInput = TEXT(
-				"Remember this object for our next conversation and reply with its exact name: Copper Lantern.");
+				"For this test, the object label is inside tags: <OBJECT>Copper Lantern</OBJECT>. "
+				"Reply with only the label.");
 			bOutExpectedMarker = true;
 			return true;
 		}
@@ -267,7 +268,8 @@ namespace
 			OutNpcId = PrimaryNpcId;
 			OutScopeId = PrimaryScopeId;
 			OutPlayerInput = TEXT(
-				"Reply with the remembered object name, or UNKNOWN if no earlier object is available.");
+				"Search the earlier conversation messages for a value inside <OBJECT> tags. "
+				"Reply with only that value, or UNKNOWN if no tagged value exists.");
 			bOutExpectedMarker = true;
 			return true;
 		}
@@ -276,7 +278,8 @@ namespace
 			OutNpcId = PrimaryNpcId;
 			OutScopeId = TEXT("memory_demo_isolated_scope");
 			OutPlayerInput = TEXT(
-				"Reply with the remembered object name, or UNKNOWN if no earlier object is available.");
+				"Search the earlier conversation messages for a value inside <OBJECT> tags. "
+				"Reply with only that value, or UNKNOWN if no tagged value exists.");
 			bOutExpectedMarker = false;
 			return true;
 		}
@@ -285,7 +288,8 @@ namespace
 			OutNpcId = TEXT("npc_memory_demo_isolated");
 			OutScopeId = PrimaryScopeId;
 			OutPlayerInput = TEXT(
-				"Reply with the remembered object name, or UNKNOWN if no earlier object is available.");
+				"Search the earlier conversation messages for a value inside <OBJECT> tags. "
+				"Reply with only that value, or UNKNOWN if no tagged value exists.");
 			bOutExpectedMarker = false;
 			return true;
 		}

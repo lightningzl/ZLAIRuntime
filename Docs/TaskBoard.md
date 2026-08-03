@@ -29,7 +29,7 @@
 | `M4-05` | `已完成` | Dialogue Service 与 Context Builder 接线 | 读取→合并→生成→成功写入编排、错误映射和脱敏日志 | `M4-04` | 无 Memory 路径零读写；Provider 边界不变；数据库错误安全失败 |
 | `M4-06` | `已完成` | Python 离线回归与维护入口 | 完整自动化、本地统计/清理命令、模块文档和安全验证 | `M4-05` | 为 `M4-A01` 至 `M4-A08` 提供可复查的离线证据 |
 | `M4-07` | `已完成` | UE Memory 演示与集成验证 | 兼容公开入口、脱敏演示、本地 Stub 集成、自动化和 UE 模块文档 | `M4-02`、`M4-05` | 旧/新入口、隔离、非法范围和单次回调通过；受影响 Target 编译成功 |
-| `M4-08` | `待开始` | 真实端到端验收与交付记录 | 真实 Kimi 连续对话、重启恢复、范围隔离、安全审计和 M4 验收记录 | `M4-06`、`M4-07` | `M4-A01` 至 `M4-A10` 均有可复查证据 |
+| `M4-08` | `已完成` | 真实端到端验收与交付记录 | 真实 Kimi 连续对话、重启恢复、范围隔离、安全审计和 M4 验收记录 | `M4-06`、`M4-07` | `M4-A01` 至 `M4-A10` 均有可复查证据 |
 
 ## 工作包明细
 
@@ -131,6 +131,8 @@
 - 将实际证据记录到 [Milestone4Validation.md](./Validation/Milestone4Validation.md)。
 
 验证：只按 [CurrentMilestone.md](./CurrentMilestone.md) 中 `M4-A01` 至 `M4-A10` 记录证据；未执行或失败的项目保持未验证。
+
+验证记录（2026-08-03）：真实 Kimi 无界面 Game 验收使用固定虚构标记，seed 命中；停止并重启 Python Service、复用同一临时 SQLite 后 recall 再次命中；不同 scope 与不同 NPC 场景均未命中。最终聚合统计为 4 轮、2 个 scope、3 个 scope/NPC 分区。Python 166/166、`pip check`、字节码编译、`ZLEditor Win64 Development`、完整 `ZLAIRuntime` 9/9、文档链接、Git 数据库/密钥跟踪和 SQL 边界审计均通过；验收记录未保存 Key、scope 全文、完整输入、完整回复或数据库路径。`M4-A01` 至 `M4-A10` 全部通过，Milestone 4 完成。
 
 ## 推荐执行顺序
 

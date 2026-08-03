@@ -3,15 +3,15 @@
 ## 状态
 
 - 里程碑：Milestone 4：持久化对话 Memory
-- 当前阶段：开发中
-- 最后更新：2026-07-31
-- 结论：部分通过（9/10）
+- 当前阶段：已完成
+- 最后更新：2026-08-03
+- 结论：通过（10/10）
 
 本文件只记录实际执行过的验证和可复查证据。验收标准正文见 [CurrentMilestone.md](../CurrentMilestone.md)；未执行项目保持“未验证”。
 
 ## 环境记录
 
-已完成 M4-02 至 M4-07 的 Python/UE 实现、最终离线验证和本地 Stub 集成；只剩真实 Kimi 端到端验收。
+M4-02 至 M4-08 的 Python/UE 实现、离线回归、本地 Stub 集成和真实 Kimi 端到端验收均已完成。
 
 不得记录 API Key、完整 `scope_id`、完整玩家输入、完整持久化对话、数据库绝对路径、模型回复正文或可还原敏感数据的片段。
 
@@ -34,7 +34,7 @@
 | UE 完整自动化测试 | `Automation RunTests ZLAIRuntime` | 通过 | 9/9；旧请求、Context、协议、失败分类及新增 Memory 本地集成全部成功，退出码 0 |
 | UE Stub Memory 集成 | 本地 Stub + 临时 SQLite | 通过 | 连续 Memory、不同 scope、不同 NPC 和非法 Memory 单次回调通过；聚合统计为 4 轮、2 个 scope、3 个 scope/NPC 分区 |
 | UE Game 本地 Memory 演示 | `ZL.AI.DialogueMemoryDemo seed` | 通过 | 无界面 Game 收到一次 Stub 成功回调；只记录脱敏元数据，固定 Stub 不承担语义标记判断 |
-| UE Game 真实 Kimi 验收 | 未执行 | 未验证 | 待 `M4-08` 记录 |
+| UE Game 真实 Kimi 验收 | `ZL.AI.DialogueMemoryDemo` 四个受控场景 | 通过 | seed 命中；Service 重启后 recall 命中；不同 scope 与不同 NPC 均未命中；所有响应 Provider 为 `kimi` |
 | Python 安全审计 | 源码、Git 跟踪、日志与自动化扫描 | 通过 | 无数据库文件入库；SQL 仅在 Repository；维护入口非 HTTP；自动化屏蔽真实 Key 和非本机网络，响应与日志脱敏 |
 
 ## 验收证据
@@ -50,8 +50,8 @@
 | `M4-A07` | 通过 | 应用依赖与源码扫描证明 Route→Dialogue Service→Memory Service→Repository 分层保持，SQL 仅在 SQLite Repository，Provider 未依赖 Memory、SQLite 或协议 Schema |
 | `M4-A08` | 通过 | 166 项离线自动化覆盖 Schema、初始化、事务、排序、预算、隔离、合并、幂等、回滚、维护入口和日志脱敏；测试无真实 Key、外网或 Token |
 | `M4-A09` | 通过 | UE 旧/新公开入口编译通过；本地 Stub 集成覆盖连续 Memory、scope/NPC 隔离、非法范围不发 HTTP 和所有回调恰好一次；无界面 Game 演示收到成功回调 |
-| `M4-A10` | 未验证 | 待执行 |
+| `M4-A10` | 通过 | 真实 Kimi seed 与重启后 recall 均命中固定虚构标记，不同 scope/NPC 均未命中；最终临时库聚合为 4 轮、2 个 scope、3 个分区，Git 与日志审计无密钥、数据库、完整对话或原始回复 |
 
 ## 最终结论
 
-Milestone 4 正在开发；Python Runtime、维护入口、最终离线回归和 UE 完整集成均已通过，只剩 M4-08 的真实 Kimi 连续对话、重启恢复、隔离与最终安全审计。
+Milestone 4 已完成。`M4-A01` 至 `M4-A10` 全部通过；持久化 Memory、无状态兼容、双重隔离、确定性合并、事务写入、维护入口、UE 集成和真实 Kimi 重启恢复均有可复查的脱敏证据。
