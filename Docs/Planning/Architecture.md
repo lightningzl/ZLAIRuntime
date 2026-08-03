@@ -24,6 +24,7 @@ UE5 Runtime
       - Perception Filter
       - Instant State + Short Social Memory
       - Deterministic Rule Decision
+      - Sanitized Debug Snapshot + Aggregate Metrics
     |
     | HTTP + versioned JSON
     v
@@ -64,6 +65,7 @@ Python AI Service
 - Level 1 Short Social Memory 使用固定容量环形缓冲区，保存 UE 权威事件摘要，不持久化且不与 Python Dialogue Memory 同步。
 - Rule Decision 对 Ignore、Observe、Flee、Report、Assist、Confront 计算可复现候选分数；能力硬约束先于评分，高优先级极端事件可越过普通冷却，平分按 Tag 稳定排序。
 - `FZLSocialSimulation` 编排模块内纵向链路并输出纯数据 Intent Command；`ZL` 的 Gameplay Adapter 显式产生受控 Event，并将 Intent 回调给 StateTree/AIController/Gameplay Handler，不反向泄露具体 Actor 到 Runtime 模块。
+- `ZL.Social.InspectDemo` 输出选定 Agent 的人格、即时状态、最近事件、短期记忆数量、候选分数与 Intent；`ZL.Social.Benchmark` 输出注册数、空间候选、感知数、规则次数和处理耗时，不输出 Dialogue、scope、Prompt 或凭据。
 
 ### Python AI Service
 

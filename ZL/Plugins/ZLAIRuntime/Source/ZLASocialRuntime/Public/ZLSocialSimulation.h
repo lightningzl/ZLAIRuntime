@@ -20,6 +20,8 @@ struct ZLASOCIALRUNTIME_API FZLSocialProcessingStats
 	double ProcessingMilliseconds = 0.0;
 };
 
+struct FZLSocialAgentDebugSnapshot;
+
 class ZLASOCIALRUNTIME_API FZLSocialSimulation
 {
 public:
@@ -34,6 +36,7 @@ public:
 	void Reset();
 
 	const FZLSocialAgentState* FindAgentState(FName AgentId) const;
+	bool BuildDebugSnapshot(FName AgentId, FZLSocialAgentDebugSnapshot& OutSnapshot) const;
 	int32 GetRegisteredAgentCount() const { return Router.GetRegisteredAgentCount(); }
 
 private:
@@ -43,4 +46,5 @@ private:
 	TMap<FName, FZLSocialAgentProfile> Profiles;
 	TMap<FName, FZLSocialAgentState> States;
 	TMap<FName, FZLSocialDecisionHistory> DecisionHistories;
+	TMap<FName, FZLSocialIntentCommand> LastCommands;
 };

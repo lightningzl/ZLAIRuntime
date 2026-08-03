@@ -1,5 +1,7 @@
 #include "ZLSocialSimulation.h"
 
+#include "ZLSocialDebug.h"
+
 FZLSocialSimulation::FZLSocialSimulation(const float CellSize)
 	: Router(CellSize)
 {
@@ -60,6 +62,7 @@ bool FZLSocialSimulation::ProcessEvent(const FZLSocialEvent& Event, const double
 		Command.AgentId = Agent.AgentId;
 		Command.Intent = Decision.Intent;
 		Command.CandidateScores = MoveTemp(Decision.Candidates);
+		LastCommands.Add(Agent.AgentId, Command);
 	}
 	OutStats.ProcessingMilliseconds = (FPlatformTime::Seconds() - StartedAt) * 1000.0;
 	return true;
@@ -72,7 +75,26 @@ void FZLSocialSimulation::DecayAgentStates(const float DeltaSeconds)
 
 void FZLSocialSimulation::Reset()
 {
-	Router.Reset(); Profiles.Reset(); States.Reset(); DecisionHistories.Reset();
+	Router.Reset(); Profiles.Reset(); States.Reset(); DecisionHistories.Reset(); LastCommands.Reset();
+}
+
+bool FZLSocialSimulation::BuildDebugSnapshot(const FName AgentId, FZLSocialAgentDebugSnapshot& OutSnapshot) const
+{
+	const FZLSocialAgentProfile* Profile = Profiles.Find(AgentId);
+	const FZLSocialAgentState* State = States.Find(AgentId);
+	if (Profile == nullptr || State == nullptr) { return false; }
+	OutSnapshot = FZLSocialAgentDebugSnapshot();
+	OutSnapshot.AgentId = AgentId;
+	OutSnapshot.Personality = Profile->Personality;
+	OutSnapshot.InstantState = State->Instant;
+	OutSnapshot.ShortMemory = State->ShortMemory.GetChronological();
+	if (const FZLSocialIntentCommand* Command = LastCommands.Find(AgentId))
+	{
+		OutSnapshot.LastEventId = Command->EventId;
+		OutSnapshot.FinalIntent = Command->Intent;
+		OutSnapshot.CandidateScores = Command->CandidateScores;
+	}
+	return true;
 }
 
 const FZLSocialAgentState* FZLSocialSimulation::FindAgentState(const FName AgentId) const
