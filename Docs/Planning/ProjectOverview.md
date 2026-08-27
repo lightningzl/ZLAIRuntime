@@ -10,7 +10,7 @@
 
 它不是以聊天为中心的 AI NPC 项目。核心目标是展示玩家行为如何通过 Gameplay Event、空间传播、NPC 感知、状态、记忆、人格、关系和分层决策改变一个小型社会系统。
 
-LLM 只负责少量关键 NPC 的 reasoning、dialogue 和 high-level decision；UE 始终负责世界事实、移动、动画、伤害、生成和行为执行。
+目标架构中，LLM 只负责少量关键 NPC 的 reasoning、dialogue 和 high-level decision；UE 始终负责世界事实、移动、动画、伤害、生成和行为执行。
 
 ## 技术栈
 
@@ -25,7 +25,7 @@ LLM 只负责少量关键 NPC 的 reasoning、dialogue 和 high-level decision�
 - UE 是 Gameplay 和社会模拟的唯一事实来源。
 - Python Service 负责 AI 推理编排，不直接访问或修改 UE World。
 - UE 与 Service 只通过版本化 JSON 协议通信。
-- AI 返回 Decision、Dialogue 或受约束 ToolCall；UE 验证后才可能执行。
+- 目标系统允许 AI 返回 Decision、Dialogue 或受约束 ToolCall；当前已实现路径只返回 Dialogue，任何未来 Gameplay 建议都必须由 UE 验证后才可能执行。
 - Level 1 NPC 不调用 LLM，所有层级都有确定性降级路径。
 - 每个里程碑保持可运行、可验证，避免提前引入未被当前需求证明的复杂度。
 
@@ -33,7 +33,7 @@ LLM 只负责少量关键 NPC 的 reasoning、dialogue 和 high-level decision�
 
 1. **已完成：通信与真实对话**——UE/Python 闭环、Kimi、错误与超时。
 2. **已完成：上下文与对话 Memory**——NPC/World 快照和 SQLite 对话历史。
-3. **当前：确定性社会模拟**——Event、空间查询、感知、人格、Instant State、Short Memory 和规则决策。
+3. **已完成：确定性社会模拟基础**——Event、空间查询、感知、人格、Instant State、Short Memory 和规则决策。
 4. **后续：关系与重要 NPC**——Long-Term State、Relationship、Faction 和事件链。
 5. **后续：AI Decision 与 ToolCall**——经协议确认后接入 Level 2/3。
 6. **交付：Core NPC、Debugger 与面试场景**。

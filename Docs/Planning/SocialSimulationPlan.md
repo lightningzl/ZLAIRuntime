@@ -18,17 +18,9 @@
 - LLM 决策编排、结构化输出、失败降级和成本控制能力。
 - 模块边界、协议、安全执行、性能预算和可验证架构能力。
 
-## 当前基线
+## 实现状态入口
 
-Milestone 1 至 4 已完成，当前已有：
-
-- UE 到 Python Service 的非流式 HTTP/JSON 通信。
-- Kimi Provider、确定性 Stub/Fake、超时和错误分类。
-- NPC 人格、世界事实和有限对话历史快照。
-- 按 `(scope_id, npc_id)` 隔离的 SQLite 对话 Memory。
-- UE 最终掌握 Gameplay 执行权的既定边界。
-
-当前尚未实现社会事件传播、情绪/关系模拟、三级 NPC、结构化 AI Decision、ToolCall、Mass NPC 社会模拟和运行时决策调试器。
+本文档不复制实时完成状态。当前已完成能力、活动里程碑和下一候选任务分别以 [ProjectState.md](../Current/ProjectState.md)、[CurrentMilestone.md](../Current/CurrentMilestone.md) 和 [TaskBoard.md](../Current/TaskBoard.md) 为准；已经接受并实现的模块边界见 [Architecture.md](./Architecture.md)。
 
 ## 核心原则
 

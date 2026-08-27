@@ -35,8 +35,8 @@
 | `FZLSocialEvent` | 表示具有唯一 ID、类型、来源/目标、位置、强度、通道和生命周期的 UE 权威事件 |
 | `FZLSocialAgentProfile` | 表示独立于具体 Actor 的 Level 1 Agent 标识、位置、能力和人格快照 |
 | `FZLSocialPersonalityTraits` | 表示六个有界人格 Trait，并提供统一 Clamp 行为 |
-| `UZLSocialEventArchetype` | 以 DataAsset 配置事件类型、范围、强度、通道和生命周期 |
-| `UZLSocialPersonalityArchetype` | 以 DataAsset 配置可复用人格 Trait |
+| `UZLSocialEventArchetype` | 声明可配置事件类型、范围、强度、通道和生命周期的 DataAsset 类型；当前运行时尚未消费该资产 |
+| `UZLSocialPersonalityArchetype` | 声明可复用人格 Trait 的 DataAsset 类型；当前运行时尚未接入资产选择或 DataTable 覆盖 |
 | `ZLSocialTags` | 定义 Event、Instant State 与 Intent 原生 Gameplay Tags |
 | `FZLSocialSpatialIndex` | 维护 Agent 到二维 Cell 的索引，并返回有界半径查询与候选统计 |
 | `FZLSocialEventRouter` | 创建受控事件、校验生命周期、执行空间查询并按 Event/Agent 去重 |
@@ -44,13 +44,20 @@
 | `FZLSocialInstantState` | 根据 Event、感知强度和 Personality 更新并衰减 Fear、Anger、Curiosity、Alert |
 | `FZLSocialShortMemory` | 维护固定容量、按时间可复查的 UE 社会事件环形缓冲区 |
 | `FZLSocialAgentState` | 聚合单个 Agent 的 Instant State 与 Short Memory 更新入口 |
-| `FZLSocialRuleDecisionEngine` | 以 Personality、Instant State 和 Event 生成有界候选分数，并应用硬约束、优先级、冷却、迟滞和稳定平局规则 |
+| `FZLSocialRuleDecisionEngine` | 以 Personality、Instant State 和 Event 生成可复现候选分数，并应用硬约束、优先级、冷却、迟滞和稳定平局规则 |
 | `FZLSocialSimulation` | 编排 Event Router、Perception、State、Memory 和 Rule Decision，输出不含具体 Actor 的 Intent Command |
 | `FZLSocialGameplayAdapter` | `ZL` 私有适配层；显式产生 Punch/Gunshot/Help Event，并把 Intent Command 交给 Gameplay 回调 |
 | `FZLSocialAgentDebugSnapshot` | 单 Agent 的只读社会模拟快照，不反向驱动状态且不包含 Dialogue/凭据数据 |
 | `ZLSocialDebug` | 格式化安全快照并运行确定性 120 Agent 聚合基准 |
 
 这些类型不包含 Actor、Widget、HTTP、Provider、Python 或 Dialogue Memory 引用。`ZL` 负责把具体 Gameplay 对象转换为稳定 ID 和位置快照。
+
+当前 Social Runtime 接入边界：
+
+- `FZLSocialGameplayAdapter` 只验证 Event 产生、Intent Command 生成和回调交付，尚未连接具体 StateTree、AIController、导航、动画或 Gameplay Ability。
+- Gameplay Adapter 当前使用恒定可见的测试 LOS 回调，真实 World Trace 尚未接入。
+- `FZLSocialSpatialIndex` 使用二维 Cell 和二维距离，不处理 Z 轴楼层、房间或区域传播。
+- Event/Personality DataAsset 类型已经声明，但 Event Router 仍使用 C++ 受控默认值，DataTable 批量覆盖尚未实现。
 
 ## Context 类型
 
@@ -115,3 +122,4 @@ ZL Gameplay / UI
 - 通信与错误处理：[Milestone2Validation.md](../Validation/Milestone2Validation.md)
 - Context：[Milestone3Validation.md](../Validation/Milestone3Validation.md)
 - Dialogue Memory：[Milestone4Validation.md](../Validation/Milestone4Validation.md)
+- 确定性社会模拟：[Milestone5Validation.md](../Validation/Milestone5Validation.md)

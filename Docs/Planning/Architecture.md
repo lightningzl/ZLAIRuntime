@@ -54,7 +54,7 @@ Python AI Service
 
 `ZLASocialRuntime` 是同一插件内与 HTTP Client 隔离的 Runtime Module：
 
-- 公开社会 Event、Level 1 Agent、Personality Profile 和 DataAsset 基础类型。
+- 公开社会 Event、Level 1 Agent、Personality Profile 和 DataAsset 基础类型；当前只声明 Archetype 类型，运行时 Event Preset 仍由 Router 的受控默认值提供，尚未接入资产加载或 DataTable 覆盖。
 - 通过原生 Gameplay Tags 定义 Event、Instant State 和 Intent 的稳定扩展点。
 - 只依赖 UE Runtime 基础模块与 `GameplayTags`，不依赖 `ZL`、`ZLAIRuntime`、HTTP、Python、Provider、Widget 或具体 NPC Actor。
 - `ZL` 可以依赖并适配其公开接口；`ZLASocialRuntime` 不反向依赖游戏模块。
@@ -64,7 +64,7 @@ Python AI Service
 - 感知结果按 Event 强度与 Personality 更新 Fear、Anger、Curiosity、Alert；状态值有界并按时间衰减。
 - Level 1 Short Social Memory 使用固定容量环形缓冲区，保存 UE 权威事件摘要，不持久化且不与 Python Dialogue Memory 同步。
 - Rule Decision 对 Ignore、Observe、Flee、Report、Assist、Confront 计算可复现候选分数；能力硬约束先于评分，高优先级极端事件可越过普通冷却，平分按 Tag 稳定排序。
-- `FZLSocialSimulation` 编排模块内纵向链路并输出纯数据 Intent Command；`ZL` 的 Gameplay Adapter 显式产生受控 Event，并将 Intent 回调给 StateTree/AIController/Gameplay Handler，不反向泄露具体 Actor 到 Runtime 模块。
+- `FZLSocialSimulation` 编排模块内纵向链路并输出纯数据 Intent Command；`ZL` 的 Gameplay Adapter 显式产生受控 Event 并完成 Intent 回调交付，不反向泄露具体 Actor 到 Runtime 模块。具体 StateTree、AIController 或 Gameplay Intent 执行器尚未实现。
 - `ZL.Social.InspectDemo` 输出选定 Agent 的人格、即时状态、最近事件、短期记忆数量、候选分数与 Intent；`ZL.Social.Benchmark` 输出注册数、空间候选、感知数、规则次数和处理耗时，不输出 Dialogue、scope、Prompt 或凭据。
 
 ### Python AI Service

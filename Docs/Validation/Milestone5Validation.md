@@ -7,7 +7,7 @@
 - 最后更新：2026-08-03
 - 结论：通过，10/10 项已验证
 
-验收标准正文见 [CurrentMilestone.md](../Current/CurrentMilestone.md)。本文只记录实际执行过的验证；未执行项目保持“未验证”。
+验收标准正文见已归档的 [Milestone5.md](../Milestones/Milestone5.md)。本文只记录实际执行过的验证；未执行项目保持“未验证”。
 
 ## 验证环境
 

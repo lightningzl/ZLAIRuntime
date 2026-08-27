@@ -14,6 +14,8 @@
 
 ## 10 分钟展示流程
 
+以下内容是最终目标演示脚本，不代表 Milestone 5 已具备全部展示能力。当前已实现能力以 [ProjectState.md](../Current/ProjectState.md) 和 [Architecture.md](../Planning/Architecture.md) 为准；尚未实现的 Mass、事件二级传播、Relationship、AI Decision、ToolCall 和完整 Runtime Debugger 不得在当前演示中表述为已完成。
+
 | 时间 | 展示内容 | 讲解重点 |
 | --- | --- | --- |
 | 0:00–0:45 | 总体架构图 | UE 权威；LLM 只做高层 Decision/Dialogue |
