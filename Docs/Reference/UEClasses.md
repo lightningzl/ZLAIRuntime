@@ -51,8 +51,8 @@
 | `FZLSocialRuleDecisionEngine` | 以 Personality、Instant State、Relationship、Faction Standing、Long Memory、Occupation 和来源 Confidence 生成含 Reason Code 的可复现候选分数，并应用能力/重复报告硬约束、优先级、冷却、迟滞和稳定平局规则 |
 | `FZLSocialSimulation` | 编排 Event Router、Perception、State、Memory 和 Rule Decision，输出不含具体 Actor 的 Intent Command |
 | `FZLSocialGameplayAdapter` | `ZL` 私有适配层；显式产生 Punch/Gunshot/Help Event、确认 Report 完成、处理 Social 派生 Event、确认 Authority Assessment，并把 Intent Command 交给 Gameplay 回调 |
-| `FZLSocialAgentDebugSnapshot` | 单 Agent 的只读社会模拟快照，不反向驱动状态且不包含 Dialogue/凭据数据 |
-| `ZLSocialDebug` | 格式化安全快照并运行确定性 120 Agent 聚合基准 |
+| `FZLSocialAgentDebugSnapshot` | 单 Agent 的只读 Level/Faction/Occupation、Event Chain、来源、关系、Faction、Short/Long Memory、Reason Code 和 Intent 快照，不反向驱动状态且不包含 Dialogue/凭据数据 |
+| `ZLSocialDebug` | 格式化安全快照，运行确定性 120 Level 1 基线与 120 Level 1 + 5 Important NPC 的传播/关系/Memory 聚合基准 |
 
 这些类型不包含 Actor、Widget、HTTP、Provider、Python 或 Dialogue Memory 引用。`ZL` 负责把具体 Gameplay 对象转换为稳定 ID 和位置快照。
 
@@ -118,6 +118,7 @@ ZL Gameplay / UI
 - `ZL.AI.DialogueMemoryDemo`：连续 Memory、scope/NPC 隔离和重启恢复演示。
 - `ZL.Social.InspectDemo [agent_id]`：输出可复现的最小 Agent 社会状态快照。
 - `ZL.Social.Benchmark [agent_count]`：运行确定性 Level 1 场景并输出聚合性能指标。
+- `ZL.Social.BenchmarkM6`：运行固定 120 Level 1 + 5 Important NPC 的传播、关系、Faction、Long Memory 和规则聚合基准。
 
 演示日志只记录关联元数据、匹配结果和长度，不记录完整输入、Context、scope 或回复正文。
 
