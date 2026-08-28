@@ -27,6 +27,7 @@ public:
 	explicit FZLSocialPropagation(float InConfidenceDecay = 0.8f, float InMinimumImportance = 0.2f);
 
 	bool ConfirmReport(const FZLSocialReportConfirmation& Confirmation, FZLSocialPropagationResult& OutResult);
+	bool HasReporterReported(FGuid RootEventId, FName ReporterId) const;
 	void Reset();
 
 private:

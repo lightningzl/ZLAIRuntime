@@ -91,3 +91,9 @@ void FZLSocialPropagation::Reset()
 	ReportersByRoot.Reset();
 	RemainingBudgetByRoot.Reset();
 }
+
+bool FZLSocialPropagation::HasReporterReported(const FGuid RootEventId, const FName ReporterId) const
+{
+	const TSet<FName>* Reporters = ReportersByRoot.Find(RootEventId);
+	return Reporters != nullptr && Reporters->Contains(ReporterId);
+}

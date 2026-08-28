@@ -12,6 +12,7 @@ struct ZLASOCIALRUNTIME_API FZLSocialIntentCommand
 	FName AgentId;
 	FGameplayTag Intent;
 	TArray<FZLSocialIntentScore> CandidateScores;
+	TArray<FName> ReasonCodes;
 };
 
 struct ZLASOCIALRUNTIME_API FZLSocialProcessingStats

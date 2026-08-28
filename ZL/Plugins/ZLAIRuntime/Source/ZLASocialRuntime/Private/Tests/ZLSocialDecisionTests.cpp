@@ -68,4 +68,74 @@ bool FZLSocialDecisionTest::RunTest(const FString& Parameters)
 	return true;
 }
 
+IMPLEMENT_SIMPLE_AUTOMATION_TEST(FZLSocialHistoryAwareDecisionTest, "ZL.Social.Decision.RelationshipMemoryFactionHistory", EAutomationTestFlags::EditorContext | EAutomationTestFlags::EngineFilter)
+
+bool FZLSocialHistoryAwareDecisionTest::RunTest(const FString& Parameters)
+{
+	FZLSocialAgentProfile Guard;
+	Guard.AgentId = TEXT("guard");
+	Guard.AgentLevel = EZLSocialAgentLevel::Important;
+	Guard.OccupationId = TEXT("guard");
+	Guard.Personality.Brave = 0.5f;
+	Guard.Personality.FearSensitivity = 0.2f;
+	Guard.Personality.Curiosity = 0.5f;
+	Guard.Personality.Justice = 0.6f;
+	Guard.Personality.Aggression = 0.4f;
+	Guard.Personality.Social = 0.4f;
+	FZLSocialInstantState State;
+	State.Fear = 0.1f;
+	State.Anger = 0.2f;
+	State.Alert = 0.4f;
+	FZLSocialEvent Punch;
+	Punch.Type = ZLSocialTags::Event_Punch;
+	FZLSocialPerceptionResult Perception;
+	Perception.bPerceived = true;
+	Perception.Channel = EZLSocialPerceptionChannel::Social;
+	Perception.EffectiveIntensity = 0.7f;
+	const FZLSocialRuleDecisionEngine Engine(0.0f, 0.0f);
+
+	FZLSocialDecisionContext Neutral;
+	Neutral.OccupationId = Guard.OccupationId;
+	Neutral.SourceConfidence = 0.7f;
+	Neutral.RelevantMemoryCount = 2;
+	Neutral.StrongestMemoryImportance = 0.7f;
+	FZLSocialDecisionHistory NeutralHistory;
+	const FZLSocialDecisionResult Investigate = Engine.Evaluate(Punch, Guard, State, Perception, 1.0, NeutralHistory, Neutral);
+	TestTrue(TEXT("Uncertain guard investigates"), Investigate.Intent == ZLSocialTags::Intent_Investigate);
+	TestTrue(TEXT("Decision exposes stable reason codes"), Investigate.ReasonCodes.Contains(TEXT("source.uncertainty")) && Investigate.ReasonCodes.Contains(TEXT("occupation.guard")));
+
+	FZLSocialDecisionContext Trusted = Neutral;
+	Trusted.bHasRelationship = true;
+	Trusted.Relationship.Trust = 1.0f;
+	Trusted.Relationship.Affinity = 1.0f;
+	Trusted.Relationship.Reputation = 1.0f;
+	FZLSocialDecisionHistory TrustedHistory;
+	const FZLSocialDecisionResult Assist = Engine.Evaluate(Punch, Guard, State, Perception, 1.0, TrustedHistory, Trusted);
+	TestTrue(TEXT("Trusted history produces assist"), Assist.Intent == ZLSocialTags::Intent_Assist);
+
+	FZLSocialDecisionContext Hostile = Neutral;
+	Hostile.bHasRelationship = true;
+	Hostile.Relationship.Trust = -1.0f;
+	Hostile.Relationship.Affinity = -1.0f;
+	Hostile.Relationship.Fear = 1.0f;
+	Hostile.Relationship.Reputation = -1.0f;
+	Hostile.bHasFactionStanding = true;
+	Hostile.FactionStanding = -1.0f;
+	FZLSocialDecisionHistory HostileHistory;
+	const FZLSocialDecisionResult Confront = Engine.Evaluate(Punch, Guard, State, Perception, 1.0, HostileHistory, Hostile);
+	TestTrue(TEXT("Hostile history produces confront"), Confront.Intent == ZLSocialTags::Intent_Confront);
+	TestTrue(TEXT("Hostile reason includes relationship"), Confront.ReasonCodes.Contains(TEXT("relationship.threat")));
+
+	FZLSocialDecisionHistory RepeatHistory;
+	const FZLSocialDecisionResult Repeat = Engine.Evaluate(Punch, Guard, State, Perception, 1.0, RepeatHistory, Hostile);
+	TestTrue(TEXT("Same history is deterministic"), Repeat.Intent == Confront.Intent && Repeat.ReasonCodes == Confront.ReasonCodes);
+
+	FZLSocialDecisionContext AlreadyReported = Neutral;
+	AlreadyReported.bAlreadyReportedRoot = true;
+	FZLSocialDecisionHistory ReportHistory;
+	const FZLSocialDecisionResult NoDuplicateReport = Engine.Evaluate(Punch, Guard, State, Perception, 1.0, ReportHistory, AlreadyReported);
+	TestTrue(TEXT("Confirmed root cannot select report again"), NoDuplicateReport.Intent != ZLSocialTags::Intent_Report);
+	return true;
+}
+
 #endif

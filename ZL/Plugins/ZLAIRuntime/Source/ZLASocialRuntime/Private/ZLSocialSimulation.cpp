@@ -76,13 +76,37 @@ bool FZLSocialSimulation::ProcessEvent(const FZLSocialEvent& Event, const double
 		const FZLSocialAgentProfile* Subject = Profiles.Find(Event.SourceId);
 		State.ApplyPerception(Event, Perception, Agent.Personality, RelationshipImpact, Subject != nullptr ? Subject->FactionId : NAME_None);
 		FZLSocialDecisionHistory& History = DecisionHistories.FindChecked(Agent.AgentId);
-		FZLSocialDecisionResult Decision = DecisionEngine.Evaluate(Event, Agent, State.Instant, Perception, NowSeconds, History);
+		FZLSocialDecisionContext Context;
+		if (const FZLSocialRelationshipState* Relationship = RelationshipStore.FindRelationship(Agent.AgentId, Event.SourceId))
+		{
+			Context.Relationship = *Relationship;
+			Context.bHasRelationship = true;
+		}
+		if (!Agent.FactionId.IsNone())
+		{
+			if (const FZLSocialFactionStandingState* Standing = RelationshipStore.FindFactionStanding(Agent.FactionId, Event.SourceId))
+			{
+				Context.FactionStanding = Standing->Standing;
+				Context.bHasFactionStanding = true;
+			}
+		}
+		FZLSocialLongMemoryQuery MemoryQuery;
+		MemoryQuery.SubjectId = Event.SourceId;
+		MemoryQuery.TopK = ZLSocialMemoryLimits::MaxTopK;
+		const TArray<FZLSocialMemoryEntry> RelevantMemory = State.LongMemory.Retrieve(MemoryQuery, NowSeconds);
+		Context.RelevantMemoryCount = RelevantMemory.Num();
+		for (const FZLSocialMemoryEntry& Entry : RelevantMemory) { Context.StrongestMemoryImportance = FMath::Max(Context.StrongestMemoryImportance, Entry.Importance); }
+		Context.SourceConfidence = Perception.EffectiveIntensity;
+		Context.OccupationId = Agent.OccupationId;
+		Context.bAlreadyReportedRoot = Propagation.HasReporterReported(Event.RootEventId, Agent.AgentId);
+		FZLSocialDecisionResult Decision = DecisionEngine.Evaluate(Event, Agent, State.Instant, Perception, NowSeconds, History, Context);
 		++OutStats.RuleEvaluations;
 		FZLSocialIntentCommand& Command = OutCommands.AddDefaulted_GetRef();
 		Command.EventId = Event.EventId;
 		Command.AgentId = Agent.AgentId;
 		Command.Intent = Decision.Intent;
 		Command.CandidateScores = MoveTemp(Decision.Candidates);
+		Command.ReasonCodes = MoveTemp(Decision.ReasonCodes);
 		LastCommands.Add(Agent.AgentId, Command);
 	}
 	OutStats.ProcessingMilliseconds = (FPlatformTime::Seconds() - StartedAt) * 1000.0;

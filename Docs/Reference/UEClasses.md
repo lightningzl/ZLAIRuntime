@@ -48,7 +48,7 @@
 | `FZLSocialShortMemory` | 维护固定容量、按时间可复查的 UE 社会事件环形缓冲区 |
 | `FZLSocialLongMemory` | 为 Important NPC 维护有界提升、衰减淘汰和结构化稳定 Top-K 检索，不访问 SQLite 或 Dialogue Memory |
 | `FZLSocialAgentState` | 聚合单个 Agent 的 Instant State、Short Memory 与可选 Important NPC Long Memory 更新入口 |
-| `FZLSocialRuleDecisionEngine` | 以 Personality、Instant State 和 Event 生成可复现候选分数，并应用硬约束、优先级、冷却、迟滞和稳定平局规则 |
+| `FZLSocialRuleDecisionEngine` | 以 Personality、Instant State、Relationship、Faction Standing、Long Memory、Occupation 和来源 Confidence 生成含 Reason Code 的可复现候选分数，并应用能力/重复报告硬约束、优先级、冷却、迟滞和稳定平局规则 |
 | `FZLSocialSimulation` | 编排 Event Router、Perception、State、Memory 和 Rule Decision，输出不含具体 Actor 的 Intent Command |
 | `FZLSocialGameplayAdapter` | `ZL` 私有适配层；显式产生 Punch/Gunshot/Help Event，并把 Intent Command 交给 Gameplay 回调 |
 | `FZLSocialAgentDebugSnapshot` | 单 Agent 的只读社会模拟快照，不反向驱动状态且不包含 Dialogue/凭据数据 |

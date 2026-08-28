@@ -25,7 +25,7 @@ UE5 Runtime
       - Explicit Report Confirmation + Bounded Propagation
       - Instant/Long-Term State + Sparse Relationship/Faction
       - Bounded Short/Long Social Memory + Structured Retrieval
-      - Deterministic Rule Decision
+      - Relationship-Aware Deterministic Rule Decision
       - Sanitized Debug Snapshot + Aggregate Metrics
     |
     | HTTP + versioned JSON
@@ -69,7 +69,7 @@ Python AI Service
 - 感知结果按 Event 强度与 Personality 更新 Fear、Anger、Curiosity、Alert；状态值有界并按时间衰减。
 - Level 1 Short Social Memory 使用固定容量环形缓冲区，保存 UE 权威事件摘要，不持久化且不与 Python Dialogue Memory 同步。
 - Important NPC 默认使用 Short 16、Long 8 的有界 Social Memory；Long Memory 只提升高 Importance 或显式 Anchored 事件，按衰减后重要度稳定淘汰，并通过事件、人物、Faction、地点和时间过滤执行有界 Top-K 检索。
-- Rule Decision 对 Ignore、Observe、Flee、Report、Assist、Confront 计算可复现候选分数；能力硬约束先于评分，高优先级极端事件可越过普通冷却，平分按 Tag 稳定排序。
+- Rule Decision 对 Ignore、Observe、Investigate、Flee、Report、Assist、Confront 计算可复现候选分数；Relationship、Faction Standing、相关 Long Memory、Occupation 和来源 Confidence 以稳定 Reason Code/Score Contribution 参与评分，能力与重复报告硬约束先于评分，高优先级极端事件可越过普通冷却，平分按 Tag 稳定排序。
 - `FZLSocialSimulation` 编排模块内纵向链路并输出纯数据 Intent Command；`ZL` 的 Gameplay Adapter 显式产生受控 Event 并完成 Intent 回调交付，不反向泄露具体 Actor 到 Runtime 模块。具体 StateTree、AIController 或 Gameplay Intent 执行器尚未实现。
 - `ZL.Social.InspectDemo` 输出选定 Agent 的人格、即时状态、最近事件、短期记忆数量、候选分数与 Intent；`ZL.Social.Benchmark` 输出注册数、空间候选、感知数、规则次数和处理耗时，不输出 Dialogue、scope、Prompt 或凭据。
 

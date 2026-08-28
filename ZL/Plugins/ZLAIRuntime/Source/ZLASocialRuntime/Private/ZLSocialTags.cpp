@@ -15,6 +15,7 @@ namespace ZLSocialTags
 	UE_DEFINE_GAMEPLAY_TAG(State_Alert, "Social.State.Alert");
 	UE_DEFINE_GAMEPLAY_TAG(Intent_Ignore, "Social.Intent.Ignore");
 	UE_DEFINE_GAMEPLAY_TAG(Intent_Observe, "Social.Intent.Observe");
+	UE_DEFINE_GAMEPLAY_TAG(Intent_Investigate, "Social.Intent.Investigate");
 	UE_DEFINE_GAMEPLAY_TAG(Intent_Flee, "Social.Intent.Flee");
 	UE_DEFINE_GAMEPLAY_TAG(Intent_Report, "Social.Intent.Report");
 	UE_DEFINE_GAMEPLAY_TAG(Intent_Assist, "Social.Intent.Assist");
