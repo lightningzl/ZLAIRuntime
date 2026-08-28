@@ -363,3 +363,23 @@ Docs 使用 `Planning`、`Current`、`Reference`、`Process`、`Interview`、`Mi
 
 重要性：
 重要
+
+## 2026-08-28：将报告意图与社会传播成功分离
+
+决定：
+Milestone 6 中的 `Intent.Report` 只表示 NPC 希望报告，不直接修改接收者 Memory、Relationship、Reputation 或 Faction Standing。只有 UE Gameplay 通过显式确认入口证明报告已经发生后，才能创建带 Root/Parent、Depth、Budget、来源与 Confidence 的 Social 派生 Event。Important NPC 继续使用确定性规则消费报告；本阶段不修改 Dialogue 协议，也不新增 LLM Decision 或 ToolCall。
+
+原因：
+- 决策意图不是 Gameplay 执行结果；移动失败、目标离开或报告被中断时不应产生“信息已经送达”的虚假事实。
+- 显式确认保持 UE 权威，并为未来 StateTree、AIController 或 Tool Executor 提供稳定的完成边界。
+- Root Event、传播预算和来源链只有在真实传播发生时更新，能够可靠执行去重、Confidence 衰减和 Authority 校验。
+
+取舍：
+- Milestone 6 的无界面纵向切片只能模拟显式报告完成，不能展示找守卫、移动、动画或对话表现。
+- Gameplay 层必须保存待报告上下文，并在实际执行成功后调用确认入口；只生成 `Intent.Report` 不再足以完成传播。
+
+状态：
+已接受
+
+重要性：
+重要
