@@ -22,6 +22,7 @@ UE5 Runtime
       - Event Chain/Agent/Profile Types
       - Event Router + 2D Spatial Index
       - Perception Filter
+      - Explicit Report Confirmation + Bounded Propagation
       - Instant State + Short Social Memory
       - Deterministic Rule Decision
       - Sanitized Debug Snapshot + Aggregate Metrics
@@ -61,6 +62,7 @@ Python AI Service
 - Agent 仅在注册、注销或跨 Cell 移动时更新二维网格；Event Router 只枚举半径覆盖的 Cell，再做精确二维距离过滤。
 - Event 包含 Root/Parent、Depth、Budget、Causation、Confidence 和 Social 来源基础字段；根事件由 Router 初始化并受深度、预算和生命周期硬上限约束。
 - Router 为 Punch、Gunshot、Help 提供受控默认参数，拒绝非法/过期事件，并按 `(root_event_id, agent_id)` 确定性去重。
+- `FZLSocialPropagation` 只在 Gameplay 显式确认报告完成后创建 Social 派生 Event；它限制深度、单节点 Fan-out、Root Budget、TTL、低重要度和 Reporter/Root 重复，并确定性衰减 Confidence。规则产生 `Intent.Report` 不调用该入口。
 - Perception Filter 在空间候选上执行 Direct/Visual/Auditory/Social 能力、距离衰减、视线、阈值和过期检查；Direct Target 与指定 Social Receiver 不受普通半径和遮挡过滤。
 - 感知结果按 Event 强度与 Personality 更新 Fear、Anger、Curiosity、Alert；状态值有界并按时间衰减。
 - Level 1 Short Social Memory 使用固定容量环形缓冲区，保存 UE 权威事件摘要，不持久化且不与 Python Dialogue Memory 同步。

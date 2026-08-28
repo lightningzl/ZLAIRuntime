@@ -3,6 +3,7 @@
 #include "CoreMinimal.h"
 #include "ZLSocialDecision.h"
 #include "ZLSocialEventRouter.h"
+#include "ZLSocialPropagation.h"
 
 struct ZLASOCIALRUNTIME_API FZLSocialIntentCommand
 {
@@ -31,6 +32,7 @@ public:
 	bool UpdateAgentPosition(FName AgentId, const FVector& Position);
 	bool UnregisterAgent(FName AgentId);
 	bool CreateEvent(FGameplayTag Type, FName SourceId, FName TargetId, const FVector& Position, double NowSeconds, FZLSocialEvent& OutEvent) const;
+	bool ConfirmReport(const FZLSocialReportConfirmation& Confirmation, FZLSocialPropagationResult& OutResult);
 	bool ProcessEvent(const FZLSocialEvent& Event, double NowSeconds, TArray<FZLSocialIntentCommand>& OutCommands, FZLSocialProcessingStats& OutStats, const TFunctionRef<bool(const FVector&, const FVector&)> HasLineOfSight);
 	void DecayAgentStates(float DeltaSeconds);
 	void Reset();
@@ -43,6 +45,7 @@ private:
 	FZLSocialEventRouter Router;
 	FZLSocialPerceptionFilter PerceptionFilter;
 	FZLSocialRuleDecisionEngine DecisionEngine;
+	FZLSocialPropagation Propagation;
 	TMap<FName, FZLSocialAgentProfile> Profiles;
 	TMap<FName, FZLSocialAgentState> States;
 	TMap<FName, FZLSocialDecisionHistory> DecisionHistories;

@@ -40,6 +40,8 @@
 | `ZLSocialTags` | 定义 Event、Instant State 与 Intent 原生 Gameplay Tags |
 | `FZLSocialSpatialIndex` | 维护 Agent 到二维 Cell 的索引，并返回有界半径查询与候选统计 |
 | `FZLSocialEventRouter` | 创建受控根事件、校验 Event Chain 硬边界、执行空间查询并按 Root/Agent 去重 |
+| `FZLSocialReportConfirmation` | 表示 Gameplay 已确认完成的报告、接收者、因果 ID、确认时间和 Reporter Confidence |
+| `FZLSocialPropagation` | 从显式报告确认创建有界 Social 派生 Event，并执行 Depth、Fan-out、Budget、TTL、Importance 与 Reporter/Root 去重 |
 | `FZLSocialPerceptionFilter` | 对空间候选执行 Direct/Visual/Auditory/Social、距离衰减、视线、阈值和过期过滤 |
 | `FZLSocialInstantState` | 根据 Event、感知强度和 Personality 更新并衰减 Fear、Anger、Curiosity、Alert |
 | `FZLSocialShortMemory` | 维护固定容量、按时间可复查的 UE 社会事件环形缓冲区 |

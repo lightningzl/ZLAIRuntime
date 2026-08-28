@@ -38,6 +38,11 @@ bool FZLSocialSimulation::CreateEvent(const FGameplayTag Type, const FName Sourc
 	return Router.CreateEvent(Type, SourceId, TargetId, Position, NowSeconds, OutEvent);
 }
 
+bool FZLSocialSimulation::ConfirmReport(const FZLSocialReportConfirmation& Confirmation, FZLSocialPropagationResult& OutResult)
+{
+	return Propagation.ConfirmReport(Confirmation, OutResult);
+}
+
 bool FZLSocialSimulation::ProcessEvent(const FZLSocialEvent& Event, const double NowSeconds, TArray<FZLSocialIntentCommand>& OutCommands, FZLSocialProcessingStats& OutStats, const TFunctionRef<bool(const FVector&, const FVector&)> HasLineOfSight)
 {
 	const double StartedAt = FPlatformTime::Seconds();
@@ -75,7 +80,7 @@ void FZLSocialSimulation::DecayAgentStates(const float DeltaSeconds)
 
 void FZLSocialSimulation::Reset()
 {
-	Router.Reset(); Profiles.Reset(); States.Reset(); DecisionHistories.Reset(); LastCommands.Reset();
+	Router.Reset(); Propagation.Reset(); Profiles.Reset(); States.Reset(); DecisionHistories.Reset(); LastCommands.Reset();
 }
 
 bool FZLSocialSimulation::BuildDebugSnapshot(const FName AgentId, FZLSocialAgentDebugSnapshot& OutSnapshot) const
