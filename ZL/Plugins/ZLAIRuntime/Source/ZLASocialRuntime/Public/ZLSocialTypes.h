@@ -68,6 +68,7 @@ struct ZLASOCIALRUNTIME_API FZLSocialEvent
 	UPROPERTY(VisibleAnywhere, BlueprintReadOnly) int32 ChainDepth = 0;
 	UPROPERTY(VisibleAnywhere, BlueprintReadOnly) int32 ChainBudget = 0;
 	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, meta=(ClampMin="0.0", ClampMax="1.0")) float Confidence = 1.0f;
+	UPROPERTY(EditAnywhere, BlueprintReadWrite) bool bAnchored = false;
 	UPROPERTY(VisibleAnywhere, BlueprintReadOnly) double CreatedAtSeconds = 0.0;
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, meta=(ClampMin="0.0")) double ExpiresAtSeconds = 0.0;
 
@@ -95,6 +96,8 @@ struct ZLASOCIALRUNTIME_API FZLSocialAgentProfile
 	UPROPERTY(EditAnywhere, BlueprintReadWrite) bool bCanConfront = true;
 	UPROPERTY(EditAnywhere, BlueprintReadWrite) bool bCanReceiveReports = false;
 	UPROPERTY(EditAnywhere, BlueprintReadWrite) bool bHasFactionAuthority = false;
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, meta=(ClampMin="1", ClampMax="32")) int32 ShortMemoryCapacity = 6;
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, meta=(ClampMin="0", ClampMax="24")) int32 LongMemoryCapacity = 0;
 
 	bool IsValid() const { return !AgentId.IsNone(); }
 	bool IsImportant() const { return AgentLevel == EZLSocialAgentLevel::Important; }

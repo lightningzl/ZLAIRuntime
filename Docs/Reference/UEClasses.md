@@ -46,7 +46,8 @@
 | `FZLSocialPerceptionFilter` | 对空间候选执行 Direct/Visual/Auditory/Social、距离衰减、视线、阈值和过期过滤 |
 | `FZLSocialInstantState` | 根据 Event、感知强度和 Personality 更新并衰减 Fear、Anger、Curiosity、Alert |
 | `FZLSocialShortMemory` | 维护固定容量、按时间可复查的 UE 社会事件环形缓冲区 |
-| `FZLSocialAgentState` | 聚合单个 Agent 的 Instant State 与 Short Memory 更新入口 |
+| `FZLSocialLongMemory` | 为 Important NPC 维护有界提升、衰减淘汰和结构化稳定 Top-K 检索，不访问 SQLite 或 Dialogue Memory |
+| `FZLSocialAgentState` | 聚合单个 Agent 的 Instant State、Short Memory 与可选 Important NPC Long Memory 更新入口 |
 | `FZLSocialRuleDecisionEngine` | 以 Personality、Instant State 和 Event 生成可复现候选分数，并应用硬约束、优先级、冷却、迟滞和稳定平局规则 |
 | `FZLSocialSimulation` | 编排 Event Router、Perception、State、Memory 和 Rule Decision，输出不含具体 Actor 的 Intent Command |
 | `FZLSocialGameplayAdapter` | `ZL` 私有适配层；显式产生 Punch/Gunshot/Help Event，并把 Intent Command 交给 Gameplay 回调 |

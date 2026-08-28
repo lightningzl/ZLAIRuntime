@@ -11,7 +11,13 @@ bool FZLSocialSimulation::RegisterAgent(const FZLSocialAgentProfile& Profile)
 {
 	if (!Router.RegisterAgent(Profile)) { return false; }
 	Profiles.Add(Profile.AgentId, Profile);
-	States.Add(Profile.AgentId, FZLSocialAgentState(6));
+	const int32 ShortCapacity = Profile.IsImportant()
+		? FMath::Clamp(Profile.ShortMemoryCapacity > ZLSocialMemoryLimits::Level1ShortCapacity ? Profile.ShortMemoryCapacity : ZLSocialMemoryLimits::ImportantShortCapacity, 1, ZLSocialMemoryLimits::MaxShortCapacity)
+		: ZLSocialMemoryLimits::Level1ShortCapacity;
+	const int32 LongCapacity = Profile.IsImportant()
+		? FMath::Clamp(Profile.LongMemoryCapacity > 0 ? Profile.LongMemoryCapacity : ZLSocialMemoryLimits::ImportantLongCapacity, 1, ZLSocialMemoryLimits::MaxLongCapacity)
+		: 0;
+	States.Add(Profile.AgentId, FZLSocialAgentState(ShortCapacity, LongCapacity));
 	DecisionHistories.Add(Profile.AgentId);
 	return true;
 }
@@ -64,8 +70,11 @@ bool FZLSocialSimulation::ProcessEvent(const FZLSocialEvent& Event, const double
 		if (!Perception.bPerceived) { continue; }
 		++OutStats.PerceivedAgents;
 		FZLSocialAgentState& State = States.FindChecked(Agent.AgentId);
-		State.ApplyPerception(Event, Perception, Agent.Personality);
-		RelationshipStore.ApplyPersonalEvent(Event, Agent, Perception, NowSeconds);
+		FZLSocialRelationshipDelta RelationshipDelta;
+		RelationshipStore.ApplyPersonalEvent(Event, Agent, Perception, NowSeconds, &RelationshipDelta);
+		const float RelationshipImpact = FMath::Clamp(FMath::Abs(RelationshipDelta.Trust) + FMath::Abs(RelationshipDelta.Affinity) + FMath::Abs(RelationshipDelta.Fear) + FMath::Abs(RelationshipDelta.Reputation), 0.0f, 1.0f);
+		const FZLSocialAgentProfile* Subject = Profiles.Find(Event.SourceId);
+		State.ApplyPerception(Event, Perception, Agent.Personality, RelationshipImpact, Subject != nullptr ? Subject->FactionId : NAME_None);
 		FZLSocialDecisionHistory& History = DecisionHistories.FindChecked(Agent.AgentId);
 		FZLSocialDecisionResult Decision = DecisionEngine.Evaluate(Event, Agent, State.Instant, Perception, NowSeconds, History);
 		++OutStats.RuleEvaluations;
