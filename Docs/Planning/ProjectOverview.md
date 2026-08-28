@@ -34,8 +34,8 @@
 1. **已完成：通信与真实对话**——UE/Python 闭环、Kimi、错误与超时。
 2. **已完成：上下文与对话 Memory**——NPC/World 快照和 SQLite 对话历史。
 3. **已完成：确定性社会模拟基础**——Event、空间查询、感知、人格、Instant State、Short Memory 和规则决策。
-4. **当前：关系与重要 NPC**——Long-Term State、Relationship、Faction、Long Memory 和有界事件链。
-5. **后续：AI Decision 与 ToolCall**——经协议确认后接入 Level 2/3。
+4. **已完成：关系与重要 NPC**——Long-Term State、Relationship、Faction、Long Memory 和有界事件链。
+5. **下一阶段：AI Decision 与 ToolCall**——经协议确认后接入 Level 2/3。
 6. **交付：Core NPC、Debugger 与面试场景**。
 
 ## 文档入口

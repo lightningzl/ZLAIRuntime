@@ -130,3 +130,4 @@ ZL Gameplay / UI
 - Context：[Milestone3Validation.md](../Validation/Milestone3Validation.md)
 - Dialogue Memory：[Milestone4Validation.md](../Validation/Milestone4Validation.md)
 - 确定性社会模拟：[Milestone5Validation.md](../Validation/Milestone5Validation.md)
+- 关系、长期记忆与 Important NPC：[Milestone6Validation.md](../Validation/Milestone6Validation.md)
