@@ -4,6 +4,7 @@
 #include "ZLSocialDecision.h"
 #include "ZLSocialEventRouter.h"
 #include "ZLSocialPropagation.h"
+#include "ZLSocialRelationship.h"
 
 struct ZLASOCIALRUNTIME_API FZLSocialIntentCommand
 {
@@ -33,11 +34,13 @@ public:
 	bool UnregisterAgent(FName AgentId);
 	bool CreateEvent(FGameplayTag Type, FName SourceId, FName TargetId, const FVector& Position, double NowSeconds, FZLSocialEvent& OutEvent) const;
 	bool ConfirmReport(const FZLSocialReportConfirmation& Confirmation, FZLSocialPropagationResult& OutResult);
+	bool ConfirmFactionStanding(const FZLSocialEvent& Event, FName AuthorityId, const FZLSocialPerceptionResult& Perception, double NowSeconds);
 	bool ProcessEvent(const FZLSocialEvent& Event, double NowSeconds, TArray<FZLSocialIntentCommand>& OutCommands, FZLSocialProcessingStats& OutStats, const TFunctionRef<bool(const FVector&, const FVector&)> HasLineOfSight);
 	void DecayAgentStates(float DeltaSeconds);
 	void Reset();
 
 	const FZLSocialAgentState* FindAgentState(FName AgentId) const;
+	const FZLSocialRelationshipStore& GetRelationshipStore() const { return RelationshipStore; }
 	bool BuildDebugSnapshot(FName AgentId, FZLSocialAgentDebugSnapshot& OutSnapshot) const;
 	int32 GetRegisteredAgentCount() const { return Router.GetRegisteredAgentCount(); }
 
@@ -46,6 +49,7 @@ private:
 	FZLSocialPerceptionFilter PerceptionFilter;
 	FZLSocialRuleDecisionEngine DecisionEngine;
 	FZLSocialPropagation Propagation;
+	FZLSocialRelationshipStore RelationshipStore;
 	TMap<FName, FZLSocialAgentProfile> Profiles;
 	TMap<FName, FZLSocialAgentState> States;
 	TMap<FName, FZLSocialDecisionHistory> DecisionHistories;

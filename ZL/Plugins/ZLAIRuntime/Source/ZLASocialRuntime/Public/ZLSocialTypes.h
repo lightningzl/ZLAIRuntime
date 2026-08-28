@@ -16,6 +16,13 @@ enum class EZLSocialPerceptionChannel : uint8
 };
 ENUM_CLASS_FLAGS(EZLSocialPerceptionChannel);
 
+UENUM(BlueprintType)
+enum class EZLSocialAgentLevel : uint8
+{
+	Level1,
+	Important
+};
+
 namespace ZLSocialEventLimits
 {
 	inline constexpr int32 MaxChainDepth = 2;
@@ -77,14 +84,20 @@ struct ZLASOCIALRUNTIME_API FZLSocialAgentProfile
 	UPROPERTY(EditAnywhere, BlueprintReadWrite) FName AgentId;
 	UPROPERTY(EditAnywhere, BlueprintReadWrite) FVector Position = FVector::ZeroVector;
 	UPROPERTY(EditAnywhere, BlueprintReadWrite) FGameplayTag Faction;
+	UPROPERTY(EditAnywhere, BlueprintReadWrite) FName FactionId;
+	UPROPERTY(EditAnywhere, BlueprintReadWrite) FName OccupationId;
+	UPROPERTY(EditAnywhere, BlueprintReadWrite) EZLSocialAgentLevel AgentLevel = EZLSocialAgentLevel::Level1;
 	UPROPERTY(EditAnywhere, BlueprintReadWrite) FZLSocialPersonalityTraits Personality;
 	UPROPERTY(EditAnywhere, BlueprintReadWrite) bool bCanSee = true;
 	UPROPERTY(EditAnywhere, BlueprintReadWrite) bool bCanHear = true;
 	UPROPERTY(EditAnywhere, BlueprintReadWrite) bool bCanReport = true;
 	UPROPERTY(EditAnywhere, BlueprintReadWrite) bool bCanAssist = true;
 	UPROPERTY(EditAnywhere, BlueprintReadWrite) bool bCanConfront = true;
+	UPROPERTY(EditAnywhere, BlueprintReadWrite) bool bCanReceiveReports = false;
+	UPROPERTY(EditAnywhere, BlueprintReadWrite) bool bHasFactionAuthority = false;
 
 	bool IsValid() const { return !AgentId.IsNone(); }
+	bool IsImportant() const { return AgentLevel == EZLSocialAgentLevel::Important; }
 };
 
 UCLASS(BlueprintType)

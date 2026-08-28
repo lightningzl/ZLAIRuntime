@@ -43,6 +43,12 @@ bool FZLSocialSimulation::ConfirmReport(const FZLSocialReportConfirmation& Confi
 	return Propagation.ConfirmReport(Confirmation, OutResult);
 }
 
+bool FZLSocialSimulation::ConfirmFactionStanding(const FZLSocialEvent& Event, const FName AuthorityId, const FZLSocialPerceptionResult& Perception, const double NowSeconds)
+{
+	const FZLSocialAgentProfile* Authority = Profiles.Find(AuthorityId);
+	return Authority != nullptr && RelationshipStore.ConfirmFactionStanding(Event, *Authority, Perception, NowSeconds);
+}
+
 bool FZLSocialSimulation::ProcessEvent(const FZLSocialEvent& Event, const double NowSeconds, TArray<FZLSocialIntentCommand>& OutCommands, FZLSocialProcessingStats& OutStats, const TFunctionRef<bool(const FVector&, const FVector&)> HasLineOfSight)
 {
 	const double StartedAt = FPlatformTime::Seconds();
@@ -59,6 +65,7 @@ bool FZLSocialSimulation::ProcessEvent(const FZLSocialEvent& Event, const double
 		++OutStats.PerceivedAgents;
 		FZLSocialAgentState& State = States.FindChecked(Agent.AgentId);
 		State.ApplyPerception(Event, Perception, Agent.Personality);
+		RelationshipStore.ApplyPersonalEvent(Event, Agent, Perception, NowSeconds);
 		FZLSocialDecisionHistory& History = DecisionHistories.FindChecked(Agent.AgentId);
 		FZLSocialDecisionResult Decision = DecisionEngine.Evaluate(Event, Agent, State.Instant, Perception, NowSeconds, History);
 		++OutStats.RuleEvaluations;
@@ -76,11 +83,12 @@ bool FZLSocialSimulation::ProcessEvent(const FZLSocialEvent& Event, const double
 void FZLSocialSimulation::DecayAgentStates(const float DeltaSeconds)
 {
 	for (TPair<FName, FZLSocialAgentState>& Pair : States) { Pair.Value.Decay(DeltaSeconds); }
+	RelationshipStore.DecayTowardsNeutral(DeltaSeconds);
 }
 
 void FZLSocialSimulation::Reset()
 {
-	Router.Reset(); Propagation.Reset(); Profiles.Reset(); States.Reset(); DecisionHistories.Reset(); LastCommands.Reset();
+	Router.Reset(); Propagation.Reset(); RelationshipStore.Reset(); Profiles.Reset(); States.Reset(); DecisionHistories.Reset(); LastCommands.Reset();
 }
 
 bool FZLSocialSimulation::BuildDebugSnapshot(const FName AgentId, FZLSocialAgentDebugSnapshot& OutSnapshot) const
