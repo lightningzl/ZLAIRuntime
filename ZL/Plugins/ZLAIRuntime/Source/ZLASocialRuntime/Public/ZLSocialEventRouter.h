@@ -28,5 +28,5 @@ private:
 	static bool ApplyDefaults(FGameplayTag Type, FZLSocialEvent& Event);
 
 	FZLSocialSpatialIndex SpatialIndex;
-	TMap<FGuid, TSet<FName>> DeliveredAgentsByEvent;
+	TMap<FGuid, TSet<FName>> DeliveredAgentsByRoot;
 };

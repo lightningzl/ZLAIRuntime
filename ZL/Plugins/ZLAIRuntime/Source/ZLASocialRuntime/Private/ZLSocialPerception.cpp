@@ -24,6 +24,14 @@ FZLSocialPerceptionResult FZLSocialPerceptionFilter::Evaluate(const FZLSocialEve
 		return Result;
 	}
 
+	if (Event.HasChannel(EZLSocialPerceptionChannel::Social) && Event.SocialReceiverId == Agent.AgentId)
+	{
+		Result.bPerceived = true;
+		Result.Channel = EZLSocialPerceptionChannel::Social;
+		Result.EffectiveIntensity = Event.Confidence;
+		return Result;
+	}
+
 	const float Falloff = DistanceFalloff(Event, Agent);
 	if (Falloff <= 0.0f)
 	{

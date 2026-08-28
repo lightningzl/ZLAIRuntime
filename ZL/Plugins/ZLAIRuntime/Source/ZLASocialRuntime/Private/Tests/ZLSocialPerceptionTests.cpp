@@ -10,12 +10,14 @@ bool FZLSocialPerceptionTest::RunTest(const FString& Parameters)
 {
 	FZLSocialEvent Event;
 	Event.EventId = FGuid::NewGuid();
+	Event.RootEventId = Event.EventId;
 	Event.Type = ZLSocialTags::Event_Punch;
 	Event.Position = FVector::ZeroVector;
 	Event.Radius = 1000.0f;
 	Event.Severity = 0.8f;
 	Event.Noise = 0.4f;
 	Event.Channels = static_cast<int32>(EZLSocialPerceptionChannel::Visual) | static_cast<int32>(EZLSocialPerceptionChannel::Auditory);
+	Event.ChainBudget = ZLSocialEventLimits::DefaultChainBudget;
 	Event.CreatedAtSeconds = 1.0;
 	Event.ExpiresAtSeconds = 3.0;
 

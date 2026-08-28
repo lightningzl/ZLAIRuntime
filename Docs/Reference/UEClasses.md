@@ -32,15 +32,15 @@
 
 | 类型 | 职责 |
 | --- | --- |
-| `FZLSocialEvent` | 表示具有唯一 ID、类型、来源/目标、位置、强度、通道和生命周期的 UE 权威事件 |
+| `FZLSocialEvent` | 表示具有 Event/Root/Parent/Causation ID、Depth、Budget、Confidence、来源/目标、Social 报告端点、位置、强度、通道和生命周期的 UE 权威事件 |
 | `FZLSocialAgentProfile` | 表示独立于具体 Actor 的 Level 1 Agent 标识、位置、能力和人格快照 |
 | `FZLSocialPersonalityTraits` | 表示六个有界人格 Trait，并提供统一 Clamp 行为 |
 | `UZLSocialEventArchetype` | 声明可配置事件类型、范围、强度、通道和生命周期的 DataAsset 类型；当前运行时尚未消费该资产 |
 | `UZLSocialPersonalityArchetype` | 声明可复用人格 Trait 的 DataAsset 类型；当前运行时尚未接入资产选择或 DataTable 覆盖 |
 | `ZLSocialTags` | 定义 Event、Instant State 与 Intent 原生 Gameplay Tags |
 | `FZLSocialSpatialIndex` | 维护 Agent 到二维 Cell 的索引，并返回有界半径查询与候选统计 |
-| `FZLSocialEventRouter` | 创建受控事件、校验生命周期、执行空间查询并按 Event/Agent 去重 |
-| `FZLSocialPerceptionFilter` | 对空间候选执行 Direct/Visual/Auditory、距离衰减、视线、阈值和过期过滤 |
+| `FZLSocialEventRouter` | 创建受控根事件、校验 Event Chain 硬边界、执行空间查询并按 Root/Agent 去重 |
+| `FZLSocialPerceptionFilter` | 对空间候选执行 Direct/Visual/Auditory/Social、距离衰减、视线、阈值和过期过滤 |
 | `FZLSocialInstantState` | 根据 Event、感知强度和 Personality 更新并衰减 Fear、Anger、Curiosity、Alert |
 | `FZLSocialShortMemory` | 维护固定容量、按时间可复查的 UE 社会事件环形缓冲区 |
 | `FZLSocialAgentState` | 聚合单个 Agent 的 Instant State 与 Short Memory 更新入口 |

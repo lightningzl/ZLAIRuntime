@@ -12,7 +12,7 @@
 
 ## Milestone 6：关系、长期记忆与重要 NPC
 
-状态：`待开始`（范围于 2026-08-28 确定，尚未产生验收证据）。
+状态：`进行中`（范围于 2026-08-28 确定，Event Chain 基础模型已进入实现）。
 
 目标：在 Milestone 5 的纯 UE 确定性社会模拟基础上，增加有界的 NPC→NPC 社会传播、个人关系、Faction Standing、Important NPC Long Memory 和关系感知规则决策，形成以下可测试纵向切片：
 

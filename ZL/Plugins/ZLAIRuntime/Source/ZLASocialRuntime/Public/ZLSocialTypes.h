@@ -11,9 +11,18 @@ enum class EZLSocialPerceptionChannel : uint8
 	None = 0,
 	Direct = 1 << 0,
 	Visual = 1 << 1,
-	Auditory = 1 << 2
+	Auditory = 1 << 2,
+	Social = 1 << 3
 };
 ENUM_CLASS_FLAGS(EZLSocialPerceptionChannel);
+
+namespace ZLSocialEventLimits
+{
+	inline constexpr int32 MaxChainDepth = 2;
+	inline constexpr int32 MaxChainBudget = 32;
+	inline constexpr int32 DefaultChainBudget = 12;
+	inline constexpr int32 MaxFanOut = 6;
+}
 
 USTRUCT(BlueprintType)
 struct ZLASOCIALRUNTIME_API FZLSocialPersonalityTraits
@@ -36,19 +45,28 @@ struct ZLASOCIALRUNTIME_API FZLSocialEvent
 	GENERATED_BODY()
 
 	UPROPERTY(VisibleAnywhere, BlueprintReadOnly) FGuid EventId;
+	UPROPERTY(VisibleAnywhere, BlueprintReadOnly) FGuid RootEventId;
+	UPROPERTY(VisibleAnywhere, BlueprintReadOnly) FGuid ParentEventId;
+	UPROPERTY(VisibleAnywhere, BlueprintReadOnly) FGuid CausationId;
 	UPROPERTY(EditAnywhere, BlueprintReadWrite) FGameplayTag Type;
 	UPROPERTY(EditAnywhere, BlueprintReadWrite) FName SourceId;
 	UPROPERTY(EditAnywhere, BlueprintReadWrite) FName TargetId;
+	UPROPERTY(VisibleAnywhere, BlueprintReadOnly) FName ReporterId;
+	UPROPERTY(VisibleAnywhere, BlueprintReadOnly) FName SocialReceiverId;
 	UPROPERTY(EditAnywhere, BlueprintReadWrite) FVector Position = FVector::ZeroVector;
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, meta=(ClampMin="0.0")) float Radius = 0.0f;
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, meta=(ClampMin="0.0", ClampMax="1.0")) float Severity = 0.0f;
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, meta=(ClampMin="0.0", ClampMax="1.0")) float Noise = 0.0f;
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, meta=(Bitmask, BitmaskEnum="/Script/ZLASocialRuntime.EZLSocialPerceptionChannel")) int32 Channels = 0;
+	UPROPERTY(VisibleAnywhere, BlueprintReadOnly) int32 ChainDepth = 0;
+	UPROPERTY(VisibleAnywhere, BlueprintReadOnly) int32 ChainBudget = 0;
+	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, meta=(ClampMin="0.0", ClampMax="1.0")) float Confidence = 1.0f;
 	UPROPERTY(VisibleAnywhere, BlueprintReadOnly) double CreatedAtSeconds = 0.0;
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, meta=(ClampMin="0.0")) double ExpiresAtSeconds = 0.0;
 
 	bool IsValid(double NowSeconds) const;
 	bool HasChannel(EZLSocialPerceptionChannel Channel) const;
+	bool IsRootEvent() const { return EventId.IsValid() && RootEventId == EventId && !ParentEventId.IsValid() && ChainDepth == 0; }
 };
 
 USTRUCT(BlueprintType)
