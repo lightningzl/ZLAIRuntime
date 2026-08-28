@@ -6,6 +6,7 @@
 
 - 项目定位：[Project Overview](./Planning/ProjectOverview.md)
 - 长期总规划：[Social Simulation Plan](./Planning/SocialSimulationPlan.md)
+- 最终场景设想：[Scenario 1 Open Social Sandbox](./Planning/FinalScenarios/Scenario1OpenSocialSandbox.md)
 - 目标总设计：[Social Simulation Design](./Planning/SocialSimulationDesign.md)
 - 当前里程碑：[Current Milestone](./Current/CurrentMilestone.md)
 - 当前任务板：[Task Board](./Current/TaskBoard.md)

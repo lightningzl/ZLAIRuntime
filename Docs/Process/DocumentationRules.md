@@ -9,6 +9,7 @@
 ```text
 Docs/
   Planning/    长期目标、目标设计、当前架构和重要决策
+    FinalScenarios/  最终场景的体验设想、开放交互边界和场景级验收属性
   Current/     当前里程碑、当前任务板和实时项目状态
   Reference/   协议、UE 类型、Python 模块和数据库设计
   Process/     文档、编码和 Git 工作规则
@@ -29,6 +30,7 @@ Docs/
 | `Planning/SocialSimulationDesign.md` | 目标社会模拟领域模型和长期技术设计 | 声明目标已实现、线上协议正文、当前任务 |
 | `Planning/Architecture.md` | 当前已接受并实现的系统模块、边界和依赖 | 目标路线、文件清单、当前任务状态 |
 | `Planning/DecisionLog.md` | 已接受或已取代的重要决策及原因 | 任务流水账、临时方案、单独改变范围或协议 |
+| `Planning/FinalScenarios/*.md` | 单个最终场景的体验目标、交互边界、观察探针和底座需求来源 | 当前实施授权、固定剧情脚本、固定模型台词或实际验证结果 |
 | `Current/CurrentMilestone.md` | 当前范围、明确不做、验收标准和完成定义 | 任务状态、验证日志、历史里程碑正文 |
 | `Current/TaskBoard.md` | 当前工作包、依赖、状态和完成条件 | 复制验收标准、验证命令和历史结果 |
 | `Current/ProjectState.md` | 活动任务、下一步、阻塞和验收进度的简洁快照 | 任务明细、架构、协议和验证日志 |
