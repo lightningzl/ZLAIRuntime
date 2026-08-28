@@ -35,6 +35,19 @@ bool FZLSocialEventRouter::RouteEvent(const FZLSocialEvent& Event, const double 
 	{
 		return false;
 	}
+	for (auto Iterator = RootExpiryByRoot.CreateIterator(); Iterator; ++Iterator)
+	{
+		if (Iterator.Value() < NowSeconds)
+		{
+			DeliveredAgentsByRoot.Remove(Iterator.Key());
+			Iterator.RemoveCurrent();
+		}
+	}
+	if (!RootExpiryByRoot.Contains(Event.RootEventId))
+	{
+		if (RootExpiryByRoot.Num() >= ZLSocialRuntimeLimits::MaxTrackedRoots) { return false; }
+		RootExpiryByRoot.Add(Event.RootEventId, Event.ExpiresAtSeconds);
+	}
 
 	TArray<FZLSocialAgentProfile> QueriedAgents;
 	SpatialIndex.QueryRadius(Event.Position, Event.Radius, QueriedAgents, &OutResult.SpatialStats);
@@ -72,6 +85,7 @@ void FZLSocialEventRouter::Reset()
 {
 	SpatialIndex.Reset();
 	DeliveredAgentsByRoot.Reset();
+	RootExpiryByRoot.Reset();
 }
 
 bool FZLSocialEventRouter::ApplyDefaults(const FGameplayTag Type, FZLSocialEvent& Event)

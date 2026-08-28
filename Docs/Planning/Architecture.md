@@ -65,6 +65,7 @@ Python AI Service
 - Router 为 Punch、Gunshot、Help 提供受控默认参数，拒绝非法/过期事件，并按 `(root_event_id, agent_id)` 确定性去重。
 - `FZLSocialPropagation` 只在 Gameplay 显式确认报告完成后创建 Social 派生 Event；它限制深度、单节点 Fan-out、Root Budget、TTL、低重要度和 Reporter/Root 重复，并确定性衰减 Confidence。规则产生 `Intent.Report` 不调用该入口。
 - Relationship Store 只在相关交互发生时创建有向 `(observer_id, subject_id)` 边，保存有界 Trust、Affinity、Fear、Familiarity 与 Reputation；Faction Standing 只有具备 Authority Capability 的 Important NPC 经显式确认且 Confidence 达标后才更新，并按 Root/Faction 去重。
+- Agent 注册、活动 Root 跟踪、Relationship 边和 Faction Standing 均有固定硬上限；过期 Root 会从 Router、Propagation 和长期状态去重表中清理，容量耗尽时拒绝新增状态而不扩张容器。
 - Perception Filter 在空间候选上执行 Direct/Visual/Auditory/Social 能力、距离衰减、视线、阈值和过期检查；Direct Target 与指定 Social Receiver 不受普通半径和遮挡过滤。
 - 感知结果按 Event 强度与 Personality 更新 Fear、Anger、Curiosity、Alert；状态值有界并按时间衰减。
 - Level 1 Short Social Memory 使用固定容量环形缓冲区，保存 UE 权威事件摘要，不持久化且不与 Python Dialogue Memory 同步。

@@ -23,10 +23,12 @@ public:
 	bool RouteEvent(const FZLSocialEvent& Event, double NowSeconds, FZLSocialEventRouteResult& OutResult);
 	void Reset();
 	int32 GetRegisteredAgentCount() const { return SpatialIndex.Num(); }
+	int32 GetTrackedRootCount() const { return DeliveredAgentsByRoot.Num(); }
 
 private:
 	static bool ApplyDefaults(FGameplayTag Type, FZLSocialEvent& Event);
 
 	FZLSocialSpatialIndex SpatialIndex;
 	TMap<FGuid, TSet<FName>> DeliveredAgentsByRoot;
+	TMap<FGuid, double> RootExpiryByRoot;
 };

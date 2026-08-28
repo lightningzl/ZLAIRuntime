@@ -17,6 +17,20 @@ bool FZLSocialRelationshipStore::ApplyPersonalEvent(const FZLSocialEvent& Event,
 	{
 		return false;
 	}
+	for (auto Iterator = RootExpiryByRoot.CreateIterator(); Iterator; ++Iterator)
+	{
+		if (Iterator.Value() < NowSeconds)
+		{
+			PersonalObserversByRoot.Remove(Iterator.Key());
+			UpdatedFactionsByRoot.Remove(Iterator.Key());
+			Iterator.RemoveCurrent();
+		}
+	}
+	if (!RootExpiryByRoot.Contains(Event.RootEventId))
+	{
+		if (RootExpiryByRoot.Num() >= ZLSocialRuntimeLimits::MaxTrackedRoots) { return false; }
+		RootExpiryByRoot.Add(Event.RootEventId, Event.ExpiresAtSeconds);
+	}
 	TSet<FName>& Observers = PersonalObserversByRoot.FindOrAdd(Event.RootEventId);
 	if (Observers.Contains(Observer.AgentId))
 	{
@@ -28,7 +42,9 @@ bool FZLSocialRelationshipStore::ApplyPersonalEvent(const FZLSocialEvent& Event,
 	{
 		return false;
 	}
-	FZLSocialRelationshipState& State = Relationships.FindOrAdd({Observer.AgentId, Event.SourceId});
+	const FZLSocialRelationshipKey Key{Observer.AgentId, Event.SourceId};
+	if (!Relationships.Contains(Key) && Relationships.Num() >= ZLSocialRuntimeLimits::MaxRelationshipEdges) { return false; }
+	FZLSocialRelationshipState& State = Relationships.FindOrAdd(Key);
 	State.Trust += Delta.Trust;
 	State.Affinity += Delta.Affinity;
 	State.Fear += Delta.Fear;
@@ -52,6 +68,20 @@ bool FZLSocialRelationshipStore::ConfirmFactionStanding(const FZLSocialEvent& Ev
 	{
 		return false;
 	}
+	for (auto Iterator = RootExpiryByRoot.CreateIterator(); Iterator; ++Iterator)
+	{
+		if (Iterator.Value() < NowSeconds)
+		{
+			PersonalObserversByRoot.Remove(Iterator.Key());
+			UpdatedFactionsByRoot.Remove(Iterator.Key());
+			Iterator.RemoveCurrent();
+		}
+	}
+	if (!RootExpiryByRoot.Contains(Event.RootEventId))
+	{
+		if (RootExpiryByRoot.Num() >= ZLSocialRuntimeLimits::MaxTrackedRoots) { return false; }
+		RootExpiryByRoot.Add(Event.RootEventId, Event.ExpiresAtSeconds);
+	}
 	TSet<FName>& UpdatedFactions = UpdatedFactionsByRoot.FindOrAdd(Event.RootEventId);
 	if (UpdatedFactions.Contains(Authority.FactionId))
 	{
@@ -63,7 +93,9 @@ bool FZLSocialRelationshipStore::ConfirmFactionStanding(const FZLSocialEvent& Ev
 	else if (Event.Type == ZLSocialTags::Event_Help) { BaseDelta = 0.25f; }
 	else { return false; }
 
-	FZLSocialFactionStandingState& State = FactionStandings.FindOrAdd({Authority.FactionId, Event.SourceId});
+	const FZLSocialFactionStandingKey Key{Authority.FactionId, Event.SourceId};
+	if (!FactionStandings.Contains(Key) && FactionStandings.Num() >= ZLSocialRuntimeLimits::MaxFactionStandings) { return false; }
+	FZLSocialFactionStandingState& State = FactionStandings.FindOrAdd(Key);
 	State.Standing = FMath::Clamp(State.Standing + BaseDelta * SourceWeight(Perception.Channel, Perception.EffectiveIntensity), -1.0f, 1.0f);
 	State.LastUpdatedSeconds = NowSeconds;
 	State.LastCausationEventId = Event.RootEventId;
@@ -92,6 +124,7 @@ void FZLSocialRelationshipStore::Reset()
 	FactionStandings.Reset();
 	PersonalObserversByRoot.Reset();
 	UpdatedFactionsByRoot.Reset();
+	RootExpiryByRoot.Reset();
 }
 
 const FZLSocialRelationshipState* FZLSocialRelationshipStore::FindRelationship(const FName ObserverId, const FName SubjectId) const

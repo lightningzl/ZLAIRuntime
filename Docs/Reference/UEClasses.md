@@ -56,6 +56,8 @@
 
 这些类型不包含 Actor、Widget、HTTP、Provider、Python 或 Dialogue Memory 引用。`ZL` 负责把具体 Gameplay 对象转换为稳定 ID 和位置快照。
 
+Runtime 固定上限为 10000 个注册 Agent、1024 个活动 Root、4096 条 Personal Relationship 边和 1024 条 Faction Standing；活动 Root 过期后清理其去重状态。
+
 当前 Social Runtime 接入边界：
 
 - `FZLSocialGameplayAdapter` 验证 Event 产生、显式 Report 确认、Important NPC Social/Long Memory、Authority/Relationship 更新、Intent Command 生成和回调交付，尚未连接具体 StateTree、AIController、导航、动画或 Gameplay Ability。

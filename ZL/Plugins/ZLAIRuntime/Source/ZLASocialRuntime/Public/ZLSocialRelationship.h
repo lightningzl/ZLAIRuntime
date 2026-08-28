@@ -85,4 +85,5 @@ private:
 	TMap<FZLSocialFactionStandingKey, FZLSocialFactionStandingState> FactionStandings;
 	TMap<FGuid, TSet<FName>> PersonalObserversByRoot;
 	TMap<FGuid, TSet<FName>> UpdatedFactionsByRoot;
+	TMap<FGuid, double> RootExpiryByRoot;
 };

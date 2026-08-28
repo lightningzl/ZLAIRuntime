@@ -70,6 +70,11 @@ bool FZLSocialEventRouterTest::RunTest(const FString& Parameters)
 	InvalidChain = Help;
 	InvalidChain.RootEventId.Invalidate();
 	TestFalse(TEXT("Missing root identifier is invalid"), InvalidChain.IsValid(10.0));
+
+	FZLSocialEvent Later;
+	TestTrue(TEXT("Later root event is created"), Router.CreateEvent(ZLSocialTags::Event_Punch, TEXT("player"), NAME_None, FVector::ZeroVector, 20.0, Later));
+	TestTrue(TEXT("Later root routes after prior roots expire"), Router.RouteEvent(Later, 20.0, Result));
+	TestEqual(TEXT("Expired root deduplication state is pruned"), Router.GetTrackedRootCount(), 1);
 	return true;
 }
 

@@ -20,6 +20,20 @@ bool FZLSocialPropagation::ConfirmReport(const FZLSocialReportConfirmation& Conf
 	{
 		return false;
 	}
+	for (auto Iterator = RootExpiryByRoot.CreateIterator(); Iterator; ++Iterator)
+	{
+		if (Iterator.Value() < Confirmation.ConfirmedAtSeconds)
+		{
+			ReportersByRoot.Remove(Iterator.Key());
+			RemainingBudgetByRoot.Remove(Iterator.Key());
+			Iterator.RemoveCurrent();
+		}
+	}
+	if (!RootExpiryByRoot.Contains(Source.RootEventId))
+	{
+		if (RootExpiryByRoot.Num() >= ZLSocialRuntimeLimits::MaxTrackedRoots) { return false; }
+		RootExpiryByRoot.Add(Source.RootEventId, Source.ExpiresAtSeconds);
+	}
 
 	TSet<FName>& Reporters = ReportersByRoot.FindOrAdd(Source.RootEventId);
 	if (Reporters.Contains(Confirmation.ReporterId))
@@ -91,6 +105,7 @@ void FZLSocialPropagation::Reset()
 {
 	ReportersByRoot.Reset();
 	RemainingBudgetByRoot.Reset();
+	RootExpiryByRoot.Reset();
 }
 
 bool FZLSocialPropagation::HasReporterReported(const FGuid RootEventId, const FName ReporterId) const

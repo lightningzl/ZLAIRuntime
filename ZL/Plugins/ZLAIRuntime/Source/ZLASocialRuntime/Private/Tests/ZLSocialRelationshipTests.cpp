@@ -70,6 +70,19 @@ bool FZLSocialRelationshipTest::RunTest(const FString& Parameters)
 	Store.DecayTowardsNeutral(10.0f);
 	const FZLSocialRelationshipState* Relationship = Store.FindRelationship(Population[0].AgentId, TEXT("player"));
 	TestTrue(TEXT("Long-term values stay bounded"), Relationship != nullptr && Relationship->Trust >= -1.0f && Relationship->Trust <= 1.0f && Relationship->Fear >= 0.0f && Relationship->Fear <= 1.0f);
+
+	FZLSocialRelationshipStore EdgeBoundStore;
+	FZLSocialEvent SharedRoot = Punch;
+	for (int32 Index = 0; Index < ZLSocialRuntimeLimits::MaxRelationshipEdges; ++Index)
+	{
+		FZLSocialAgentProfile Observer;
+		Observer.AgentId = FName(*FString::Printf(TEXT("bounded_observer_%04d"), Index));
+		TestTrue(TEXT("Relationship edge within hard cap is accepted"), EdgeBoundStore.ApplyPersonalEvent(SharedRoot, Observer, Visual, 1.0));
+	}
+	FZLSocialAgentProfile BeyondCap;
+	BeyondCap.AgentId = TEXT("beyond_relationship_cap");
+	TestFalse(TEXT("Relationship edge beyond hard cap is rejected"), EdgeBoundStore.ApplyPersonalEvent(SharedRoot, BeyondCap, Visual, 1.0));
+	TestEqual(TEXT("Relationship graph remains hard bounded"), EdgeBoundStore.GetRelationshipEdgeCount(), ZLSocialRuntimeLimits::MaxRelationshipEdges);
 	return true;
 }
 

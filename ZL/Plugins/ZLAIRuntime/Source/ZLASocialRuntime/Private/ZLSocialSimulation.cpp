@@ -9,6 +9,7 @@ FZLSocialSimulation::FZLSocialSimulation(const float CellSize)
 
 bool FZLSocialSimulation::RegisterAgent(const FZLSocialAgentProfile& Profile)
 {
+	if (Profiles.Num() >= ZLSocialRuntimeLimits::MaxRegisteredAgents) { return false; }
 	if (!Router.RegisterAgent(Profile)) { return false; }
 	Profiles.Add(Profile.AgentId, Profile);
 	const int32 ShortCapacity = Profile.IsImportant()

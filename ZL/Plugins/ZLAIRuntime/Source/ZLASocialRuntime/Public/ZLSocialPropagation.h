@@ -29,6 +29,7 @@ public:
 
 	bool ConfirmReport(const FZLSocialReportConfirmation& Confirmation, FZLSocialPropagationResult& OutResult);
 	bool HasReporterReported(FGuid RootEventId, FName ReporterId) const;
+	int32 GetTrackedRootCount() const { return RootExpiryByRoot.Num(); }
 	void Reset();
 
 private:
@@ -36,4 +37,5 @@ private:
 	float MinimumImportance;
 	TMap<FGuid, TSet<FName>> ReportersByRoot;
 	TMap<FGuid, int32> RemainingBudgetByRoot;
+	TMap<FGuid, double> RootExpiryByRoot;
 };

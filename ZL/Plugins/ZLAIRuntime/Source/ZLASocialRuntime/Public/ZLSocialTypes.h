@@ -31,6 +31,14 @@ namespace ZLSocialEventLimits
 	inline constexpr int32 MaxFanOut = 6;
 }
 
+namespace ZLSocialRuntimeLimits
+{
+	inline constexpr int32 MaxRegisteredAgents = 10000;
+	inline constexpr int32 MaxTrackedRoots = 1024;
+	inline constexpr int32 MaxRelationshipEdges = 4096;
+	inline constexpr int32 MaxFactionStandings = 1024;
+}
+
 USTRUCT(BlueprintType)
 struct ZLASOCIALRUNTIME_API FZLSocialPersonalityTraits
 {
