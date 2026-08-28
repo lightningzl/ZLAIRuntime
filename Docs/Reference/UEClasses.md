@@ -50,7 +50,7 @@
 | `FZLSocialAgentState` | 聚合单个 Agent 的 Instant State、Short Memory 与可选 Important NPC Long Memory 更新入口 |
 | `FZLSocialRuleDecisionEngine` | 以 Personality、Instant State、Relationship、Faction Standing、Long Memory、Occupation 和来源 Confidence 生成含 Reason Code 的可复现候选分数，并应用能力/重复报告硬约束、优先级、冷却、迟滞和稳定平局规则 |
 | `FZLSocialSimulation` | 编排 Event Router、Perception、State、Memory 和 Rule Decision，输出不含具体 Actor 的 Intent Command |
-| `FZLSocialGameplayAdapter` | `ZL` 私有适配层；显式产生 Punch/Gunshot/Help Event，并把 Intent Command 交给 Gameplay 回调 |
+| `FZLSocialGameplayAdapter` | `ZL` 私有适配层；显式产生 Punch/Gunshot/Help Event、确认 Report 完成、处理 Social 派生 Event、确认 Authority Assessment，并把 Intent Command 交给 Gameplay 回调 |
 | `FZLSocialAgentDebugSnapshot` | 单 Agent 的只读社会模拟快照，不反向驱动状态且不包含 Dialogue/凭据数据 |
 | `ZLSocialDebug` | 格式化安全快照并运行确定性 120 Agent 聚合基准 |
 
@@ -58,7 +58,7 @@
 
 当前 Social Runtime 接入边界：
 
-- `FZLSocialGameplayAdapter` 只验证 Event 产生、Intent Command 生成和回调交付，尚未连接具体 StateTree、AIController、导航、动画或 Gameplay Ability。
+- `FZLSocialGameplayAdapter` 验证 Event 产生、显式 Report 确认、Important NPC Social/Long Memory、Authority/Relationship 更新、Intent Command 生成和回调交付，尚未连接具体 StateTree、AIController、导航、动画或 Gameplay Ability。
 - Gameplay Adapter 当前使用恒定可见的测试 LOS 回调，真实 World Trace 尚未接入。
 - `FZLSocialSpatialIndex` 使用二维 Cell 和二维距离，不处理 Z 轴楼层、房间或区域传播。
 - Event/Personality DataAsset 类型已经声明，但 Event Router 仍使用 C++ 受控默认值，DataTable 批量覆盖尚未实现。

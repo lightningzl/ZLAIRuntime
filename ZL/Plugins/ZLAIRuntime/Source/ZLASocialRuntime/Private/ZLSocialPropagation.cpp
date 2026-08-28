@@ -73,6 +73,7 @@ bool FZLSocialPropagation::ConfirmReport(const FZLSocialReportConfirmation& Conf
 		Derived.ChainDepth = Source.ChainDepth + 1;
 		Derived.ChainBudget = RemainingBudget;
 		Derived.Confidence = FMath::Clamp(Source.Confidence * Confirmation.ReporterConfidence * ConfidenceDecay, 0.0f, 1.0f);
+		Derived.bAnchored = Confirmation.bAnchorDerivedEvents;
 		Derived.CreatedAtSeconds = Confirmation.ConfirmedAtSeconds;
 		Derived.ExpiresAtSeconds = Source.ExpiresAtSeconds;
 	}

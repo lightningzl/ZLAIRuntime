@@ -11,6 +11,7 @@ struct ZLASOCIALRUNTIME_API FZLSocialReportConfirmation
 	FGuid CausationId;
 	double ConfirmedAtSeconds = 0.0;
 	float ReporterConfidence = 1.0f;
+	bool bAnchorDerivedEvents = false;
 };
 
 struct ZLASOCIALRUNTIME_API FZLSocialPropagationResult
