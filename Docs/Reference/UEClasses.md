@@ -32,29 +32,35 @@
 
 | 类型 | 职责 |
 | --- | --- |
-| `FZLSocialEvent` | 表示具有唯一 ID、类型、来源/目标、位置、强度、通道和生命周期的 UE 权威事件 |
-| `FZLSocialAgentProfile` | 表示独立于具体 Actor 的 Level 1 Agent 标识、位置、能力和人格快照 |
+| `FZLSocialEvent` | 表示具有 Event/Root/Parent/Causation ID、Depth、Budget、Confidence、来源/目标、Social 报告端点、位置、强度、通道和生命周期的 UE 权威事件 |
+| `FZLSocialAgentProfile` | 表示独立于具体 Actor 的 Agent ID、Level、Faction/Occupation、位置、能力和人格快照；Important NPC 可声明 Report Receiver 与 Faction Authority 能力 |
 | `FZLSocialPersonalityTraits` | 表示六个有界人格 Trait，并提供统一 Clamp 行为 |
 | `UZLSocialEventArchetype` | 声明可配置事件类型、范围、强度、通道和生命周期的 DataAsset 类型；当前运行时尚未消费该资产 |
 | `UZLSocialPersonalityArchetype` | 声明可复用人格 Trait 的 DataAsset 类型；当前运行时尚未接入资产选择或 DataTable 覆盖 |
 | `ZLSocialTags` | 定义 Event、Instant State 与 Intent 原生 Gameplay Tags |
 | `FZLSocialSpatialIndex` | 维护 Agent 到二维 Cell 的索引，并返回有界半径查询与候选统计 |
-| `FZLSocialEventRouter` | 创建受控事件、校验生命周期、执行空间查询并按 Event/Agent 去重 |
-| `FZLSocialPerceptionFilter` | 对空间候选执行 Direct/Visual/Auditory、距离衰减、视线、阈值和过期过滤 |
+| `FZLSocialEventRouter` | 创建受控根事件、校验 Event Chain 硬边界、执行空间查询并按 Root/Agent 去重 |
+| `FZLSocialReportConfirmation` | 表示 Gameplay 已确认完成的报告、接收者、因果 ID、确认时间和 Reporter Confidence |
+| `FZLSocialPropagation` | 从显式报告确认创建有界 Social 派生 Event，并执行 Depth、Fan-out、Budget、TTL、Importance 与 Reporter/Root 去重 |
+| `FZLSocialRelationshipStore` | 维护稀疏有向 Personal Relationship、Reputation 与 Faction Standing，执行来源权重、边界、衰减、Authority/Confidence 校验和 Root 去重 |
+| `FZLSocialPerceptionFilter` | 对空间候选执行 Direct/Visual/Auditory/Social、距离衰减、视线、阈值和过期过滤 |
 | `FZLSocialInstantState` | 根据 Event、感知强度和 Personality 更新并衰减 Fear、Anger、Curiosity、Alert |
 | `FZLSocialShortMemory` | 维护固定容量、按时间可复查的 UE 社会事件环形缓冲区 |
-| `FZLSocialAgentState` | 聚合单个 Agent 的 Instant State 与 Short Memory 更新入口 |
-| `FZLSocialRuleDecisionEngine` | 以 Personality、Instant State 和 Event 生成可复现候选分数，并应用硬约束、优先级、冷却、迟滞和稳定平局规则 |
+| `FZLSocialLongMemory` | 为 Important NPC 维护有界提升、衰减淘汰和结构化稳定 Top-K 检索，不访问 SQLite 或 Dialogue Memory |
+| `FZLSocialAgentState` | 聚合单个 Agent 的 Instant State、Short Memory 与可选 Important NPC Long Memory 更新入口 |
+| `FZLSocialRuleDecisionEngine` | 以 Personality、Instant State、Relationship、Faction Standing、Long Memory、Occupation 和来源 Confidence 生成含 Reason Code 的可复现候选分数，并应用能力/重复报告硬约束、优先级、冷却、迟滞和稳定平局规则 |
 | `FZLSocialSimulation` | 编排 Event Router、Perception、State、Memory 和 Rule Decision，输出不含具体 Actor 的 Intent Command |
-| `FZLSocialGameplayAdapter` | `ZL` 私有适配层；显式产生 Punch/Gunshot/Help Event，并把 Intent Command 交给 Gameplay 回调 |
-| `FZLSocialAgentDebugSnapshot` | 单 Agent 的只读社会模拟快照，不反向驱动状态且不包含 Dialogue/凭据数据 |
-| `ZLSocialDebug` | 格式化安全快照并运行确定性 120 Agent 聚合基准 |
+| `FZLSocialGameplayAdapter` | `ZL` 私有适配层；显式产生 Punch/Gunshot/Help Event、确认 Report 完成、处理 Social 派生 Event、确认 Authority Assessment，并把 Intent Command 交给 Gameplay 回调 |
+| `FZLSocialAgentDebugSnapshot` | 单 Agent 的只读 Level/Faction/Occupation、Event Chain、来源、关系、Faction、Short/Long Memory、Reason Code 和 Intent 快照，不反向驱动状态且不包含 Dialogue/凭据数据 |
+| `ZLSocialDebug` | 格式化安全快照，运行确定性 120 Level 1 基线与 120 Level 1 + 5 Important NPC 的传播/关系/Memory 聚合基准 |
 
 这些类型不包含 Actor、Widget、HTTP、Provider、Python 或 Dialogue Memory 引用。`ZL` 负责把具体 Gameplay 对象转换为稳定 ID 和位置快照。
 
+Runtime 固定上限为 10000 个注册 Agent、1024 个活动 Root、4096 条 Personal Relationship 边和 1024 条 Faction Standing；活动 Root 过期后清理其去重状态。
+
 当前 Social Runtime 接入边界：
 
-- `FZLSocialGameplayAdapter` 只验证 Event 产生、Intent Command 生成和回调交付，尚未连接具体 StateTree、AIController、导航、动画或 Gameplay Ability。
+- `FZLSocialGameplayAdapter` 验证 Event 产生、显式 Report 确认、Important NPC Social/Long Memory、Authority/Relationship 更新、Intent Command 生成和回调交付，尚未连接具体 StateTree、AIController、导航、动画或 Gameplay Ability。
 - Gameplay Adapter 当前使用恒定可见的测试 LOS 回调，真实 World Trace 尚未接入。
 - `FZLSocialSpatialIndex` 使用二维 Cell 和二维距离，不处理 Z 轴楼层、房间或区域传播。
 - Event/Personality DataAsset 类型已经声明，但 Event Router 仍使用 C++ 受控默认值，DataTable 批量覆盖尚未实现。
@@ -114,6 +120,7 @@ ZL Gameplay / UI
 - `ZL.AI.DialogueMemoryDemo`：连续 Memory、scope/NPC 隔离和重启恢复演示。
 - `ZL.Social.InspectDemo [agent_id]`：输出可复现的最小 Agent 社会状态快照。
 - `ZL.Social.Benchmark [agent_count]`：运行确定性 Level 1 场景并输出聚合性能指标。
+- `ZL.Social.BenchmarkM6`：运行固定 120 Level 1 + 5 Important NPC 的传播、关系、Faction、Long Memory 和规则聚合基准。
 
 演示日志只记录关联元数据、匹配结果和长度，不记录完整输入、Context、scope 或回复正文。
 
@@ -123,3 +130,4 @@ ZL Gameplay / UI
 - Context：[Milestone3Validation.md](../Validation/Milestone3Validation.md)
 - Dialogue Memory：[Milestone4Validation.md](../Validation/Milestone4Validation.md)
 - 确定性社会模拟：[Milestone5Validation.md](../Validation/Milestone5Validation.md)
+- 关系、长期记忆与 Important NPC：[Milestone6Validation.md](../Validation/Milestone6Validation.md)

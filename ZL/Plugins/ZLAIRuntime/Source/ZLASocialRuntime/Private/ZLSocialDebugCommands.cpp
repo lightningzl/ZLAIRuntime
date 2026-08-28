@@ -18,6 +18,19 @@ static FAutoConsoleCommand GZLSocialBenchmarkCommand(
 			Result.Processing.RuleEvaluations, Result.Processing.ProcessingMilliseconds);
 	}));
 
+static FAutoConsoleCommand GZLSocialMilestone6BenchmarkCommand(
+	TEXT("ZL.Social.BenchmarkM6"),
+	TEXT("Run deterministic 120 Level 1 plus 5 Important NPC social benchmark."),
+	FConsoleCommandDelegate::CreateStatic([]()
+	{
+		const FZLSocialMilestone6BenchmarkResult Result = ZLSocialDebug::RunMilestone6Benchmark();
+		UE_LOG(LogZLSocialDebug, Display, TEXT("m6_benchmark level1=%d important=%d registered=%d propagation=%d rejected=%d duplicates=%d relationships=%d factions=%d long_memory=%d rules=%d rule_ms=%.3f processing_ms=%.3f"),
+			Result.Level1Agents, Result.ImportantAgents, Result.RegisteredAgents, Result.Aggregate.PropagationCreated,
+			Result.Aggregate.PropagationRejected, Result.Aggregate.RootDuplicates, Result.Aggregate.RelationshipEdges,
+			Result.Aggregate.FactionStandings, Result.Aggregate.LongMemoryItems, Result.Processing.RuleEvaluations,
+			Result.Processing.RuleEvaluationMilliseconds, Result.Processing.ProcessingMilliseconds);
+	}));
+
 static FAutoConsoleCommand GZLSocialInspectCommand(
 	TEXT("ZL.Social.InspectDemo"),
 	TEXT("Run a deterministic one-agent event and print the sanitized social snapshot."),

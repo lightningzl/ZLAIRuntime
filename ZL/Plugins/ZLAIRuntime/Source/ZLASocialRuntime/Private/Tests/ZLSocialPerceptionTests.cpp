@@ -10,12 +10,14 @@ bool FZLSocialPerceptionTest::RunTest(const FString& Parameters)
 {
 	FZLSocialEvent Event;
 	Event.EventId = FGuid::NewGuid();
+	Event.RootEventId = Event.EventId;
 	Event.Type = ZLSocialTags::Event_Punch;
 	Event.Position = FVector::ZeroVector;
 	Event.Radius = 1000.0f;
 	Event.Severity = 0.8f;
 	Event.Noise = 0.4f;
 	Event.Channels = static_cast<int32>(EZLSocialPerceptionChannel::Visual) | static_cast<int32>(EZLSocialPerceptionChannel::Auditory);
+	Event.ChainBudget = ZLSocialEventLimits::DefaultChainBudget;
 	Event.CreatedAtSeconds = 1.0;
 	Event.ExpiresAtSeconds = 3.0;
 
@@ -42,6 +44,19 @@ bool FZLSocialPerceptionTest::RunTest(const FString& Parameters)
 	Result = Filter.Evaluate(Event, Agent, 2.0, Occluded);
 	TestTrue(TEXT("Direct target bypasses radius and occlusion"), Result.bPerceived);
 	TestEqual(TEXT("Direct channel wins"), Result.Channel, EZLSocialPerceptionChannel::Direct);
+
+	FZLSocialEvent SocialEvent = Event;
+	SocialEvent.EventId = FGuid::NewGuid();
+	SocialEvent.ParentEventId = Event.EventId;
+	SocialEvent.ReporterId = TEXT("witness");
+	SocialEvent.SocialReceiverId = Agent.AgentId;
+	SocialEvent.Channels = static_cast<int32>(EZLSocialPerceptionChannel::Social);
+	SocialEvent.ChainDepth = 1;
+	SocialEvent.Confidence = 0.65f;
+	Result = Filter.Evaluate(SocialEvent, Agent, 2.0, Occluded);
+	TestTrue(TEXT("Named social receiver bypasses radius and occlusion"), Result.bPerceived);
+	TestEqual(TEXT("Social channel is retained"), Result.Channel, EZLSocialPerceptionChannel::Social);
+	TestEqual(TEXT("Social confidence drives intensity"), Result.EffectiveIntensity, 0.65f);
 	return true;
 }
 

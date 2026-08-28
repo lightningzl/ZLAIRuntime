@@ -6,7 +6,7 @@
 
 ## 当前状态
 
-当前无活动里程碑，也没有已授权工作包。Milestone 5 已完成并归档至 [Milestone5.md](../Milestones/Milestone5.md)。
+当前无活动里程碑，也没有已授权工作包。Milestone 6 已完成并归档至 [Milestone6.md](../Milestones/Milestone6.md)。
 
 下一里程碑经用户确认并写入 Current Milestone 后，再在此拆分工作包；不得从长期规划或目标设计直接提前创建实施任务。
 

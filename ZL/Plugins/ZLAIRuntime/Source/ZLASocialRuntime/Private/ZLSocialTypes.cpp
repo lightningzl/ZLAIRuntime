@@ -13,13 +13,19 @@ void FZLSocialPersonalityTraits::Clamp()
 bool FZLSocialEvent::IsValid(const double NowSeconds) const
 {
 	return EventId.IsValid()
+		&& RootEventId.IsValid()
 		&& Type.IsValid()
 		&& Radius >= 0.0f
 		&& Severity >= 0.0f && Severity <= 1.0f
 		&& Noise >= 0.0f && Noise <= 1.0f
 		&& Channels != 0
+		&& ChainDepth >= 0 && ChainDepth <= ZLSocialEventLimits::MaxChainDepth
+		&& ChainBudget >= 0 && ChainBudget <= ZLSocialEventLimits::MaxChainBudget
+		&& Confidence >= 0.0f && Confidence <= 1.0f
 		&& ExpiresAtSeconds > CreatedAtSeconds
-		&& NowSeconds <= ExpiresAtSeconds;
+		&& NowSeconds <= ExpiresAtSeconds
+		&& ((ChainDepth == 0 && IsRootEvent() && ReporterId.IsNone() && SocialReceiverId.IsNone())
+			|| (ChainDepth > 0 && ParentEventId.IsValid() && ReporterId != NAME_None && SocialReceiverId != NAME_None && HasChannel(EZLSocialPerceptionChannel::Social)));
 }
 
 bool FZLSocialEvent::HasChannel(const EZLSocialPerceptionChannel Channel) const

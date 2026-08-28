@@ -19,12 +19,14 @@ UE5 Runtime
     - Protocol Types
     - ZLASocialRuntime Module
       - Social Gameplay Tags
-      - Event/Agent/Profile Types
+      - Event Chain/Agent/Profile Types
       - Event Router + 2D Spatial Index
       - Perception Filter
-      - Instant State + Short Social Memory
-      - Deterministic Rule Decision
-      - Sanitized Debug Snapshot + Aggregate Metrics
+      - Explicit Report Confirmation + Bounded Propagation
+      - Instant/Long-Term State + Sparse Relationship/Faction
+      - Bounded Short/Long Social Memory + Structured Retrieval
+      - Relationship-Aware Deterministic Rule Decision
+      - Sanitized Chain/Relationship/Memory Snapshot + Aggregate Metrics
     |
     | HTTP + versioned JSON
     v
@@ -59,13 +61,18 @@ Python AI Service
 - 只依赖 UE Runtime 基础模块与 `GameplayTags`，不依赖 `ZL`、`ZLAIRuntime`、HTTP、Python、Provider、Widget 或具体 NPC Actor。
 - `ZL` 可以依赖并适配其公开接口；`ZLASocialRuntime` 不反向依赖游戏模块。
 - Agent 仅在注册、注销或跨 Cell 移动时更新二维网格；Event Router 只枚举半径覆盖的 Cell，再做精确二维距离过滤。
-- Router 为 Punch、Gunshot、Help 提供受控默认参数，拒绝非法/过期事件，并按 `(event_id, agent_id)` 确定性去重。
-- Perception Filter 在空间候选上执行 Direct/Visual/Auditory 能力、距离衰减、视线、阈值和过期检查；Direct Target 不受普通半径和遮挡过滤。
+- Event 包含 Root/Parent、Depth、Budget、Causation、Confidence 和 Social 来源基础字段；根事件由 Router 初始化并受深度、预算和生命周期硬上限约束。
+- Router 为 Punch、Gunshot、Help 提供受控默认参数，拒绝非法/过期事件，并按 `(root_event_id, agent_id)` 确定性去重。
+- `FZLSocialPropagation` 只在 Gameplay 显式确认报告完成后创建 Social 派生 Event；它限制深度、单节点 Fan-out、Root Budget、TTL、低重要度和 Reporter/Root 重复，并确定性衰减 Confidence。规则产生 `Intent.Report` 不调用该入口。
+- Relationship Store 只在相关交互发生时创建有向 `(observer_id, subject_id)` 边，保存有界 Trust、Affinity、Fear、Familiarity 与 Reputation；Faction Standing 只有具备 Authority Capability 的 Important NPC 经显式确认且 Confidence 达标后才更新，并按 Root/Faction 去重。
+- Agent 注册、活动 Root 跟踪、Relationship 边和 Faction Standing 均有固定硬上限；过期 Root 会从 Router、Propagation 和长期状态去重表中清理，容量耗尽时拒绝新增状态而不扩张容器。
+- Perception Filter 在空间候选上执行 Direct/Visual/Auditory/Social 能力、距离衰减、视线、阈值和过期检查；Direct Target 与指定 Social Receiver 不受普通半径和遮挡过滤。
 - 感知结果按 Event 强度与 Personality 更新 Fear、Anger、Curiosity、Alert；状态值有界并按时间衰减。
 - Level 1 Short Social Memory 使用固定容量环形缓冲区，保存 UE 权威事件摘要，不持久化且不与 Python Dialogue Memory 同步。
-- Rule Decision 对 Ignore、Observe、Flee、Report、Assist、Confront 计算可复现候选分数；能力硬约束先于评分，高优先级极端事件可越过普通冷却，平分按 Tag 稳定排序。
-- `FZLSocialSimulation` 编排模块内纵向链路并输出纯数据 Intent Command；`ZL` 的 Gameplay Adapter 显式产生受控 Event 并完成 Intent 回调交付，不反向泄露具体 Actor 到 Runtime 模块。具体 StateTree、AIController 或 Gameplay Intent 执行器尚未实现。
-- `ZL.Social.InspectDemo` 输出选定 Agent 的人格、即时状态、最近事件、短期记忆数量、候选分数与 Intent；`ZL.Social.Benchmark` 输出注册数、空间候选、感知数、规则次数和处理耗时，不输出 Dialogue、scope、Prompt 或凭据。
+- Important NPC 默认使用 Short 16、Long 8 的有界 Social Memory；Long Memory 只提升高 Importance 或显式 Anchored 事件，按衰减后重要度稳定淘汰，并通过事件、人物、Faction、地点和时间过滤执行有界 Top-K 检索。
+- Rule Decision 对 Ignore、Observe、Investigate、Flee、Report、Assist、Confront 计算可复现候选分数；Relationship、Faction Standing、相关 Long Memory、Occupation 和来源 Confidence 以稳定 Reason Code/Score Contribution 参与评分，能力与重复报告硬约束先于评分，高优先级极端事件可越过普通冷却，平分按 Tag 稳定排序。
+- `FZLSocialSimulation` 编排模块内纵向链路并输出纯数据 Intent Command；`ZL` 的 Gameplay Adapter 显式产生受控 Event、确认报告完成、处理 Social 派生 Event、确认 Authority Assessment 并完成 Intent 回调交付，不反向泄露具体 Actor 到 Runtime 模块。确定性无界面场景注册 5 个 Important NPC 并验证完整数据闭环；具体 StateTree、AIController 或 Gameplay Intent 执行器尚未实现。
+- `ZL.Social.InspectDemo` 输出选定 Agent 的 Level、Faction/Occupation、人格、即时状态、Event Chain、来源、Relationship/Faction Standing、Short/Long Memory、候选贡献、Reason Code 与 Intent；`ZL.Social.Benchmark` 保留 120 Level 1 基线，`ZL.Social.BenchmarkM6` 输出 120+5 场景的传播创建/拒绝、Root 去重、稀疏边、Faction、Long Memory、规则次数与耗时，均不输出 Dialogue、scope、Prompt 或凭据。
 
 ### Python AI Service
 

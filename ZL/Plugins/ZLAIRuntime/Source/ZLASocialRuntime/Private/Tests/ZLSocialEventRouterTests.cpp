@@ -40,6 +40,9 @@ bool FZLSocialEventRouterTest::RunTest(const FString& Parameters)
 
 	FZLSocialEvent Event;
 	TestTrue(TEXT("Punch uses a valid preset"), Router.CreateEvent(ZLSocialTags::Event_Punch, TEXT("player"), NAME_None, FVector::ZeroVector, 10.0, Event));
+	TestTrue(TEXT("Root event identifies itself"), Event.IsRootEvent());
+	TestEqual(TEXT("Root event starts at depth zero"), Event.ChainDepth, 0);
+	TestEqual(TEXT("Root event has bounded budget"), Event.ChainBudget, ZLSocialEventLimits::DefaultChainBudget);
 	TestEqual(TEXT("Punch radius is configured"), Event.Radius, 1000.0f);
 	FZLSocialEventRouteResult Result;
 	TestTrue(TEXT("Valid event routes"), Router.RouteEvent(Event, 10.5, Result));
@@ -57,6 +60,21 @@ bool FZLSocialEventRouterTest::RunTest(const FString& Parameters)
 	TestEqual(TEXT("Help radius is configured"), Help.Radius, 1200.0f);
 	TestTrue(TEXT("Targeted Help includes Direct channel"), Help.HasChannel(EZLSocialPerceptionChannel::Direct));
 	TestFalse(TEXT("Reserved event without milestone preset is rejected"), Router.CreateEvent(ZLSocialTags::Event_Steal, TEXT("player"), NAME_None, FVector::ZeroVector, 10.0, Event));
+
+	FZLSocialEvent InvalidChain = Help;
+	InvalidChain.ChainDepth = ZLSocialEventLimits::MaxChainDepth + 1;
+	TestFalse(TEXT("Depth beyond hard limit is invalid"), InvalidChain.IsValid(10.0));
+	InvalidChain = Help;
+	InvalidChain.ChainBudget = ZLSocialEventLimits::MaxChainBudget + 1;
+	TestFalse(TEXT("Budget beyond hard limit is invalid"), InvalidChain.IsValid(10.0));
+	InvalidChain = Help;
+	InvalidChain.RootEventId.Invalidate();
+	TestFalse(TEXT("Missing root identifier is invalid"), InvalidChain.IsValid(10.0));
+
+	FZLSocialEvent Later;
+	TestTrue(TEXT("Later root event is created"), Router.CreateEvent(ZLSocialTags::Event_Punch, TEXT("player"), NAME_None, FVector::ZeroVector, 20.0, Later));
+	TestTrue(TEXT("Later root routes after prior roots expire"), Router.RouteEvent(Later, 20.0, Result));
+	TestEqual(TEXT("Expired root deduplication state is pruned"), Router.GetTrackedRootCount(), 1);
 	return true;
 }
 
