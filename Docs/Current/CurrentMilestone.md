@@ -140,4 +140,4 @@
 2. `M8-A01` 至 `M8-A10` 均有可复查验证证据。
 3. Stub 与真实模型都完成一次“个人视角输入 -> 结构化 Decision -> UE 校验 -> 气泡与真实动作”的可操作闭环。
 4. 非法或过期动作零 Gameplay 副作用且拒绝原因可见；Python 不可用时场景保持可操作。
-5. 协议、Architecture、UE/Python Reference、Decision Log、Validation 和当前状态文档已按职责同步，Milestone 8 范围定稿归档。
+5. 协议、Architecture、UE/Python Reference、Decision Log、[Milestone8Validation.md](../Validation/Milestone8Validation.md) 和当前状态文档已按职责同步，Milestone 8 范围定稿归档。

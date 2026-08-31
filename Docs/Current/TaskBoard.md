@@ -2,7 +2,7 @@
 
 ## 文档职责
 
-本文档维护当前 [Milestone 8](./CurrentMilestone.md) 的工作包、依赖、状态和完成条件。稳定验收标准只在 Current Milestone 定义；实际证据后续写入 `Docs/Validation/Milestone8Validation.md`。
+本文档维护当前 [Milestone 8](./CurrentMilestone.md) 的工作包、依赖、状态和完成条件。稳定验收标准只在 Current Milestone 定义；实际证据写入 [Milestone8Validation.md](../Validation/Milestone8Validation.md)。
 
 ## 当前状态
 
