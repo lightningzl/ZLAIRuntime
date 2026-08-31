@@ -8,11 +8,12 @@
 - [Milestone 4：持久化对话 Memory](../Milestones/Milestone4.md)
 - [Milestone 5：确定性社会模拟基础](../Milestones/Milestone5.md)
 - [Milestone 6：关系、长期记忆与重要 NPC](../Milestones/Milestone6.md)
+- [Milestone 7：可操作交互舞台与定向感知](../Milestones/Milestone7.md)
 
 历史文档只用于追溯，不定义当前允许实施的范围。长期路线见 [SocialSimulationPlan.md](../Planning/SocialSimulationPlan.md)，目标系统设计见 [SocialSimulationDesign.md](../Planning/SocialSimulationDesign.md)。
 
 ## 当前状态
 
-当前无活动里程碑。Milestone 6 已于 2026-08-28 完成并归档，验收证据见 [Milestone6Validation.md](../Validation/Milestone6Validation.md)。
+当前无活动里程碑。Milestone 7 已于 2026-08-31 完成并归档，验收证据见 [Milestone7Validation.md](../Validation/Milestone7Validation.md)。
 
-在用户确认下一纵向切片前，不授权新的功能实现、协议修改或未来能力提前落地。下一里程碑确定后，应在本文定义目标、范围、明确不做、稳定验收 ID 和完成定义，并同步 [TaskBoard.md](./TaskBoard.md) 与 [ProjectState.md](./ProjectState.md)。
+在用户确认下一纵向切片及其协议边界前，不授权新的功能实现、协议修改或未来能力提前落地。下一里程碑确定后，应在本文定义目标、范围、明确不做、稳定验收 ID 和完成定义，并同步 [TaskBoard.md](./TaskBoard.md) 与 [ProjectState.md](./ProjectState.md)。

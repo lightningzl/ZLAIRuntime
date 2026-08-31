@@ -53,6 +53,12 @@
 | `FZLSocialGameplayAdapter` | `ZL` 私有适配层；显式产生 Punch/Gunshot/Help Event、确认 Report 完成、处理 Social 派生 Event、确认 Authority Assessment，并把 Intent Command 交给 Gameplay 回调 |
 | `FZLSocialAgentDebugSnapshot` | 单 Agent 的只读 Level/Faction/Occupation、Event Chain、来源、关系、Faction、Short/Long Memory、Reason Code 和 Intent 快照，不反向驱动状态且不包含 Dialogue/凭据数据 |
 | `ZLSocialDebug` | 格式化安全快照，运行确定性 120 Level 1 基线与 120 Level 1 + 5 Important NPC 的传播/关系/Memory 聚合基准 |
+| `FZLSocialSpeechEvent` / `FZLSocialActionEvent` | 分别表示有界玩家说话和已经接受的 Gameplay 行为状态；Action 类型不保存输入原文 |
+| `FZLSocialObserver` / `FZLSocialObservationSettings` | 表示单个稳定 ID 观察者快照，以及可配置视野、听觉范围和清晰阈值 |
+| `FZLSocialObservationEvaluator` | 按距离、朝向、模式和显式目标为一个 NPC 生成独立视觉/听觉 Observation |
+| `FZLSocialObservationBuffer` | 保存固定容量的单 NPC Observation，并提供确定性重置和最近项读取 |
+| `FZLSocialActionParser` | 只把 Face、Approach、MoveAway、Stop 的中英文受控别名解析为行为枚举 |
+| `FZLSocialInputValidation` | 按 Unicode 码点校验 1 至 512 字符，并拒绝缺少显式目标的 InEar 输入 |
 
 这些类型不包含 Actor、Widget、HTTP、Provider、Python 或 Dialogue Memory 引用。`ZL` 负责把具体 Gameplay 对象转换为稳定 ID 和位置快照。
 
@@ -64,6 +70,20 @@ Runtime 固定上限为 10000 个注册 Agent、1024 个活动 Root、4096 条 P
 - Gameplay Adapter 当前使用恒定可见的测试 LOS 回调，真实 World Trace 尚未接入。
 - `FZLSocialSpatialIndex` 使用二维 Cell 和二维距离，不处理 Z 轴楼层、房间或区域传播。
 - Event/Personality DataAsset 类型已经声明，但 Event Router 仍使用 C++ 受控默认值，DataTable 批量覆盖尚未实现。
+
+## Social Sandbox Gameplay 类型
+
+| 类型 | 职责 | 不负责 |
+| --- | --- | --- |
+| `AZLSocialSandboxGameMode` | 生成确定环境与 4 个稳定 NPC，接收已校验输入，构造事件，逐 NPC 计算 Observation，执行重置和受控演示 | HTTP、LLM Decision、NPC ToolCall、Python 社会状态 |
+| `AZLSocialSandboxPawn` | 提供玩家移动/转向、Face/Approach/MoveAway/Stop 的权威执行和说话/动作气泡 | 从自由文本推断未注册行为、伪造完成状态 |
+| `AZLSocialSandboxNpc` | 保存稳定 ID、显示名、位置/朝向和容量 32 的个人 Observation，显示明确标记的规则占位反馈 | 读取其他 NPC Observation 或玩家行为输入原文 |
+| `AZLSocialSandboxPlayerController` | 创建交互 Widget，连接提交/重置并刷新目标与 Inspector | 持有协议或 Provider 状态 |
+| `UZLSocialSandboxWidget` | 提供说话/行为、模式、目标、文本、提交、错误状态和逐 NPC Observation Inspector | 保存持久历史、Prompt、scope 或凭据 |
+| `UZLSocialBubbleWidget` | 使用屏幕空间 UMG 显示有界时长的中英文说话、动作和 `RulePlaceholder` 反馈 | 产生事件或改变 Gameplay 状态 |
+| `FZLSocialSandboxMotion` | 计算 Approach/MoveAway 的单步平面位移、完成边界与面向 | 导航、避障、动画或复杂路径规划 |
+
+专用地图为 `/Game/SocialSandbox/Lvl_SocialSandbox`，默认使用上述 GameMode、Pawn 和 PlayerController。GameMode 保持世界状态权威；Widget 只提交请求并展示结果。
 
 ## Context 类型
 
@@ -121,6 +141,8 @@ ZL Gameplay / UI
 - `ZL.Social.InspectDemo [agent_id]`：输出可复现的最小 Agent 社会状态快照。
 - `ZL.Social.Benchmark [agent_count]`：运行确定性 Level 1 场景并输出聚合性能指标。
 - `ZL.Social.BenchmarkM6`：运行固定 120 Level 1 + 5 Important NPC 的传播、关系、Faction、Long Memory 和规则聚合基准。
+- `ResetSocialSandbox`：在专用场景中恢复玩家、NPC、气泡和个人 Observation 的确定初始状态。
+- `RunSocialSandboxDemo` 或启动参数 `-ZLSandboxDemo`：经正常提交路径选择 Guard 并执行一次本地 Talk，不依赖 Python Service。
 
 演示日志只记录关联元数据、匹配结果和长度，不记录完整输入、Context、scope 或回复正文。
 
@@ -131,3 +153,4 @@ ZL Gameplay / UI
 - Dialogue Memory：[Milestone4Validation.md](../Validation/Milestone4Validation.md)
 - 确定性社会模拟：[Milestone5Validation.md](../Validation/Milestone5Validation.md)
 - 关系、长期记忆与 Important NPC：[Milestone6Validation.md](../Validation/Milestone6Validation.md)
+- 可操作交互舞台与定向感知：[Milestone7Validation.md](../Validation/Milestone7Validation.md)
