@@ -1,5 +1,7 @@
 #include "SocialSandbox/ZLSocialSandboxPawn.h"
 
+#include "SocialSandbox/ZLSocialSandboxMotion.h"
+
 #include "Camera/CameraComponent.h"
 #include "Components/ArrowComponent.h"
 #include "Components/CapsuleComponent.h"
@@ -123,12 +125,8 @@ void AZLSocialSandboxPawn::Tick(const float DeltaSeconds)
 	{
 		return;
 	}
-	FVector DeltaToTarget = ScriptedTarget->GetActorLocation() - GetActorLocation();
-	DeltaToTarget.Z = 0.0f;
-	const float Distance = DeltaToTarget.Size();
-	const float DesiredDistance = ScriptedAction == EZLSocialActionType::Approach ? 180.0f : 650.0f;
-	const bool bComplete = ScriptedAction == EZLSocialActionType::Approach ? Distance <= DesiredDistance : Distance >= DesiredDistance;
-	if (bComplete)
+	const FZLSocialSandboxMotionStep Motion = FZLSocialSandboxMotion::Compute(ScriptedAction, GetActorLocation(), ScriptedTarget->GetActorLocation(), DeltaSeconds, ScriptedSpeed);
+	if (Motion.bComplete)
 	{
 		bScriptedActionActive = false;
 		ScriptedTarget.Reset();
@@ -138,17 +136,9 @@ void AZLSocialSandboxPawn::Tick(const float DeltaSeconds)
 		return;
 	}
 
-	FVector Direction = DeltaToTarget.GetSafeNormal();
-	if (ScriptedAction == EZLSocialActionType::MoveAway)
-	{
-		Direction *= -1.0f;
-	}
-	const float MaxStep = FMath::Max(0.0f, DeltaSeconds) * ScriptedSpeed;
-	const float Remaining = FMath::Abs(Distance - DesiredDistance);
-	const FVector Step = Direction * FMath::Min(MaxStep, Remaining);
-	SetActorRotation(Direction.Rotation());
-	if (Controller != nullptr) { Controller->SetControlRotation(Direction.Rotation()); }
-	AddActorWorldOffset(Step, true);
+	SetActorRotation(Motion.Facing.Rotation());
+	if (Controller != nullptr) { Controller->SetControlRotation(Motion.Facing.Rotation()); }
+	AddActorWorldOffset(Motion.Translation, true);
 }
 
 void AZLSocialSandboxPawn::ShowSpeechBubble(const FString& SpokenText)

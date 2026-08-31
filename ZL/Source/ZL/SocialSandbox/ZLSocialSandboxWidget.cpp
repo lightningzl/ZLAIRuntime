@@ -1,5 +1,6 @@
 #include "SocialSandbox/ZLSocialSandboxWidget.h"
 
+#include "ZLSocialInputValidation.h"
 #include "Blueprint/WidgetTree.h"
 #include "Components/Border.h"
 #include "Components/Button.h"
@@ -138,8 +139,8 @@ void UZLSocialSandboxWidget::SetStatus(const FText& Status, const bool bIsError)
 void UZLSocialSandboxWidget::HandleSubmitClicked()
 {
 	const FString Input = InputBox == nullptr ? FString() : InputBox->GetText().ToString().TrimStartAndEnd();
-	const int32 Length = CountUnicodeCodePoints(Input);
-	if (Length < 1 || Length > 512)
+	const EZLSocialInputValidationResult Validation = FZLSocialInputValidation::ValidateText(Input);
+	if (Validation != EZLSocialInputValidationResult::Valid)
 	{
 		SetStatus(FText::FromString(TEXT("拒绝：输入必须为 1–512 个 Unicode 字符")), true);
 		return;
@@ -222,23 +223,4 @@ FName UZLSocialSandboxWidget::GetSelectedSpeechMode() const
 	if (Selected == ShoutOption) { return TEXT("Shout"); }
 	if (Selected == InEarOption) { return TEXT("InEar"); }
 	return TEXT("Talk");
-}
-
-int32 UZLSocialSandboxWidget::CountUnicodeCodePoints(const FString& Text)
-{
-	int32 Count = 0;
-	for (int32 Index = 0; Index < Text.Len(); ++Index)
-	{
-		const uint32 CodeUnit = static_cast<uint32>(Text[Index]);
-		if (CodeUnit >= 0xD800 && CodeUnit <= 0xDBFF && Index + 1 < Text.Len())
-		{
-			const uint32 Next = static_cast<uint32>(Text[Index + 1]);
-			if (Next >= 0xDC00 && Next <= 0xDFFF)
-			{
-				++Index;
-			}
-		}
-		++Count;
-	}
-	return Count;
 }

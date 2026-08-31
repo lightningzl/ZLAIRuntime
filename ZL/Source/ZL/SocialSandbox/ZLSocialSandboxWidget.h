@@ -54,7 +54,6 @@ private:
 	void HandleTargetChanged(FString SelectedItem, ESelectInfo::Type SelectionType);
 
 	FName GetSelectedSpeechMode() const;
-	static int32 CountUnicodeCodePoints(const FString& Text);
 
 	UPROPERTY()
 	TObjectPtr<UComboBoxString> InputModeCombo;
