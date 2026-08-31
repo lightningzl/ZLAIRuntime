@@ -23,6 +23,8 @@ public:
 	bool StartScriptedAction(EZLSocialActionType Action, AActor* Target, TFunction<void()> OnCompleted);
 	void StopScriptedAction();
 	bool IsScriptedActionActive() const { return bScriptedActionActive; }
+	void ShowSpeechBubble(const FString& SpokenText);
+	void ShowActionBubble(EZLSocialActionType Action, EZLSocialActionPhase Phase, const FText& TargetName);
 
 protected:
 	virtual void BeginPlay() override;
@@ -34,6 +36,9 @@ private:
 	void MoveRight(float Value);
 	void Turn(float Value);
 	void LookUp(float Value);
+	void ShowBubble(const FText& Text, const FColor& Color, float DurationSeconds = 4.0f);
+	void ClearBubble();
+	void FaceLabelsToCamera() const;
 
 	UPROPERTY(VisibleAnywhere, Category="Sandbox")
 	TObjectPtr<USpringArmComponent> CameraBoom;
@@ -50,10 +55,14 @@ private:
 	UPROPERTY(VisibleAnywhere, Category="Sandbox")
 	TObjectPtr<UTextRenderComponent> NameLabel;
 
+	UPROPERTY(VisibleAnywhere, Category="Sandbox")
+	TObjectPtr<UTextRenderComponent> BubbleText;
+
 	FTransform SandboxStartTransform;
 	TWeakObjectPtr<AActor> ScriptedTarget;
 	TFunction<void()> ScriptedCompletion;
 	EZLSocialActionType ScriptedAction = EZLSocialActionType::Stop;
 	bool bScriptedActionActive = false;
 	float ScriptedSpeed = 300.0f;
+	FTimerHandle BubbleTimer;
 };

@@ -23,6 +23,7 @@ public:
 	FText SubmitSpeech(FName SpeechMode, FName TargetId, const FString& Text);
 	FText SubmitAction(FName TargetId, const FString& Text);
 	const FZLSocialObservationSettings& GetObservationSettings() const { return ObservationSettings; }
+	FText BuildInspectorText(FName NpcId) const;
 
 protected:
 	virtual void BeginPlay() override;
@@ -31,6 +32,7 @@ private:
 	void SpawnEnvironment();
 	void SpawnNpc(FName StableId, const TCHAR* DisplayName, const FVector& Location, const FRotator& Rotation);
 	void DispatchActionObservation(EZLSocialActionType Action, EZLSocialActionPhase Phase, FName TargetId);
+	void RefreshInspector() const;
 
 	UPROPERTY()
 	TArray<TObjectPtr<AZLSocialSandboxNpc>> SandboxNpcs;

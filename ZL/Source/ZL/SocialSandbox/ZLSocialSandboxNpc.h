@@ -27,6 +27,11 @@ public:
 	void RecordObservation(const FZLSocialObservation& Observation) { ObservationBuffer.Add(Observation); }
 	const FZLSocialObservation* GetLatestObservation() const { return ObservationBuffer.Latest(); }
 	void ClearObservations() { ObservationBuffer.Reset(); }
+	void ShowRuleSpeech(const FZLSocialObservation& Observation);
+	void ShowActionObservation(const FZLSocialObservation& Observation);
+
+protected:
+	virtual void Tick(float DeltaSeconds) override;
 
 private:
 	UPROPERTY(VisibleAnywhere, Category="Sandbox")
@@ -42,6 +47,9 @@ private:
 	TObjectPtr<UTextRenderComponent> NameLabel;
 
 	UPROPERTY(VisibleAnywhere, Category="Sandbox")
+	TObjectPtr<UTextRenderComponent> BubbleText;
+
+	UPROPERTY(VisibleAnywhere, Category="Sandbox")
 	FName StableId;
 
 	UPROPERTY(VisibleAnywhere, Category="Sandbox")
@@ -49,4 +57,9 @@ private:
 
 	FTransform SandboxStartTransform;
 	FZLSocialObservationBuffer ObservationBuffer;
+	FTimerHandle BubbleTimer;
+
+	void ShowBubble(const FText& Text, const FColor& Color, float DurationSeconds = 4.0f);
+	void ClearBubble();
+	void FaceLabelsToCamera() const;
 };

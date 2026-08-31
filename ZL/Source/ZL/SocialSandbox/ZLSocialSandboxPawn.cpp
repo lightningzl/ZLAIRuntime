@@ -7,7 +7,10 @@
 #include "Components/TextRenderComponent.h"
 #include "GameFramework/CharacterMovementComponent.h"
 #include "GameFramework/Controller.h"
+#include "Camera/PlayerCameraManager.h"
 #include "GameFramework/SpringArmComponent.h"
+#include "Kismet/GameplayStatics.h"
+#include "TimerManager.h"
 #include "UObject/ConstructorHelpers.h"
 
 AZLSocialSandboxPawn::AZLSocialSandboxPawn()
@@ -44,6 +47,14 @@ AZLSocialSandboxPawn::AZLSocialSandboxPawn()
 	NameLabel->SetTextRenderColor(FColor(40, 220, 255));
 	NameLabel->SetText(FText::FromString(TEXT("玩家 Player")));
 
+	BubbleText = CreateDefaultSubobject<UTextRenderComponent>(TEXT("BubbleText"));
+	BubbleText->SetupAttachment(GetCapsuleComponent());
+	BubbleText->SetRelativeLocation(FVector(0.0f, 0.0f, 190.0f));
+	BubbleText->SetHorizontalAlignment(EHTA_Center);
+	BubbleText->SetWorldSize(28.0f);
+	BubbleText->SetTextRenderColor(FColor(40, 220, 255));
+	BubbleText->SetHiddenInGame(true);
+
 	CameraBoom = CreateDefaultSubobject<USpringArmComponent>(TEXT("CameraBoom"));
 	CameraBoom->SetupAttachment(GetCapsuleComponent());
 	CameraBoom->TargetArmLength = 650.0f;
@@ -73,6 +84,7 @@ void AZLSocialSandboxPawn::SetupPlayerInputComponent(UInputComponent* PlayerInpu
 void AZLSocialSandboxPawn::ResetToSandboxStart()
 {
 	StopScriptedAction();
+	ClearBubble();
 	GetCharacterMovement()->StopMovementImmediately();
 	SetActorTransform(SandboxStartTransform, false, nullptr, ETeleportType::TeleportPhysics);
 	if (Controller != nullptr)
@@ -106,6 +118,7 @@ void AZLSocialSandboxPawn::StopScriptedAction()
 void AZLSocialSandboxPawn::Tick(const float DeltaSeconds)
 {
 	Super::Tick(DeltaSeconds);
+	FaceLabelsToCamera();
 	if (!bScriptedActionActive || !ScriptedTarget.IsValid())
 	{
 		return;
@@ -136,6 +149,56 @@ void AZLSocialSandboxPawn::Tick(const float DeltaSeconds)
 	SetActorRotation(Direction.Rotation());
 	if (Controller != nullptr) { Controller->SetControlRotation(Direction.Rotation()); }
 	AddActorWorldOffset(Step, true);
+}
+
+void AZLSocialSandboxPawn::ShowSpeechBubble(const FString& SpokenText)
+{
+	const FString Bounded = SpokenText.Len() > 96 ? SpokenText.Left(96) + TEXT("…") : SpokenText;
+	ShowBubble(FText::FromString(Bounded), FColor(40, 220, 255));
+}
+
+void AZLSocialSandboxPawn::ShowActionBubble(const EZLSocialActionType Action, const EZLSocialActionPhase Phase, const FText& TargetName)
+{
+	const TCHAR* ActionText = TEXT("停止 Stop");
+	switch (Action)
+	{
+	case EZLSocialActionType::Face: ActionText = TEXT("面向 Face"); break;
+	case EZLSocialActionType::Approach: ActionText = TEXT("靠近 Approach"); break;
+	case EZLSocialActionType::MoveAway: ActionText = TEXT("远离 MoveAway"); break;
+	default: break;
+	}
+	const TCHAR* PhaseText = Phase == EZLSocialActionPhase::Started ? TEXT("开始") : TEXT("完成");
+	const FString TargetSuffix = TargetName.IsEmpty() ? FString() : FString::Printf(TEXT(" → %s"), *TargetName.ToString());
+	ShowBubble(FText::FromString(FString::Printf(TEXT("[%s] %s%s"), PhaseText, ActionText, *TargetSuffix)), FColor(120, 220, 255));
+}
+
+void AZLSocialSandboxPawn::ShowBubble(const FText& Text, const FColor& Color, const float DurationSeconds)
+{
+	if (BubbleText == nullptr || GetWorld() == nullptr) { return; }
+	GetWorld()->GetTimerManager().ClearTimer(BubbleTimer);
+	BubbleText->SetText(Text);
+	BubbleText->SetTextRenderColor(Color);
+	BubbleText->SetHiddenInGame(false);
+	GetWorld()->GetTimerManager().SetTimer(BubbleTimer, this, &AZLSocialSandboxPawn::ClearBubble, FMath::Clamp(DurationSeconds, 0.5f, 8.0f), false);
+}
+
+void AZLSocialSandboxPawn::ClearBubble()
+{
+	if (GetWorld() != nullptr) { GetWorld()->GetTimerManager().ClearTimer(BubbleTimer); }
+	if (BubbleText != nullptr) { BubbleText->SetHiddenInGame(true); }
+}
+
+void AZLSocialSandboxPawn::FaceLabelsToCamera() const
+{
+	const APlayerCameraManager* Camera = UGameplayStatics::GetPlayerCameraManager(this, 0);
+	if (Camera == nullptr) { return; }
+	for (UTextRenderComponent* Label : { NameLabel.Get(), BubbleText.Get() })
+	{
+		if (Label != nullptr)
+		{
+			Label->SetWorldRotation((Camera->GetCameraLocation() - Label->GetComponentLocation()).Rotation());
+		}
+	}
 }
 
 void AZLSocialSandboxPawn::MoveForward(const float Value)

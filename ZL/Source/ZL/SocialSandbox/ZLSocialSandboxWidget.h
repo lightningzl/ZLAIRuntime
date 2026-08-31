@@ -24,11 +24,15 @@ class ZL_API UZLSocialSandboxWidget final : public UUserWidget
 public:
 	using FSubmitHandler = TFunction<FText(EZLSocialSandboxInputMode, FName, FName, const FString&)>;
 	using FResetHandler = TFunction<void()>;
+	using FSelectionHandler = TFunction<void()>;
 
 	void SetSubmitHandler(FSubmitHandler InHandler) { SubmitHandler = MoveTemp(InHandler); }
 	void SetResetHandler(FResetHandler InHandler) { ResetHandler = MoveTemp(InHandler); }
+	void SetSelectionHandler(FSelectionHandler InHandler) { SelectionHandler = MoveTemp(InHandler); }
 	void SetTargets(const TArray<FName>& StableIds, const TArray<FText>& DisplayNames);
 	void SetStatus(const FText& Status, bool bIsError);
+	void SetInspectorText(const FText& Text);
+	FName GetSelectedTargetId() const;
 
 protected:
 	virtual void NativeOnInitialized() override;
@@ -46,7 +50,9 @@ private:
 	UFUNCTION()
 	void HandleInputModeChanged(FString SelectedItem, ESelectInfo::Type SelectionType);
 
-	FName GetSelectedTargetId() const;
+	UFUNCTION()
+	void HandleTargetChanged(FString SelectedItem, ESelectInfo::Type SelectionType);
+
 	FName GetSelectedSpeechMode() const;
 	static int32 CountUnicodeCodePoints(const FString& Text);
 
@@ -65,7 +71,11 @@ private:
 	UPROPERTY()
 	TObjectPtr<UTextBlock> StatusText;
 
+	UPROPERTY()
+	TObjectPtr<UTextBlock> InspectorText;
+
 	TMap<FString, FName> TargetIdsByOption;
 	FSubmitHandler SubmitHandler;
 	FResetHandler ResetHandler;
+	FSelectionHandler SelectionHandler;
 };

@@ -14,6 +14,7 @@ class ZL_API AZLSocialSandboxPlayerController final : public APlayerController
 
 public:
 	void RefreshSandboxTargets();
+	void RefreshObservationInspector();
 	UZLSocialSandboxWidget* GetSandboxWidget() const { return SandboxWidget; }
 
 protected:

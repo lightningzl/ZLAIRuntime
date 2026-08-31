@@ -44,6 +44,7 @@ void AZLSocialSandboxGameMode::ResetSocialSandbox()
 	{
 		Pawn->ResetToSandboxStart();
 	}
+	RefreshInspector();
 }
 
 AZLSocialSandboxNpc* AZLSocialSandboxGameMode::FindSandboxNpc(const FName StableId) const
@@ -114,8 +115,12 @@ FText AZLSocialSandboxGameMode::SubmitSpeech(const FName SpeechMode, const FName
 		Observer.AgentId = Npc->GetStableId();
 		Observer.Position = Npc->GetActorLocation();
 		Observer.Forward = Npc->GetPlanarForwardVector();
-		Npc->RecordObservation(Evaluator.ObserveSpeech(Event, Observer, Event.TimestampSeconds));
+		const FZLSocialObservation Observation = Evaluator.ObserveSpeech(Event, Observer, Event.TimestampSeconds);
+		Npc->RecordObservation(Observation);
+		Npc->ShowRuleSpeech(Observation);
 	}
+	Player->ShowSpeechBubble(Text);
+	RefreshInspector();
 	return FText::GetEmpty();
 }
 
@@ -209,6 +214,58 @@ void AZLSocialSandboxGameMode::DispatchActionObservation(const EZLSocialActionTy
 		Observer.Position = Npc->GetActorLocation();
 		Observer.Forward = Npc->GetPlanarForwardVector();
 		Npc->RecordObservation(Evaluator.ObserveAction(Event, Observer, NowSeconds));
+		Npc->ShowActionObservation(*Npc->GetLatestObservation());
+	}
+	const AZLSocialSandboxNpc* Target = TargetId.IsNone() ? nullptr : FindSandboxNpc(TargetId);
+	Player->ShowActionBubble(Action, Phase, Target == nullptr ? FText::GetEmpty() : Target->GetDisplayName());
+	RefreshInspector();
+}
+
+FText AZLSocialSandboxGameMode::BuildInspectorText(const FName NpcId) const
+{
+	const AZLSocialSandboxNpc* Npc = FindSandboxNpc(NpcId);
+	if (Npc == nullptr)
+	{
+		return FText::FromString(TEXT("选择一个 NPC 查看个人感知。"));
+	}
+	const FZLSocialObservation* Observation = Npc->GetLatestObservation();
+	if (Observation == nullptr)
+	{
+		return FText::FromString(FString::Printf(TEXT("%s [%s]\n尚无 Observation"), *Npc->GetDisplayName().ToString(), *NpcId.ToString()));
+	}
+	auto YesNo = [](const bool Value) { return Value ? TEXT("是 Yes") : TEXT("否 No"); };
+	auto SpeechModeText = [](const EZLSocialSpeechMode Mode)
+	{
+		switch (Mode) { case EZLSocialSpeechMode::Whisper: return TEXT("Whisper"); case EZLSocialSpeechMode::Shout: return TEXT("Shout"); case EZLSocialSpeechMode::InEar: return TEXT("InEar"); default: return TEXT("Talk"); }
+	};
+	auto TargetText = [](const EZLSocialTargetJudgment Value)
+	{
+		switch (Value) { case EZLSocialTargetJudgment::Candidate: return TEXT("Candidate"); case EZLSocialTargetJudgment::ExplicitSelf: return TEXT("ExplicitSelf"); case EZLSocialTargetJudgment::ExplicitOther: return TEXT("ExplicitOther"); default: return TEXT("Unresolved"); }
+	};
+	auto FilterText = [](const EZLSocialObservationFilterReason Value)
+	{
+		switch (Value) { case EZLSocialObservationFilterReason::InvalidEvent: return TEXT("InvalidEvent"); case EZLSocialObservationFilterReason::Expired: return TEXT("Expired"); case EZLSocialObservationFilterReason::CannotSee: return TEXT("CannotSee"); case EZLSocialObservationFilterReason::CannotHear: return TEXT("CannotHear"); case EZLSocialObservationFilterReason::OutsideVisualRange: return TEXT("OutsideVisualRange"); case EZLSocialObservationFilterReason::OutsideFieldOfView: return TEXT("OutsideFieldOfView"); case EZLSocialObservationFilterReason::OutsideHearingRange: return TEXT("OutsideHearingRange"); case EZLSocialObservationFilterReason::NotExplicitInEarTarget: return TEXT("NotExplicitInEarTarget"); default: return TEXT("None"); }
+	};
+	const FString Source = Observation->Source == EZLSocialObservationSource::Speech ? TEXT("Speech") : TEXT("Action");
+	auto ActionText = [](const EZLSocialActionType Value)
+	{
+		switch (Value) { case EZLSocialActionType::Face: return TEXT("Face"); case EZLSocialActionType::Approach: return TEXT("Approach"); case EZLSocialActionType::MoveAway: return TEXT("MoveAway"); default: return TEXT("Stop"); }
+	};
+	const FString SourceDetails = Observation->Source == EZLSocialObservationSource::Speech
+		? FString::Printf(TEXT("SpeechMode: %s · ExplicitTarget: %s\nTargetJudgment: %s · AuditoryFilter: %s"), SpeechModeText(Observation->SpeechMode), Observation->ExplicitTargetId.IsNone() ? TEXT("None") : *Observation->ExplicitTargetId.ToString(), TargetText(Observation->TargetJudgment), FilterText(Observation->AuditoryFilter))
+		: FString::Printf(TEXT("Action: %s · Phase: %s · Target: %s\nTargetJudgment: %s · InputTextAvailable: No"), ActionText(Observation->Action), Observation->ActionPhase == EZLSocialActionPhase::Started ? TEXT("Started") : TEXT("Completed"), Observation->ExplicitTargetId.IsNone() ? TEXT("None") : *Observation->ExplicitTargetId.ToString(), TargetText(Observation->TargetJudgment));
+	return FText::FromString(FString::Printf(
+		TEXT("%s [%s]\nSource: %s · Distance: %.0f cm\nSaw: %s · VisualFilter: %s\nHeard: %s · Clear: %s · Strength: %.2f\n%s\nInputSource: UE Event · RuleSource: RulePlaceholder"),
+		*Npc->GetDisplayName().ToString(), *NpcId.ToString(), *Source, Observation->Distance,
+		YesNo(Observation->bSaw), FilterText(Observation->VisualFilter), YesNo(Observation->bHeard), YesNo(Observation->bHeardClearly), Observation->HearingStrength,
+		*SourceDetails));
+}
+
+void AZLSocialSandboxGameMode::RefreshInspector() const
+{
+	if (AZLSocialSandboxPlayerController* Controller = Cast<AZLSocialSandboxPlayerController>(UGameplayStatics::GetPlayerController(this, 0)))
+	{
+		Controller->RefreshObservationInspector();
 	}
 }
 

@@ -46,7 +46,7 @@ void UZLSocialSandboxWidget::NativeOnInitialized()
 	PanelSlot->SetAnchors(FAnchors(0.0f, 1.0f));
 	PanelSlot->SetAlignment(FVector2D(0.0f, 1.0f));
 	PanelSlot->SetPosition(FVector2D(20.0f, -20.0f));
-	PanelSlot->SetSize(FVector2D(500.0f, 430.0f));
+	PanelSlot->SetSize(FVector2D(520.0f, 650.0f));
 
 	UVerticalBox* Layout = WidgetTree->ConstructWidget<UVerticalBox>();
 	Panel->SetContent(Layout);
@@ -71,6 +71,7 @@ void UZLSocialSandboxWidget::NativeOnInitialized()
 	TargetCombo = WidgetTree->ConstructWidget<UComboBoxString>();
 	TargetCombo->AddOption(NoTargetOption);
 	TargetCombo->SetSelectedOption(NoTargetOption);
+	TargetCombo->OnSelectionChanged.AddDynamic(this, &UZLSocialSandboxWidget::HandleTargetChanged);
 	Layout->AddChildToVerticalBox(TargetCombo)->SetPadding(FMargin(0.0f, 5.0f));
 
 	InputBox = WidgetTree->ConstructWidget<UEditableTextBox>();
@@ -96,6 +97,14 @@ void UZLSocialSandboxWidget::NativeOnInitialized()
 
 	StatusText = AddLabel(WidgetTree, Layout, TEXT("就绪 Ready"), 15.0f);
 	SetStatus(FText::FromString(TEXT("就绪 Ready")), false);
+	AddLabel(WidgetTree, Layout, TEXT("逐 NPC Observation Inspector"), 18.0f);
+	InspectorText = AddLabel(WidgetTree, Layout, TEXT("选择一个 NPC 查看个人感知。"), 14.0f);
+	InspectorText->SetAutoWrapText(true);
+}
+
+void UZLSocialSandboxWidget::SetInspectorText(const FText& Text)
+{
+	if (InspectorText != nullptr) { InspectorText->SetText(Text); }
 }
 
 void UZLSocialSandboxWidget::SetTargets(const TArray<FName>& StableIds, const TArray<FText>& DisplayNames)
@@ -185,6 +194,11 @@ void UZLSocialSandboxWidget::HandleInputModeChanged(FString SelectedItem, ESelec
 	{
 		SpeechModeCombo->SetIsEnabled(SelectedItem != ActionOption);
 	}
+}
+
+void UZLSocialSandboxWidget::HandleTargetChanged(FString, ESelectInfo::Type)
+{
+	if (SelectionHandler) { SelectionHandler(); }
 }
 
 FName UZLSocialSandboxWidget::GetSelectedTargetId() const

@@ -20,6 +20,7 @@ void AZLSocialSandboxPlayerController::BeginPlay()
 			return SubmitSandboxInput(InputMode, SpeechMode, TargetId, Input);
 		});
 		SandboxWidget->SetResetHandler([this]() { ResetSandbox(); });
+		SandboxWidget->SetSelectionHandler([this]() { RefreshObservationInspector(); });
 		SandboxWidget->AddToPlayerScreen(20);
 		RefreshSandboxTargets();
 	}
@@ -52,6 +53,14 @@ void AZLSocialSandboxPlayerController::RefreshSandboxTargets()
 		}
 	}
 	SandboxWidget->SetTargets(StableIds, DisplayNames);
+	RefreshObservationInspector();
+}
+
+void AZLSocialSandboxPlayerController::RefreshObservationInspector()
+{
+	if (SandboxWidget == nullptr) { return; }
+	const AZLSocialSandboxGameMode* GameMode = GetWorld() == nullptr ? nullptr : GetWorld()->GetAuthGameMode<AZLSocialSandboxGameMode>();
+	SandboxWidget->SetInspectorText(GameMode == nullptr ? FText::GetEmpty() : GameMode->BuildInspectorText(SandboxWidget->GetSelectedTargetId()));
 }
 
 FText AZLSocialSandboxPlayerController::SubmitSandboxInput(const EZLSocialSandboxInputMode InputMode, const FName SpeechMode, const FName TargetId, const FString& Input)
