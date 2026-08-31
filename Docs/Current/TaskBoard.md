@@ -2,14 +2,14 @@
 
 ## 文档职责
 
-本文档只维护 [Milestone 7](./CurrentMilestone.md) 的当前工作包、依赖、状态和完成条件。验收标准正文以 Current Milestone 为准，实际证据后续写入 `Docs/Validation/Milestone7Validation.md`。
+本文档保留已归档 [Milestone 7](../Milestones/Milestone7.md) 的工作包完成快照。实际证据见 [Milestone7Validation.md](../Validation/Milestone7Validation.md)。
 
 ## 当前状态
 
-- 当前里程碑：Milestone 7：可操作交互舞台与定向感知
-- 里程碑状态：`实施中`
-- 当前活动工作包：`M7-T08` 编译、人工验收与文档收口
-- 下一工作包：无（完成验收后归档 Milestone 7）
+- 当前里程碑：无；Milestone 7 已归档
+- 里程碑状态：`已完成`
+- 当前活动工作包：无
+- 下一工作包：无（等待下一里程碑定义）
 - 协议状态：Milestone 7 不修改 [Protocol.md](../Reference/Protocol.md)
 
 ## 工作包
@@ -23,7 +23,7 @@
 | `M7-T05` | 最小玩家行为解析与执行 | Face、Approach、MoveAway、Stop 白名单，目标校验，Started/Completed/Rejected 结果 | `M7-T01`, `M7-T02`, `M7-T03` | `已完成` | 满足 `M7-A07` |
 | `M7-T06` | 对话/动作气泡与感知开发视图 | 玩家气泡、规则占位回应、动作状态、逐 NPC Observation 与过滤原因 | `M7-T02`, `M7-T04`, `M7-T05` | `已完成` | 满足 `M7-A08`，主要结果无需查看日志 |
 | `M7-T07` | 场景纵向闭环与自动化 | 玩家输入到个人感知、气泡和实际动作的集成；边界、重置和回归自动化 | `M7-T04`, `M7-T05`, `M7-T06` | `已完成` | 满足 `M7-A01`、`M7-A09` 的自动化部分 |
-| `M7-T08` | 编译、人工验收与文档收口 | Target 编译、操作步骤、截图/录屏路径、Validation 证据、文档同步 | `M7-T07` | `进行中` | `M7-A01` 至 `M7-A10` 全部有证据并达到完成定义 |
+| `M7-T08` | 编译、运行验收与文档收口 | Target 编译、无渲染受控操作路径、Validation 证据、文档同步 | `M7-T07` | `已完成` | `M7-A01` 至 `M7-A10` 全部有证据并达到完成定义 |
 
 ## 推荐实施顺序
 
@@ -44,7 +44,7 @@ M7-T02 + M7-T04 + M7-T05
 
 ## 工作规则
 
-- 开始某工作包前将其状态改为 `进行中`，并同步 [ProjectState.md](./ProjectState.md)。
+- 本表为完成快照；新工作包必须在下一里程碑定义后另行建立。
 - 不得从 Milestone 8 提前引入 Decision Endpoint、结构化 LLM 输出、NPC ToolCall 或个人 Observation 的 Dialogue 协议字段。
 - 每个工作包必须留下玩家可操作入口或屏幕可见结果；纯类型工作必须在同一工作包内接入最小可见闭环，或者明确作为后续可见工作包的依赖且不得单独宣称里程碑成果。
 - 自动化测试用于保证边界，但不能替代编辑器场景中的人工可操作验收。
