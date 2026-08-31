@@ -60,7 +60,7 @@ Python AI Service
 - 插件不从 Actor、World、GameState、SaveGame、账号、UI 或内容资产自动抓取上下文或 Memory 标识。
 - UE 不负责 Prompt、模型 SDK、Provider 选择、密钥、Memory 存储检索或 Python 生成编排。
 - 插件不得依赖 `ZL` 游戏模块、具体 UI 或 NPC Actor。
-- Decision 契约类型、请求序列化和响应解析已经实现并通过两端边界测试；Decision HTTP Client 与 Gameplay Tool 执行尚未接入。现有 Dialogue 路径继续只消费纯文本回复。
+- Decision 契约类型、请求序列化/响应解析和独立 HTTP Client 已实现；Client 校验请求/NPC/状态版本关联和本地 TTL，完成回调回到 Game Thread。Gameplay Tool 执行尚未接入，现有 Dialogue 路径继续只消费纯文本回复。
 
 `ZLASocialRuntime` 是同一插件内与 HTTP Client 隔离的 Runtime Module：
 
@@ -91,6 +91,12 @@ Milestone 7 在同一依赖方向上增加可操作社会沙盒：
 - 默认沙盒参数为 120 度水平视野、1500 cm 视觉距离以及 Whisper 200、Talk 800、Shout 2500、InEar 150 cm；这些值保存在场景 Observation Settings，可由场景配置覆盖。
 - 专用地图 `/Game/SocialSandbox/Lvl_SocialSandbox` 使用 `AZLSocialSandboxGameMode`；`ResetSocialSandbox` 恢复确定初始状态，`RunSocialSandboxDemo` 经正常 UI/GameMode 提交路径执行一次不依赖 Python 的受控 Talk。
 - 沙盒不会向现有 Dialogue 请求注入 Observation、Relationship 或 Social Memory，不新增 HTTP、Decision Endpoint、ToolCall 或 Python 行为。
+
+Milestone 8 当前已增加协议确认后的客户端与个人上下文基础：
+
+- `ZL` 的 `FZLSocialSandboxDecisionContextBuilder` 只接受一个明确 NPC 的 Trigger Observation 和该 NPC 自己的 Observation Buffer，过滤其他 Observer，并把说话内容只放入已听见的 Speech Trigger；Action 历史只保存事实摘要。
+- Builder 显式提供人物、关系/即时状态默认快照和四个固定允许 Tool；`ZLAIRuntime` 不从 Actor、World 或其他 NPC 自动收集这些数据。
+- `UZLAIServiceSubsystem::SendDecisionRequest` 调用独立 `/v1/decision`，在成功前校验关联字段和本地 TTL；当前世界状态版本的最终比较仍由 Gameplay 层负责。
 
 ### Python AI Service
 

@@ -13,6 +13,12 @@ class ZLAIRUNTIME_API UZLAIServiceSubsystem final : public UGameInstanceSubsyste
 	GENERATED_BODY()
 
 public:
+	/** Sends one complete personal Decision request to the independent endpoint. */
+	FString SendDecisionRequest(
+		FZLDecisionRequest DecisionRequest,
+		FZLDecisionSuccessDelegate OnSuccess,
+		FZLDecisionFailureDelegate OnFailure);
+
 	/**
 	 * Sends one dialogue request using UZLAIServiceSettings.
 	 * Returns the generated request ID immediately; completion delegates run on the Game Thread.
@@ -70,5 +76,19 @@ private:
 		FZLDialogueSuccessDelegate OnSuccess,
 		FZLDialogueFailureDelegate OnFailure);
 
+	void CompleteDecisionRequest(
+		const FString& ExpectedRequestId,
+		const FString& ExpectedNpcId,
+		int64 ExpectedStateVersion,
+		double SentAtSeconds,
+		int32 TtlMs,
+		bool bTransportSucceeded,
+		bool bTimedOut,
+		int32 HttpStatusCode,
+		const FString& ResponseBody,
+		FZLDecisionSuccessDelegate OnSuccess,
+		FZLDecisionFailureDelegate OnFailure);
+
 	friend class FZLAIServiceFailureHandlingTest;
+	friend class FZLDecisionClientCompletionTest;
 };

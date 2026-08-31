@@ -4,7 +4,7 @@
 
 - 里程碑：Milestone 8——单 NPC LLM 具身反馈与受控动作
 - 当前阶段：Python Planner 完成，UE Decision Client 实施中
-- 最后更新：2026-08-31
+- 最后更新：2026-09-01
 - 结论：未完成；当前只记录已实际执行的基线检查，不声明 `M8-A01` 至 `M8-A10` 通过
 
 验收标准正文见 [CurrentMilestone.md](../Current/CurrentMilestone.md)。本文只记录实际执行过的验证，不保存完整玩家输入、Prompt、Memory scope、回复正文、凭据或原始 Provider 异常。
@@ -30,6 +30,8 @@
 | Python Decision Planner 与全量回归 | 在 `PythonService` 执行 `.venv/Scripts/python -m pytest` | 通过 | 收集 193 项，193 项通过，耗时 1.58 秒；覆盖 Route、Context Builder、Service、Stub、Kimi JSON 映射、非法 Tool/目标、空白业务数据和超时分类 |
 | UE Target 编译 | 执行 `Build.bat ZLEditor Win64 Development` | 通过 | UHT、Decision 协议类型、序列化/解析和新增测试编译链接成功 |
 | UE Decision/Dialogue 契约 | NullRHI 执行 `Automation RunTests ZLAIRuntime.Protocol` | 通过 | 收集 9 项，9 项全部 `Success`；包含 3 项 Decision 与 6 项 Dialogue 回归，退出码 0 |
+| UE Decision Client 编译与完成语义 | 编译 Target 后 NullRHI 执行 `Automation RunTests ZLAIRuntime.DecisionClient` | 通过 | 1 项通过；覆盖成功关联、30 秒本地 TTL 过期和状态版本不匹配，均只走一次完成路径 |
+| UE 单 NPC 个人上下文 | NullRHI 执行 `Automation RunTests ZL.Social.Sandbox.PersonalDecisionContext` | 通过 | 1 项通过；只保留选定 NPC 的已感知 Trigger/历史，过滤其他 Observer，未听见 Speech 不能构造请求 |
 
 ## 基线结论
 
@@ -45,10 +47,11 @@
 | --- | --- | --- |
 | `M8-A01` | Python 全量 180 项通过；当前 UE Target 编译与 6 项 Dialogue Protocol 回归通过；后续 Social/Service 完整回归仍待执行 | `部分` |
 | `M8-A02` | 用户已明确确认；`Protocol.md`、Python Schema、UE 类型及两端契约测试一致，Python 14 项与 UE 3 项 Decision 契约测试通过 | `通过` |
-| `M8-A03` | Python Context Builder 只包含单 NPC Trigger、人物/关系/即时状态/个人历史和允许 Tool；UE 个人 Observation 接入待完成 | `部分` |
+| `M8-A03` | Python Context Builder 与 UE Gameplay Builder 都只包含单 NPC 已感知 Trigger、人物/关系/即时状态/个人历史和允许 Tool；场景实际发送待接入 | `部分` |
 | `M8-A04` | Stub Route/Service 能返回相关 Speech 与允许的 `move_away` 建议；UE 可见执行待完成 | `部分` |
 | `M8-A05` | Kimi Planner 的离线 JSON 映射、结构校验和异常分类通过；真实模型人工闭环待执行 | `部分` |
 | `M8-A08` | Python 已覆盖无效 Planner 结构和 Provider 超时分类；UE 可见降级待完成 | `部分` |
-| `M8-A06`、`M8-A07`、`M8-A09`、`M8-A10` | 尚无完整实现或验证证据 | `未开始` |
+| `M8-A07` | UE Client 已验证本地 TTL 与响应状态版本关联；Gameplay 当前版本变化和零副作用拒绝待接入 | `部分` |
+| `M8-A06`、`M8-A09`、`M8-A10` | 尚无完整实现或验证证据 | `未开始` |
 
 后续每次工作包验证只追加实际命令、环境、结果和与验收 ID 的对应关系；未执行项目不得写成通过。

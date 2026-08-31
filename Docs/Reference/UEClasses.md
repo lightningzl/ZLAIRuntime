@@ -20,7 +20,7 @@
 
 | 类型 | 职责 | 不负责 |
 | --- | --- | --- |
-| `UZLAIServiceSubsystem` | 校验并发送 Dialogue 请求，管理 HTTP、超时、关联和单次完成回调；Decision Client 尚未接入 | UI、Prompt、数据库、Gameplay 行为、Tool 执行 |
+| `UZLAIServiceSubsystem` | 分别发送 Dialogue/Decision 请求，管理 HTTP、超时、关联、本地 Decision TTL 和单次 Game Thread 完成回调 | UI、Prompt、数据库、Gameplay 行为、当前世界状态比较和 Tool 执行 |
 | `UZLAIServiceSettings` | 通过 UE Config 提供 Base URL 和外层请求超时 | API Key、模型选择和运行时请求状态 |
 | `FZLDialogueRequest` | 表示请求 ID、NPC ID、玩家输入、可选 Context 和可选 Memory 范围 | 保存跨请求正文或访问数据库 |
 | `FZLDialogueResponse` | 表示请求关联、NPC ID、纯文本回复和逻辑 Provider | 推断或执行 Gameplay 指令 |
@@ -84,6 +84,7 @@ Runtime 固定上限为 10000 个注册 Agent、1024 个活动 Root、4096 条 P
 | `UZLSocialSandboxWidget` | 提供说话/行为、模式、目标、文本、提交、错误状态和逐 NPC Observation Inspector | 保存持久历史、Prompt、scope 或凭据 |
 | `UZLSocialBubbleWidget` | 使用屏幕空间 UMG 显示有界时长的中英文说话、动作和 `RulePlaceholder` 反馈 | 产生事件或改变 Gameplay 状态 |
 | `FZLSocialSandboxMotion` | 计算 Approach/MoveAway 的单步平面位移、完成边界与面向 | 导航、避障、动画或复杂路径规划 |
+| `FZLSocialSandboxDecisionContextBuilder` | 从一个选定 NPC 已感知的 Trigger 和个人 Observation 历史构造有界 Decision 请求，过滤其他 Observer | 自动读取 World、其他 NPC 知识、执行 Tool 或保存 Prompt |
 
 专用地图为 `/Game/SocialSandbox/Lvl_SocialSandbox`，默认使用上述 GameMode、Pawn 和 PlayerController。GameMode 保持世界状态权威；Widget 只提交请求并展示结果。
 
@@ -129,6 +130,7 @@ ZL Gameplay / UI
 
 - Client 使用 `UGameInstanceSubsystem`，生命周期覆盖关卡切换。
 - 每个请求由 UE 生成唯一 `request_id`。
+- Decision 请求保存发送时状态版本和本地 TTL；成功响应必须匹配请求 ID、NPC ID 和状态版本，超出 TTL 时返回 `stale_response`。
 - 请求 Context 和 Memory 在创建 HTTP 前完成边界校验。
 - 本地校验失败不创建 HTTP，并且只触发一次失败回调。
 - 网络失败、超时、HTTP 错误和解析错误走不同分类。

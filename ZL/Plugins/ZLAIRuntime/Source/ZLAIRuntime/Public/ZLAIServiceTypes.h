@@ -11,7 +11,8 @@ enum class EZLServiceErrorCategory : uint8
 	Network,
 	Timeout,
 	Http,
-	Parse
+	Parse,
+	Stale
 };
 
 USTRUCT(BlueprintType)
