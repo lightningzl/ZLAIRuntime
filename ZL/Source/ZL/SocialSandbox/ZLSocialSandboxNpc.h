@@ -9,6 +9,7 @@ class UArrowComponent;
 class UCapsuleComponent;
 class UStaticMeshComponent;
 class UTextRenderComponent;
+class UWidgetComponent;
 
 UCLASS()
 class ZL_API AZLSocialSandboxNpc final : public AActor
@@ -47,7 +48,7 @@ private:
 	TObjectPtr<UTextRenderComponent> NameLabel;
 
 	UPROPERTY(VisibleAnywhere, Category="Sandbox")
-	TObjectPtr<UTextRenderComponent> BubbleText;
+	TObjectPtr<UWidgetComponent> BubbleWidget;
 
 	UPROPERTY(VisibleAnywhere, Category="Sandbox")
 	FName StableId;

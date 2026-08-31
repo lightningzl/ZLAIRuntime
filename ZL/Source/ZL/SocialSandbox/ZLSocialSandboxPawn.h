@@ -10,6 +10,7 @@ class UCameraComponent;
 class USpringArmComponent;
 class UStaticMeshComponent;
 class UTextRenderComponent;
+class UWidgetComponent;
 
 UCLASS()
 class ZL_API AZLSocialSandboxPawn final : public ACharacter
@@ -56,7 +57,7 @@ private:
 	TObjectPtr<UTextRenderComponent> NameLabel;
 
 	UPROPERTY(VisibleAnywhere, Category="Sandbox")
-	TObjectPtr<UTextRenderComponent> BubbleText;
+	TObjectPtr<UWidgetComponent> BubbleWidget;
 
 	FTransform SandboxStartTransform;
 	TWeakObjectPtr<AActor> ScriptedTarget;

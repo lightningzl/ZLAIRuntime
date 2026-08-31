@@ -1,17 +1,20 @@
 #include "SocialSandbox/ZLSocialSandboxPawn.h"
 
 #include "SocialSandbox/ZLSocialSandboxMotion.h"
+#include "SocialSandbox/ZLSocialBubbleWidget.h"
 
 #include "Camera/CameraComponent.h"
 #include "Components/ArrowComponent.h"
 #include "Components/CapsuleComponent.h"
 #include "Components/StaticMeshComponent.h"
 #include "Components/TextRenderComponent.h"
+#include "Components/WidgetComponent.h"
 #include "GameFramework/CharacterMovementComponent.h"
 #include "GameFramework/Controller.h"
 #include "Camera/PlayerCameraManager.h"
 #include "GameFramework/SpringArmComponent.h"
 #include "Kismet/GameplayStatics.h"
+#include "Materials/MaterialInstanceDynamic.h"
 #include "TimerManager.h"
 #include "UObject/ConstructorHelpers.h"
 
@@ -47,15 +50,16 @@ AZLSocialSandboxPawn::AZLSocialSandboxPawn()
 	NameLabel->SetHorizontalAlignment(EHTA_Center);
 	NameLabel->SetWorldSize(34.0f);
 	NameLabel->SetTextRenderColor(FColor(40, 220, 255));
-	NameLabel->SetText(FText::FromString(TEXT("玩家 Player")));
+	NameLabel->SetText(FText::FromString(TEXT("Player")));
 
-	BubbleText = CreateDefaultSubobject<UTextRenderComponent>(TEXT("BubbleText"));
-	BubbleText->SetupAttachment(GetCapsuleComponent());
-	BubbleText->SetRelativeLocation(FVector(0.0f, 0.0f, 190.0f));
-	BubbleText->SetHorizontalAlignment(EHTA_Center);
-	BubbleText->SetWorldSize(28.0f);
-	BubbleText->SetTextRenderColor(FColor(40, 220, 255));
-	BubbleText->SetHiddenInGame(true);
+	BubbleWidget = CreateDefaultSubobject<UWidgetComponent>(TEXT("BubbleWidget"));
+	BubbleWidget->SetupAttachment(GetCapsuleComponent());
+	BubbleWidget->SetRelativeLocation(FVector(0.0f, 0.0f, 210.0f));
+	BubbleWidget->SetWidgetSpace(EWidgetSpace::Screen);
+	BubbleWidget->SetDrawSize(FVector2D(360.0f, 80.0f));
+	BubbleWidget->SetPivot(FVector2D(0.5f, 1.0f));
+	BubbleWidget->SetWidgetClass(UZLSocialBubbleWidget::StaticClass());
+	BubbleWidget->SetVisibility(false);
 
 	CameraBoom = CreateDefaultSubobject<USpringArmComponent>(TEXT("CameraBoom"));
 	CameraBoom->SetupAttachment(GetCapsuleComponent());
@@ -72,6 +76,10 @@ void AZLSocialSandboxPawn::BeginPlay()
 {
 	Super::BeginPlay();
 	SandboxStartTransform = GetActorTransform();
+	if (UMaterialInstanceDynamic* Material = BodyMesh->CreateDynamicMaterialInstance(0))
+	{
+		Material->SetVectorParameterValue(TEXT("Color"), FLinearColor(0.03f, 0.32f, 0.85f));
+	}
 }
 
 void AZLSocialSandboxPawn::SetupPlayerInputComponent(UInputComponent* PlayerInputComponent)
@@ -164,30 +172,30 @@ void AZLSocialSandboxPawn::ShowActionBubble(const EZLSocialActionType Action, co
 
 void AZLSocialSandboxPawn::ShowBubble(const FText& Text, const FColor& Color, const float DurationSeconds)
 {
-	if (BubbleText == nullptr || GetWorld() == nullptr) { return; }
+	if (BubbleWidget == nullptr || GetWorld() == nullptr) { return; }
 	GetWorld()->GetTimerManager().ClearTimer(BubbleTimer);
-	BubbleText->SetText(Text);
-	BubbleText->SetTextRenderColor(Color);
-	BubbleText->SetHiddenInGame(false);
+	BubbleWidget->InitWidget();
+	if (UZLSocialBubbleWidget* Widget = Cast<UZLSocialBubbleWidget>(BubbleWidget->GetUserWidgetObject()))
+	{
+		Widget->SetBubble(Text, FLinearColor(Color));
+	}
+	BubbleWidget->SetVisibility(true);
 	GetWorld()->GetTimerManager().SetTimer(BubbleTimer, this, &AZLSocialSandboxPawn::ClearBubble, FMath::Clamp(DurationSeconds, 0.5f, 8.0f), false);
 }
 
 void AZLSocialSandboxPawn::ClearBubble()
 {
 	if (GetWorld() != nullptr) { GetWorld()->GetTimerManager().ClearTimer(BubbleTimer); }
-	if (BubbleText != nullptr) { BubbleText->SetHiddenInGame(true); }
+	if (BubbleWidget != nullptr) { BubbleWidget->SetVisibility(false); }
 }
 
 void AZLSocialSandboxPawn::FaceLabelsToCamera() const
 {
 	const APlayerCameraManager* Camera = UGameplayStatics::GetPlayerCameraManager(this, 0);
 	if (Camera == nullptr) { return; }
-	for (UTextRenderComponent* Label : { NameLabel.Get(), BubbleText.Get() })
+	if (NameLabel != nullptr)
 	{
-		if (Label != nullptr)
-		{
-			Label->SetWorldRotation((Camera->GetCameraLocation() - Label->GetComponentLocation()).Rotation());
-		}
+		NameLabel->SetWorldRotation((Camera->GetCameraLocation() - NameLabel->GetComponentLocation()).Rotation());
 	}
 }
 

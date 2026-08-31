@@ -33,6 +33,7 @@ public:
 	void SetStatus(const FText& Status, bool bIsError);
 	void SetInspectorText(const FText& Text);
 	FName GetSelectedTargetId() const;
+	void SelectTarget(FName TargetId);
 
 protected:
 	virtual void NativeOnInitialized() override;

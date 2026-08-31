@@ -108,6 +108,19 @@ void UZLSocialSandboxWidget::SetInspectorText(const FText& Text)
 	if (InspectorText != nullptr) { InspectorText->SetText(Text); }
 }
 
+void UZLSocialSandboxWidget::SelectTarget(const FName TargetId)
+{
+	if (TargetCombo == nullptr) { return; }
+	for (const TPair<FString, FName>& Entry : TargetIdsByOption)
+	{
+		if (Entry.Value == TargetId)
+		{
+			TargetCombo->SetSelectedOption(Entry.Key);
+			return;
+		}
+	}
+}
+
 void UZLSocialSandboxWidget::SetTargets(const TArray<FName>& StableIds, const TArray<FText>& DisplayNames)
 {
 	if (TargetCombo == nullptr)

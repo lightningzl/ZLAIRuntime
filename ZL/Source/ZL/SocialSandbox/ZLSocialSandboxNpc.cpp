@@ -1,11 +1,15 @@
 #include "SocialSandbox/ZLSocialSandboxNpc.h"
 
+#include "SocialSandbox/ZLSocialBubbleWidget.h"
+
 #include "Components/ArrowComponent.h"
 #include "Components/CapsuleComponent.h"
 #include "Components/StaticMeshComponent.h"
 #include "Components/TextRenderComponent.h"
+#include "Components/WidgetComponent.h"
 #include "Camera/PlayerCameraManager.h"
 #include "Kismet/GameplayStatics.h"
+#include "Materials/MaterialInstanceDynamic.h"
 #include "TimerManager.h"
 #include "UObject/ConstructorHelpers.h"
 
@@ -42,13 +46,14 @@ AZLSocialSandboxNpc::AZLSocialSandboxNpc()
 	NameLabel->SetWorldSize(34.0f);
 	NameLabel->SetTextRenderColor(FColor::White);
 
-	BubbleText = CreateDefaultSubobject<UTextRenderComponent>(TEXT("BubbleText"));
-	BubbleText->SetupAttachment(Capsule);
-	BubbleText->SetRelativeLocation(FVector(0.0f, 0.0f, 190.0f));
-	BubbleText->SetHorizontalAlignment(EHTA_Center);
-	BubbleText->SetWorldSize(25.0f);
-	BubbleText->SetTextRenderColor(FColor(255, 210, 80));
-	BubbleText->SetHiddenInGame(true);
+	BubbleWidget = CreateDefaultSubobject<UWidgetComponent>(TEXT("BubbleWidget"));
+	BubbleWidget->SetupAttachment(Capsule);
+	BubbleWidget->SetRelativeLocation(FVector(0.0f, 0.0f, 205.0f));
+	BubbleWidget->SetWidgetSpace(EWidgetSpace::Screen);
+	BubbleWidget->SetDrawSize(FVector2D(320.0f, 72.0f));
+	BubbleWidget->SetPivot(FVector2D(0.5f, 1.0f));
+	BubbleWidget->SetWidgetClass(UZLSocialBubbleWidget::StaticClass());
+	BubbleWidget->SetVisibility(false);
 }
 
 void AZLSocialSandboxNpc::InitializeSandboxNpc(const FName InStableId, const FText& InDisplayName, const FTransform& InStartTransform)
@@ -57,7 +62,35 @@ void AZLSocialSandboxNpc::InitializeSandboxNpc(const FName InStableId, const FTe
 	DisplayName = InDisplayName;
 	SandboxStartTransform = InStartTransform;
 	SetActorTransform(SandboxStartTransform, false, nullptr, ETeleportType::TeleportPhysics);
-	NameLabel->SetText(DisplayName);
+	FString ShortName = DisplayName.ToString();
+	int32 Separator = INDEX_NONE;
+	if (ShortName.FindLastChar(TEXT(' '), Separator))
+	{
+		ShortName.RightChopInline(Separator + 1);
+	}
+	NameLabel->SetText(FText::FromString(ShortName));
+	if (UMaterialInstanceDynamic* Material = BodyMesh->CreateDynamicMaterialInstance(0))
+	{
+		const uint32 Hash = GetTypeHash(StableId);
+		const FLinearColor Palette[] = {
+			FLinearColor(0.85f, 0.18f, 0.08f),
+			FLinearColor(0.90f, 0.48f, 0.05f),
+			FLinearColor(0.18f, 0.62f, 0.22f),
+			FLinearColor(0.55f, 0.18f, 0.75f)
+		};
+		Material->SetVectorParameterValue(TEXT("Color"), Palette[Hash % UE_ARRAY_COUNT(Palette)]);
+	}
+	const TCHAR* MeshPaths[] = {
+		TEXT("/Engine/BasicShapes/Cube.Cube"),
+		TEXT("/Engine/BasicShapes/Cone.Cone"),
+		TEXT("/Engine/BasicShapes/Sphere.Sphere"),
+		TEXT("/Engine/BasicShapes/Cylinder.Cylinder")
+	};
+	if (UStaticMesh* Shape = LoadObject<UStaticMesh>(nullptr, MeshPaths[GetTypeHash(StableId) % UE_ARRAY_COUNT(MeshPaths)]))
+	{
+		BodyMesh->SetStaticMesh(Shape);
+		BodyMesh->SetRelativeScale3D(FVector(0.7f, 0.7f, 1.8f));
+	}
 }
 
 void AZLSocialSandboxNpc::ResetToSandboxStart()
@@ -116,29 +149,29 @@ void AZLSocialSandboxNpc::ShowActionObservation(const FZLSocialObservation& Obse
 
 void AZLSocialSandboxNpc::ShowBubble(const FText& Text, const FColor& Color, const float DurationSeconds)
 {
-	if (BubbleText == nullptr || GetWorld() == nullptr) { return; }
+	if (BubbleWidget == nullptr || GetWorld() == nullptr) { return; }
 	GetWorld()->GetTimerManager().ClearTimer(BubbleTimer);
-	BubbleText->SetText(Text);
-	BubbleText->SetTextRenderColor(Color);
-	BubbleText->SetHiddenInGame(false);
+	BubbleWidget->InitWidget();
+	if (UZLSocialBubbleWidget* Widget = Cast<UZLSocialBubbleWidget>(BubbleWidget->GetUserWidgetObject()))
+	{
+		Widget->SetBubble(Text, FLinearColor(Color));
+	}
+	BubbleWidget->SetVisibility(true);
 	GetWorld()->GetTimerManager().SetTimer(BubbleTimer, this, &AZLSocialSandboxNpc::ClearBubble, FMath::Clamp(DurationSeconds, 0.5f, 8.0f), false);
 }
 
 void AZLSocialSandboxNpc::ClearBubble()
 {
 	if (GetWorld() != nullptr) { GetWorld()->GetTimerManager().ClearTimer(BubbleTimer); }
-	if (BubbleText != nullptr) { BubbleText->SetHiddenInGame(true); }
+	if (BubbleWidget != nullptr) { BubbleWidget->SetVisibility(false); }
 }
 
 void AZLSocialSandboxNpc::FaceLabelsToCamera() const
 {
 	const APlayerCameraManager* Camera = UGameplayStatics::GetPlayerCameraManager(this, 0);
 	if (Camera == nullptr) { return; }
-	for (UTextRenderComponent* Label : { NameLabel.Get(), BubbleText.Get() })
+	if (NameLabel != nullptr)
 	{
-		if (Label != nullptr)
-		{
-			Label->SetWorldRotation((Camera->GetCameraLocation() - Label->GetComponentLocation()).Rotation());
-		}
+		NameLabel->SetWorldRotation((Camera->GetCameraLocation() - NameLabel->GetComponentLocation()).Rotation());
 	}
 }

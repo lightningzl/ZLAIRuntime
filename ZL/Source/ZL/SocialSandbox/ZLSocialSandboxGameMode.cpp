@@ -2,14 +2,21 @@
 
 #include "ZLSocialActionParser.h"
 #include "Components/StaticMeshComponent.h"
+#include "Components/LightComponent.h"
+#include "Components/PointLightComponent.h"
 #include "Engine/DirectionalLight.h"
+#include "Engine/PointLight.h"
 #include "Engine/StaticMeshActor.h"
 #include "EngineUtils.h"
 #include "GameFramework/PlayerStart.h"
 #include "Kismet/GameplayStatics.h"
+#include "Materials/MaterialInstanceDynamic.h"
+#include "Misc/CommandLine.h"
+#include "Misc/Parse.h"
 #include "SocialSandbox/ZLSocialSandboxNpc.h"
 #include "SocialSandbox/ZLSocialSandboxPawn.h"
 #include "SocialSandbox/ZLSocialSandboxPlayerController.h"
+#include "TimerManager.h"
 
 AZLSocialSandboxGameMode::AZLSocialSandboxGameMode()
 {
@@ -21,13 +28,17 @@ void AZLSocialSandboxGameMode::BeginPlay()
 {
 	Super::BeginPlay();
 	SpawnEnvironment();
-	SpawnNpc(TEXT("npc_guard"), TEXT("守卫 Guard"), FVector(350.0f, 0.0f, 96.0f), FRotator(0.0f, 180.0f, 0.0f));
-	SpawnNpc(TEXT("npc_merchant"), TEXT("商人 Merchant"), FVector(600.0f, 500.0f, 96.0f), FRotator(0.0f, 225.0f, 0.0f));
-	SpawnNpc(TEXT("npc_scout"), TEXT("斥候 Scout"), FVector(-450.0f, 250.0f, 96.0f), FRotator(0.0f, 0.0f, 0.0f));
-	SpawnNpc(TEXT("npc_civilian"), TEXT("居民 Civilian"), FVector(1250.0f, -500.0f, 96.0f), FRotator(0.0f, 135.0f, 0.0f));
+	SpawnNpc(TEXT("npc_guard"), TEXT("守卫 Guard"), FVector(500.0f, -350.0f, 96.0f), FRotator(0.0f, 145.0f, 0.0f));
+	SpawnNpc(TEXT("npc_merchant"), TEXT("商人 Merchant"), FVector(500.0f, 350.0f, 96.0f), FRotator(0.0f, 215.0f, 0.0f));
+	SpawnNpc(TEXT("npc_scout"), TEXT("斥候 Scout"), FVector(950.0f, -350.0f, 96.0f), FRotator(0.0f, 160.0f, 0.0f));
+	SpawnNpc(TEXT("npc_civilian"), TEXT("居民 Civilian"), FVector(950.0f, 350.0f, 96.0f), FRotator(0.0f, 200.0f, 0.0f));
 	if (AZLSocialSandboxPlayerController* Controller = Cast<AZLSocialSandboxPlayerController>(UGameplayStatics::GetPlayerController(this, 0)))
 	{
 		Controller->RefreshSandboxTargets();
+	}
+	if (FParse::Param(FCommandLine::Get(), TEXT("ZLSandboxDemo")))
+	{
+		GetWorldTimerManager().SetTimer(DemoTimer, this, &AZLSocialSandboxGameMode::RunSocialSandboxDemo, 0.5f, false);
 	}
 }
 
@@ -45,6 +56,16 @@ void AZLSocialSandboxGameMode::ResetSocialSandbox()
 		Pawn->ResetToSandboxStart();
 	}
 	RefreshInspector();
+}
+
+void AZLSocialSandboxGameMode::RunSocialSandboxDemo()
+{
+	const FName GuardId(TEXT("npc_guard"));
+	if (AZLSocialSandboxPlayerController* Controller = Cast<AZLSocialSandboxPlayerController>(UGameplayStatics::GetPlayerController(this, 0)))
+	{
+		Controller->SelectInspectorTarget(GuardId);
+	}
+	SubmitSpeech(TEXT("Talk"), GuardId, TEXT("Social sandbox demo"));
 }
 
 AZLSocialSandboxNpc* AZLSocialSandboxGameMode::FindSandboxNpc(const FName StableId) const
@@ -284,6 +305,10 @@ void AZLSocialSandboxGameMode::SpawnEnvironment()
 		Floor->GetStaticMeshComponent()->SetStaticMesh(LoadObject<UStaticMesh>(nullptr, TEXT("/Engine/BasicShapes/Cube.Cube")));
 		Floor->SetActorScale3D(FVector(35.0f, 35.0f, 1.0f));
 		Floor->GetStaticMeshComponent()->SetMobility(EComponentMobility::Static);
+		if (UMaterialInstanceDynamic* Material = Floor->GetStaticMeshComponent()->CreateDynamicMaterialInstance(0))
+		{
+			Material->SetVectorParameterValue(TEXT("Color"), FLinearColor(0.025f, 0.045f, 0.075f));
+		}
 	}
 
 	if (!GetWorld()->GetAuthGameMode()->FindPlayerStart(nullptr))
@@ -295,6 +320,19 @@ void AZLSocialSandboxGameMode::SpawnEnvironment()
 	if (Light != nullptr)
 	{
 		Light->SetMobility(EComponentMobility::Movable);
+		Light->GetLightComponent()->SetIntensity(2.0f);
+		Light->GetLightComponent()->SetLightColor(FLinearColor(1.0f, 0.92f, 0.78f));
+	}
+	APointLight* FillLight = GetWorld()->SpawnActor<APointLight>(FVector(500.0f, 0.0f, 1100.0f), FRotator::ZeroRotator);
+	if (FillLight != nullptr)
+	{
+		FillLight->SetMobility(EComponentMobility::Movable);
+		if (UPointLightComponent* Component = Cast<UPointLightComponent>(FillLight->GetLightComponent()))
+		{
+			Component->SetIntensity(65000.0f);
+			Component->SetAttenuationRadius(4500.0f);
+			Component->SetLightColor(FLinearColor(0.55f, 0.68f, 1.0f));
+		}
 	}
 }
 

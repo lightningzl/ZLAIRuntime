@@ -18,6 +18,9 @@ public:
 	UFUNCTION(Exec)
 	void ResetSocialSandbox();
 
+	UFUNCTION(Exec)
+	void RunSocialSandboxDemo();
+
 	const TArray<TObjectPtr<AZLSocialSandboxNpc>>& GetSandboxNpcs() const { return SandboxNpcs; }
 	AZLSocialSandboxNpc* FindSandboxNpc(FName StableId) const;
 	FText SubmitSpeech(FName SpeechMode, FName TargetId, const FString& Text);
@@ -39,4 +42,5 @@ private:
 
 	UPROPERTY(EditDefaultsOnly, Category="Sandbox|Perception")
 	FZLSocialObservationSettings ObservationSettings;
+	FTimerHandle DemoTimer;
 };

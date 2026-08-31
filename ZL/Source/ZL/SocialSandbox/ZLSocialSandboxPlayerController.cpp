@@ -63,6 +63,15 @@ void AZLSocialSandboxPlayerController::RefreshObservationInspector()
 	SandboxWidget->SetInspectorText(GameMode == nullptr ? FText::GetEmpty() : GameMode->BuildInspectorText(SandboxWidget->GetSelectedTargetId()));
 }
 
+void AZLSocialSandboxPlayerController::SelectInspectorTarget(const FName TargetId)
+{
+	if (SandboxWidget != nullptr)
+	{
+		SandboxWidget->SelectTarget(TargetId);
+		RefreshObservationInspector();
+	}
+}
+
 FText AZLSocialSandboxPlayerController::SubmitSandboxInput(const EZLSocialSandboxInputMode InputMode, const FName SpeechMode, const FName TargetId, const FString& Input)
 {
 	AZLSocialSandboxGameMode* GameMode = GetWorld() == nullptr ? nullptr : GetWorld()->GetAuthGameMode<AZLSocialSandboxGameMode>();
