@@ -6,13 +6,16 @@
 
 当前允许实施的范围见 [CurrentMilestone.md](../Current/CurrentMilestone.md)，当前已实现架构见 [Architecture.md](./Architecture.md)，线上字段以 [Protocol.md](../Reference/Protocol.md) 为准。
 
+目标系统必须服务于 [最终场景 1：开放式社会交互沙盒](./FinalScenarios/Scenario1OpenSocialSandbox.md)。场景先定义玩家可操作体验和观察属性，本设计再为其提供领域模型与技术边界。
+
 ## 总体架构
 
 ```text
-Player Action
-  -> UE Gameplay Event
+Player Speech / Action Text + Embodied Movement
+  -> UE Input Adapter + Gameplay Event
   -> Event Router + Spatial Query
-  -> NPC Perception Filter
+  -> Directional Sight / Bounded Hearing
+  -> Per-NPC Observation
   -> Instant State Update
   -> Social Memory Update
   -> Relationship / Reputation Update
@@ -22,9 +25,19 @@ Player Action
        `- Level 3 Deep Context + AI Decision
   -> UE Tool Registry / Intent Executor
   -> StateTree / GAS / AIController
-  -> Gameplay Result
+  -> Speech Bubble / Action Bubble / Gameplay Result
   -> New Gameplay Event
 ```
+
+## 场景驱动与可显化要求
+
+- 自然语言输入可以开放，但真实世界动作必须映射到有限、已注册、可校验的能力。
+- 说话输入与行为描述必须分离；NPC 不会“听见”玩家输入的行为命令，只能观察实际执行结果。
+- 每个 NPC 只接收自己的 Observation，不把完整 World Snapshot 当作所有 NPC 的共同知识。
+- LLM 生成的语言通过对话气泡显化；已经执行或正在执行的动作通过角色移动、动作气泡或状态标识显化。
+- 内部状态、隐藏目标和模型隐式推理不向玩家公开；开发 Inspector 只显示输入来源、结构化结果、校验结果和公开 Reason Code。
+- 冲突、基础战斗、逃跑、求助和缓和复用同一感知—判断—执行循环。LLM 负责高层目标、策略和表达，UE 负责即时移动、防卫、命中、伤害与合法性。
+- 每个未来里程碑必须提供场景入口和玩家操作路径；只有自动化、日志或无界面测试不能单独构成里程碑完成。
 
 ## 权威边界
 
@@ -37,7 +50,7 @@ UE 是 Gameplay 和社会模拟的唯一事实来源：
 
 Python 只负责少量 Level 2/3 的高层意图、结构化表达和对话。Python 不读取 UE World，不直接修改关系或状态，也不假定 ToolCall 已执行。
 
-Event 到达后 UE 立即更新状态和记忆，不等待 LLM。异步回复必须携带可用于过期判断的状态版本；世界已经变化时 UE 丢弃或重新规划。
+Event 或显著可感知变化到达后，UE 立即更新状态和记忆，不等待 LLM。异步回复必须携带可用于过期判断的状态版本；世界已经变化时 UE 丢弃、继续当前安全动作或重新规划。
 
 ## 目标 UE 模块
 
@@ -136,7 +149,7 @@ effective_intensity =
 severity * channel_gain * distance_falloff * occlusion_factor
 ```
 
-直接受害者使用 Direct Channel，不受普通半径过滤。禁止每帧对全部 NPC 扫描 Event。
+直接受害者使用 Direct Channel，不受普通半径过滤。视觉需要检查观察者朝向、视野角和距离；听觉需要区分小声、正常、大喊和面向单个近距离对象的耳边说话。禁止每帧对全部 NPC 扫描 Event。
 
 ## 传播限制
 
@@ -224,17 +237,21 @@ Event Accepted
   -> Execution Result Event
 ```
 
+Decision 调度除 Event 外，也可以由距离跨阈值、目标开始或停止靠近、动作完成、受击、玩家新的说话内容和当前计划失效触发。LLM 不逐帧控制角色；请求等待期间继续执行已有计划或确定性安全动作。
+
 未来 Decision 响应可包含 `decision_id`、状态版本、Intent、可选 Speech、可选 ToolCall、Confidence 和 Expiry，但这些字段只有在协议获得明确确认后才能写入 [Protocol.md](../Reference/Protocol.md)。不得返回或保存 Chain-of-Thought。
 
 ## Tool 验证
 
 UE 对每个 ToolCall 检查：注册、Capability、参数 Schema、Target、状态版本、距离、导航、视线、当前状态、冷却、速率、幂等和 Authority。
 
-建议 MVP Tool：MoveTo、ObserveTarget、FleeFrom、ReportCrime、RequestBackup、OfferHelp、Speak。未知或非法 Tool 不执行 Gameplay；如 Speech 合法，可只显示 Bubble 和白名单 Emoji。
+最终场景 1 的初始 Tool 候选按可见闭环逐步开放：Speak、FaceTarget、MoveToward、MoveAway、Stop、ObserveTarget、FleeFrom、CallForHelp、Defend。未知或非法 Tool 不执行 Gameplay；如 Speech 合法，可只显示 Bubble 和白名单 Emoji。攻击、命中、伤害和逐帧战斗动作继续由 UE Gameplay 实现，不由 LLM 直接调用任意能力。
 
 ## Dialogue 与表达
 
-玩家 Speech Event 支持 Whisper、Talk、Shout，不同模式只影响传播范围和 Noise。NPC 表达包含 Text、Emotion Tag、Expression Tag 和白名单 Emoji ID。表达可以独立于 Tool 执行；Tool 被拒绝不必丢弃合法的纯表达。
+玩家 Speech Event 支持 Whisper、Talk、Shout 和定向 InEar；模式影响传播范围、Noise、目标约束和旁观者可听性。玩家可以不指定目标，NPC 根据称呼、朝向、距离和上下文判断是否指向自己。NPC 表达包含 Text、Emotion Tag、Expression Tag 和白名单 Emoji ID。表达可以独立于 Tool 执行；Tool 被拒绝不必丢弃合法的纯表达。
+
+玩家行为文本先解析为候选动作和可选目标，再由 UE 校验并执行；无法映射或非法的行为必须给玩家明确反馈，不得仅通过叙述假装世界已经改变。
 
 ## Runtime Debugger
 
