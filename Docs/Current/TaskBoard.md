@@ -2,13 +2,53 @@
 
 ## 文档职责
 
-本文档只维护 [CurrentMilestone.md](./CurrentMilestone.md) 的当前工作包、依赖、状态和完成条件。历史范围见 [Milestones](../Milestones/)，实际证据见 [Validation](../Validation/)。
+本文档只维护 [Milestone 7](./CurrentMilestone.md) 的当前工作包、依赖、状态和完成条件。验收标准正文以 Current Milestone 为准，实际证据后续写入 `Docs/Validation/Milestone7Validation.md`。
 
 ## 当前状态
 
-当前无活动里程碑，也没有已授权工作包。Milestone 6 已完成并归档至 [Milestone6.md](../Milestones/Milestone6.md)。
+- 当前里程碑：Milestone 7：可操作交互舞台与定向感知
+- 里程碑状态：`已定义，待实施`
+- 当前活动工作包：无
+- 下一工作包：`M7-T01` 可操作平面场景与角色适配
+- 协议状态：Milestone 7 不修改 [Protocol.md](../Reference/Protocol.md)
 
-下一候选为 Milestone 7“可操作交互舞台与定向感知”。经用户确认并写入 Current Milestone 后，再在此拆分工作包；不得从长期规划或目标设计直接提前创建实施任务。
+## 工作包
+
+| ID | 工作包 | 主要成果 | 依赖 | 状态 | 完成条件 |
+| --- | --- | --- | --- | --- | --- |
+| `M7-T01` | 可操作平面场景与角色适配 | 可启动/重置场景、可移动转向玩家、3 至 5 个稳定 NPC、名称与朝向标识 | 无 | `待开始` | 满足 `M7-A02` 的场景与角色部分 |
+| `M7-T02` | 文本交互 UI 与输入边界 | 说话/行为切换、文本框、Whisper/Talk/Shout/InEar、可选目标、可见校验错误 | `M7-T01` | `待开始` | 满足 `M7-A03`，无无效 Gameplay 副作用 |
+| `M7-T03` | Speech/Action Event 与个人 Observation | 有界事件数据、说话和行为分离、逐 NPC Observation、生命周期与容量限制 | `M7-T01` | `待开始` | 支撑 `M7-A04` 至 `M7-A06` 的纯数据闭环 |
+| `M7-T04` | 定向视觉与分级听觉 | 视野角/距离过滤、四种说话模式、InEar 约束、听见与目标判断分离 | `M7-T03` | `待开始` | 满足 `M7-A04`、`M7-A05`、`M7-A06` |
+| `M7-T05` | 最小玩家行为解析与执行 | Face、Approach、MoveAway、Stop 白名单，目标校验，Started/Completed/Rejected 结果 | `M7-T01`, `M7-T02`, `M7-T03` | `待开始` | 满足 `M7-A07` |
+| `M7-T06` | 对话/动作气泡与感知开发视图 | 玩家气泡、规则占位回应、动作状态、逐 NPC Observation 与过滤原因 | `M7-T02`, `M7-T04`, `M7-T05` | `待开始` | 满足 `M7-A08`，主要结果无需查看日志 |
+| `M7-T07` | 场景纵向闭环与自动化 | 玩家输入到个人感知、气泡和实际动作的集成；边界、重置和回归自动化 | `M7-T04`, `M7-T05`, `M7-T06` | `待开始` | 满足 `M7-A01`、`M7-A09` 的自动化部分 |
+| `M7-T08` | 编译、人工验收与文档收口 | Target 编译、操作步骤、截图/录屏路径、Validation 证据、文档同步 | `M7-T07` | `待开始` | `M7-A01` 至 `M7-A10` 全部有证据并达到完成定义 |
+
+## 推荐实施顺序
+
+```text
+M7-T01
+  |- M7-T02
+  `- M7-T03
+       `- M7-T04
+M7-T01 + M7-T02 + M7-T03
+  -> M7-T05
+M7-T02 + M7-T04 + M7-T05
+  -> M7-T06
+  -> M7-T07
+  -> M7-T08
+```
+
+`M7-T02` 与 `M7-T03` 可以在 `M7-T01` 的稳定角色接口完成后并行设计，但共享类型、场景 Actor 和 Widget 接口修改必须避免互相覆盖。
+
+## 工作规则
+
+- 开始某工作包前将其状态改为 `进行中`，并同步 [ProjectState.md](./ProjectState.md)。
+- 不得从 Milestone 8 提前引入 Decision Endpoint、结构化 LLM 输出、NPC ToolCall 或个人 Observation 的 Dialogue 协议字段。
+- 每个工作包必须留下玩家可操作入口或屏幕可见结果；纯类型工作必须在同一工作包内接入最小可见闭环，或者明确作为后续可见工作包的依赖且不得单独宣称里程碑成果。
+- 自动化测试用于保证边界，但不能替代编辑器场景中的人工可操作验收。
+- 实际测试数量、命令、环境和结果只写入后续 Validation 文档，不在本文件复制。
 
 ## 状态定义
 
