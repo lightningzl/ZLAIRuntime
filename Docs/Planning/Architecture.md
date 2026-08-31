@@ -42,6 +42,11 @@ Python AI Service
   - Dialogue Provider Interface
       |- Kimi Provider
       `- Stub Provider
+  - Decision Route + Service
+      `- Personal Context Builder
+      `- Decision Planner Interface
+           |- Kimi Decision Planner
+           `- Stub Decision Planner
 ```
 
 ## 模块边界
@@ -99,6 +104,8 @@ Python Service 负责 AI 推理编排，不直接访问或修改 UE 世界。
 - Provider 接口隔离供应商 SDK 与上游数据格式。
 - Provider 实现负责把内部生成上下文映射为供应商请求，并完成供应商异常分类。
 - Service 不负责动画、移动、任务、战斗等 Gameplay 行为。
+- 独立 `/v1/decision` Route 将个人 Decision 请求交给 Decision Service；Service 完成业务边界和允许 Tool/目标复核，个人 Context Builder 只组装供应商无关 JSON，Stub/Kimi Planner 只返回结构化建议。
+- Decision Planner 不读取 UE World、不访问 Dialogue Memory、不执行 Tool，也不把建议描述为已经执行；非法 JSON、空结果、未知 Tool 或目标映射为脱敏 `planner_invalid_response`。
 - Memory Service 只持久化显式启用范围中的已完成对话轮次；Route、Context Builder 和 Provider 不直接访问数据库。
 - Service、Memory Service、Context Builder 和 Provider 都不读取 UE 世界。
 

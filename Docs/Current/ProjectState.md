@@ -9,8 +9,8 @@
 | 最后更新 | 2026-08-31 |
 | 当前里程碑 | Milestone 8：单 NPC LLM 具身反馈与受控动作 |
 | 里程碑状态 | `进行中` |
-| 当前活动任务 | `M8-T03` Python Decision Planner |
-| 下一候选任务 | `M8-T04` UE Decision Client 与个人上下文 |
+| 当前活动任务 | `M8-T04` UE Decision Client 与个人上下文 |
+| 下一候选任务 | `M8-T05` Tool Registry 与权威校验 |
 | 已知阻塞 | 无 |
 | 最近验收 | Milestone 7：10/10 项已验证 |
 
@@ -21,7 +21,7 @@
 - 当前已完成纯 UE Event→Perception→State→Memory→Rule Decision→Gameplay Intent 闭环、单 Agent 调试命令和 120 Agent 聚合基准。
 - 当前已完成有界 Event Chain、显式报告传播、稀疏 Relationship/Faction Authority、Important NPC Long Memory、关系感知规则决策、5 个 Important NPC 无界面纵向切片和 120+5 聚合基准。
 - Milestone 7 已交付专用可操作平面场景、文本说话/行为 UI、Speech/Action 分离事件、定向视觉、分级听觉、逐 NPC Observation、受控玩家行为、气泡和开发视图。
-- 当前已确认并实现 `/v1/decision` 的文档、Python Schema、UE 协议类型、序列化/解析和两端契约测试；Route、Planner、HTTP Client、Tool Executor 与场景集成尚未实现。
+- 当前已实现 `/v1/decision` 的 Python Route、个人 Context Builder、Service、确定性 Stub Planner、Kimi 结构化 Planner、脱敏失败映射及测试；UE HTTP Client、Tool Executor 与场景集成尚未实现。
 
 ## 当前执行边界
 

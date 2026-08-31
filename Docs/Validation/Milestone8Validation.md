@@ -3,7 +3,7 @@
 ## 状态
 
 - 里程碑：Milestone 8——单 NPC LLM 具身反馈与受控动作
-- 当前阶段：协议契约完成，Python Planner 实施中
+- 当前阶段：Python Planner 完成，UE Decision Client 实施中
 - 最后更新：2026-08-31
 - 结论：未完成；当前只记录已实际执行的基线检查，不声明 `M8-A01` 至 `M8-A10` 通过
 
@@ -27,6 +27,7 @@
 | UE 实现边界 | 检查 Service Subsystem、协议类型、Sandbox GameMode/NPC 与移动实现 | 通过 | Dialogue 请求已有一次完成和错误解析基线；现有 Sandbox 移动只控制玩家，NPC 具身动作需要独立权威 Handler |
 | Python Decision Schema | 执行 Decision Schema、Dialogue API 与 Provider 错误相关测试 | 通过 | 收集 31 项，31 项通过；其中新增 Decision 契约测试 14 项 |
 | Python 全量协议回归 | 在 `PythonService` 执行 `.venv/Scripts/python -m pytest` | 通过 | 收集 180 项，180 项通过，耗时 1.48 秒 |
+| Python Decision Planner 与全量回归 | 在 `PythonService` 执行 `.venv/Scripts/python -m pytest` | 通过 | 收集 193 项，193 项通过，耗时 1.58 秒；覆盖 Route、Context Builder、Service、Stub、Kimi JSON 映射、非法 Tool/目标、空白业务数据和超时分类 |
 | UE Target 编译 | 执行 `Build.bat ZLEditor Win64 Development` | 通过 | UHT、Decision 协议类型、序列化/解析和新增测试编译链接成功 |
 | UE Decision/Dialogue 契约 | NullRHI 执行 `Automation RunTests ZLAIRuntime.Protocol` | 通过 | 收集 9 项，9 项全部 `Success`；包含 3 项 Decision 与 6 项 Dialogue 回归，退出码 0 |
 
@@ -44,6 +45,10 @@
 | --- | --- | --- |
 | `M8-A01` | Python 全量 180 项通过；当前 UE Target 编译与 6 项 Dialogue Protocol 回归通过；后续 Social/Service 完整回归仍待执行 | `部分` |
 | `M8-A02` | 用户已明确确认；`Protocol.md`、Python Schema、UE 类型及两端契约测试一致，Python 14 项与 UE 3 项 Decision 契约测试通过 | `通过` |
-| `M8-A03` 至 `M8-A10` | 尚无实现或完整验证证据 | `未开始` |
+| `M8-A03` | Python Context Builder 只包含单 NPC Trigger、人物/关系/即时状态/个人历史和允许 Tool；UE 个人 Observation 接入待完成 | `部分` |
+| `M8-A04` | Stub Route/Service 能返回相关 Speech 与允许的 `move_away` 建议；UE 可见执行待完成 | `部分` |
+| `M8-A05` | Kimi Planner 的离线 JSON 映射、结构校验和异常分类通过；真实模型人工闭环待执行 | `部分` |
+| `M8-A08` | Python 已覆盖无效 Planner 结构和 Provider 超时分类；UE 可见降级待完成 | `部分` |
+| `M8-A06`、`M8-A07`、`M8-A09`、`M8-A10` | 尚无完整实现或验证证据 | `未开始` |
 
 后续每次工作包验证只追加实际命令、环境、结果和与验收 ID 的对应关系；未执行项目不得写成通过。
