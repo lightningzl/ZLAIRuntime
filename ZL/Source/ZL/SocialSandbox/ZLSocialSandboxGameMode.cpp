@@ -8,10 +8,12 @@
 #include "Kismet/GameplayStatics.h"
 #include "SocialSandbox/ZLSocialSandboxNpc.h"
 #include "SocialSandbox/ZLSocialSandboxPawn.h"
+#include "SocialSandbox/ZLSocialSandboxPlayerController.h"
 
 AZLSocialSandboxGameMode::AZLSocialSandboxGameMode()
 {
 	DefaultPawnClass = AZLSocialSandboxPawn::StaticClass();
+	PlayerControllerClass = AZLSocialSandboxPlayerController::StaticClass();
 }
 
 void AZLSocialSandboxGameMode::BeginPlay()
@@ -22,6 +24,10 @@ void AZLSocialSandboxGameMode::BeginPlay()
 	SpawnNpc(TEXT("npc_merchant"), TEXT("商人 Merchant"), FVector(600.0f, 500.0f, 96.0f), FRotator(0.0f, 225.0f, 0.0f));
 	SpawnNpc(TEXT("npc_scout"), TEXT("斥候 Scout"), FVector(-450.0f, 250.0f, 96.0f), FRotator(0.0f, 0.0f, 0.0f));
 	SpawnNpc(TEXT("npc_civilian"), TEXT("居民 Civilian"), FVector(1250.0f, -500.0f, 96.0f), FRotator(0.0f, 135.0f, 0.0f));
+	if (AZLSocialSandboxPlayerController* Controller = Cast<AZLSocialSandboxPlayerController>(UGameplayStatics::GetPlayerController(this, 0)))
+	{
+		Controller->RefreshSandboxTargets();
+	}
 }
 
 void AZLSocialSandboxGameMode::ResetSocialSandbox()

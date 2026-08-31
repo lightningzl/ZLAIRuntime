@@ -9,8 +9,8 @@
 | 最后更新 | 2026-08-31 |
 | 当前里程碑 | Milestone 7：可操作交互舞台与定向感知 |
 | 里程碑状态 | `实施中` |
-| 当前活动任务 | `M7-T02` 文本交互 UI 与输入边界 |
-| 下一候选任务 | `M7-T03` Speech/Action Event 与个人 Observation |
+| 当前活动任务 | `M7-T03` Speech/Action Event 与个人 Observation |
+| 下一候选任务 | `M7-T04` 定向视觉与分级听觉 |
 | 已知阻塞 | 无 |
 | 最近验收 | Milestone 6：10/10 项已验证 |
 
