@@ -20,13 +20,15 @@
 
 | 类型 | 职责 | 不负责 |
 | --- | --- | --- |
-| `UZLAIServiceSubsystem` | 校验并发送 Dialogue 请求，管理 HTTP、超时、关联和单次完成回调 | UI、Prompt、数据库、Gameplay 行为、ToolCall |
+| `UZLAIServiceSubsystem` | 校验并发送 Dialogue 请求，管理 HTTP、超时、关联和单次完成回调；Decision Client 尚未接入 | UI、Prompt、数据库、Gameplay 行为、Tool 执行 |
 | `UZLAIServiceSettings` | 通过 UE Config 提供 Base URL 和外层请求超时 | API Key、模型选择和运行时请求状态 |
 | `FZLDialogueRequest` | 表示请求 ID、NPC ID、玩家输入、可选 Context 和可选 Memory 范围 | 保存跨请求正文或访问数据库 |
 | `FZLDialogueResponse` | 表示请求关联、NPC ID、纯文本回复和逻辑 Provider | 推断或执行 Gameplay 指令 |
+| `FZLDecisionRequest` | 表示请求/NPC/状态版本/TTL、单个个人 Trigger、人物/关系/即时状态/历史和允许 Tool | 访问 Actor、自动收集 World 或授权 Tool 执行 |
+| `FZLDecisionResponse` | 表示结构化 Intent、可选 Speech、可选单 Tool 建议、Confidence 和 Provider | 声明 Tool 已执行或绕过 UE 当前状态校验 |
 | `FZLServiceError` | 表示错误分类、错误码、消息、请求 ID 和 HTTP 状态 | 暴露底层堆栈、路径或原始 Provider 异常 |
 
-`ZLAIServiceProtocol` 命名空间负责请求序列化、成功响应解析和协议错误解析。字段必须与 [Protocol.md](./Protocol.md) 一致。
+`ZLAIServiceProtocol` 命名空间负责 Dialogue/Decision 请求校验与序列化、成功响应解析和协议错误解析。Decision 只允许四个固定 Tool、一个 ToolCall 和个人视角硬边界；字段必须与 [Protocol.md](./Protocol.md) 一致。
 
 ## Social Runtime 基础类型
 

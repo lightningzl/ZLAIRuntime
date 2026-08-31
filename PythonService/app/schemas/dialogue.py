@@ -107,6 +107,7 @@ class ErrorDetail(ProtocolModel):
         "provider_auth_error",
         "provider_rate_limited",
         "provider_error",
+        "planner_invalid_response",
         "provider_unavailable",
         "provider_timeout",
         "internal_error",

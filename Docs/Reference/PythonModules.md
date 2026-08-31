@@ -45,6 +45,7 @@ PythonService/
 | `app.api.dialogue` | 提供 `POST /v1/dialogue` HTTP 适配，将已校验请求交给 Dialogue Service |
 | `app.core.settings` | 读取并校验 Provider、超时、输出预算、数据库路径和 Memory 检索预算 |
 | `app.schemas.dialogue` | 定义 v1 Dialogue、Context、Memory、成功响应和错误边界 |
+| `app.schemas.decision` | 定义经确认的 v1 Decision、个人上下文、允许 Tool、结构化 Speech/Tool 建议和硬边界；当前尚未注册 Route |
 | `app.services.context_builder` | 将固定约束、Context、合并历史和当前输入组装为供应商无关生成上下文 |
 | `app.services.dialogue_service` | 协调业务校验、可选 Memory、单次 Provider 调用、合法响应和成功后完整写入 |
 | `app.services.memory_service` | 执行范围复核、检索预算、稳定排序、精确重叠消除和幂等轮次语义 |
@@ -125,7 +126,7 @@ OpenAI 兼容 SDK 运行依赖为 `openai>=2.46,<3.0`。Kimi Client 禁用 SDK �
 
 ## 错误与日志
 
-Provider 错误分为鉴权、限流、超时、不可用、无效响应和通用错误，再由应用边界映射为协议状态。Memory Repository 错误映射为脱敏 `500 internal_error`。
+Provider 错误分为鉴权、限流、超时、不可用、无效响应和通用错误，再由应用边界映射为协议状态。Decision 契约允许脱敏 `502 planner_invalid_response`，其 Route 映射将在 Planner 工作包接入。Memory Repository 错误映射为脱敏 `500 internal_error`。
 
 日志只记录请求关联、NPC ID、Context/Memory 开关、数量和错误分类；不记录完整 scope、玩家输入、Context、历史、回复、SQL、数据库路径或原始 SDK 异常。
 

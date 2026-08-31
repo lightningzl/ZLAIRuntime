@@ -2,7 +2,7 @@
 
 ## 状态
 
-- 状态：`受阻（等待协议确认）`
+- 状态：`进行中`
 - 开始日期：2026-08-31
 - 前置里程碑：Milestone 1 至 7 已完成
 - 场景来源：[最终场景 1：开放式社会交互沙盒](../Planning/FinalScenarios/Scenario1OpenSocialSandbox.md)
@@ -40,8 +40,8 @@
 
 - 当前 [Protocol.md](../Reference/Protocol.md) 只定义 `POST /v1/dialogue` 的纯文本请求与响应，不允许 UE 从回复文本推断 Gameplay 指令。
 - Milestone 8 需要独立的结构化 Decision 契约，以便传输个人视角、权威状态版本、允许动作、结构化表达、Intent 和可选 Tool 建议，并定义过期与错误语义。
-- 具体 Endpoint、字段、类型、边界、错误码和兼容规则必须先向用户说明并获得明确确认，再同步到 `Protocol.md` 和两端实现。
-- 在协议确认前，只允许完成范围、任务、验收和协议方案整理；不得修改 `Protocol.md`，不得实现与当前协议不一致的网络格式，也不得从现有 Dialogue 文本驱动 NPC 动作。
+- Decision 协议方案已于 2026-08-31 获得用户明确确认；具体字段、类型、边界、错误码和兼容规则以同步后的 `Protocol.md` 为准。
+- 现有 Dialogue 契约继续保持纯文本语义，不得从 `/v1/dialogue` 回复驱动 NPC 动作。
 
 ## 玩家可操作成果
 

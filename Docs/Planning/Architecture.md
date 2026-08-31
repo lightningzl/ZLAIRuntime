@@ -17,8 +17,8 @@ UE5 Runtime
     - Social Sandbox Stage + Interaction Widget
     - Player/NPC Actor Adapters + Bubble/Inspector Feedback
   - ZLAIRuntime Plugin
-    - AI Service Client
-    - Protocol Types
+    - Dialogue Service Client
+    - Dialogue + Decision Protocol Types
     - ZLASocialRuntime Module
       - Social Gameplay Tags
       - Event Chain/Agent/Profile Types
@@ -55,7 +55,7 @@ Python AI Service
 - 插件不从 Actor、World、GameState、SaveGame、账号、UI 或内容资产自动抓取上下文或 Memory 标识。
 - UE 不负责 Prompt、模型 SDK、Provider 选择、密钥、Memory 存储检索或 Python 生成编排。
 - 插件不得依赖 `ZL` 游戏模块、具体 UI 或 NPC Actor。
-- 未来 Gameplay Tool 的最终校验和执行权仍属于 UE；当前实现只消费纯文本 Dialogue 回复。
+- Decision 契约类型、请求序列化和响应解析已经实现并通过两端边界测试；Decision HTTP Client 与 Gameplay Tool 执行尚未接入。现有 Dialogue 路径继续只消费纯文本回复。
 
 `ZLASocialRuntime` 是同一插件内与 HTTP Client 隔离的 Runtime Module：
 

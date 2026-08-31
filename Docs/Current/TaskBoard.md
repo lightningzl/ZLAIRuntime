@@ -7,18 +7,18 @@
 ## 当前状态
 
 - 当前里程碑：Milestone 8——单 NPC LLM 具身反馈与受控动作
-- 里程碑状态：`受阻（等待协议确认）`
-- 当前活动工作包：无
-- 下一工作包：`M8-T02` Decision 协议确认与契约基线
-- 协议状态：当前仍为 `/v1/dialogue` 纯文本契约；Decision 字段与 Endpoint 待明确确认
+- 里程碑状态：`进行中`
+- 当前活动工作包：`M8-T03` Python Decision Planner
+- 下一工作包：`M8-T04` UE Decision Client 与个人上下文
+- 协议状态：Decision 方案已确认，`Protocol.md` 与 Python/UE 契约类型和测试已同步
 
 ## 工作包
 
 | ID | 工作包 | 主要成果 | 依赖 | 状态 | 完成条件 |
 | --- | --- | --- | --- | --- | --- |
 | `M8-T01` | 范围、验收与协议方案整理 | 当前里程碑、任务依赖、协议变更原因和边界明确 | Milestone 7 | `已完成` | Milestone 8 范围、明确不做和 `M8-A01` 至 `M8-A10` 可审查；未越过现有协议 |
-| `M8-T02` | Decision 协议确认与契约基线 | 经确认的 Endpoint、请求/响应、边界、错误与兼容规则；两端契约测试骨架 | `M8-T01`、用户明确确认 | `受阻` | 满足 `M8-A02`；`Protocol.md` 与契约测试一致 |
-| `M8-T03` | Python Decision Planner | 独立 Route/Schema/Service/Context Builder、Stub/Kimi Planner 和失败分类 | `M8-T02` | `待开始` | 支撑 `M8-A03`、`M8-A04`、`M8-A05`、`M8-A08`、`M8-A09` 的服务端部分 |
+| `M8-T02` | Decision 协议确认与契约基线 | 经确认的 Endpoint、请求/响应、边界、错误与兼容规则；两端契约测试骨架 | `M8-T01`、用户明确确认 | `已完成` | 满足 `M8-A02`；`Protocol.md` 与契约测试一致 |
+| `M8-T03` | Python Decision Planner | 独立 Route/Schema/Service/Context Builder、Stub/Kimi Planner 和失败分类 | `M8-T02` | `进行中` | 支撑 `M8-A03`、`M8-A04`、`M8-A05`、`M8-A08`、`M8-A09` 的服务端部分 |
 | `M8-T04` | UE Decision Client 与个人上下文 | 单 NPC 选择、个人 Observation 裁剪、异步请求、响应解析和一次完成语义 | `M8-T02` | `待开始` | 支撑 `M8-A03`、`M8-A07`、`M8-A08`、`M8-A09` 的客户端部分 |
 | `M8-T05` | Tool Registry 与权威校验 | FaceTarget、MoveToward、MoveAway、Stop 注册、参数/能力/状态/距离/冷却/幂等校验 | `M8-T02` | `待开始` | 满足 `M8-A06`、`M8-A07` 的纯规则与无副作用拒绝部分 |
 | `M8-T06` | Gameplay Handler 与可见反馈 | 合法动作真实执行、Speech/Tool 独立呈现、动作结果和 Inspector 拒绝原因 | `M8-T04`, `M8-T05` | `待开始` | 满足 `M8-A04`、`M8-A06`、`M8-A07` 的场景可见部分 |
@@ -43,13 +43,11 @@ M8-T03 + M8-T04 + M8-T06
 
 `M8-T03`、`M8-T04` 与 `M8-T05` 可在协议契约固定后分开提交；共享协议类型只由 `M8-T02` 定义，不在后续工作包中各自发明字段。
 
-## 当前阻塞
+## 协议确认记录
 
-- 受影响任务：`M8-T02` 以及全部后续实现工作包。
-- 原因：Milestone 8 必须新增结构化 Decision 网络契约，而仓库规则要求协议字段、类型、语义、状态码或兼容规则在修改前获得用户明确确认。
-- 解除条件：向用户说明协议变更原因和完整方案，用户明确确认后再修改 `Protocol.md` 与两端实现。
-- 阻塞期间允许：完成 `M8-T01` 的范围、任务、验收和协议方案整理。
-- 阻塞期间禁止：修改 `Protocol.md`、实现未经确认的 Decision JSON、从 `/v1/dialogue` 回复解析动作或提前执行 ToolCall。
+- 确认日期：2026-08-31。
+- 确认范围：独立 `POST /v1/decision`、个人视角与状态版本、结构化 Speech/Intent/单 Tool 建议、固定四个 Tool、UE 最终校验、现有 `/v1/dialogue` 保持兼容。
+- 当前阻塞：无。
 
 ## 工作规则
 
