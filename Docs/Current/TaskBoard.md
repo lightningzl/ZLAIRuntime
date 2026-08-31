@@ -8,8 +8,8 @@
 
 - 当前里程碑：Milestone 8——单 NPC LLM 具身反馈与受控动作
 - 里程碑状态：`进行中`
-- 当前活动工作包：`M8-T05` Tool Registry 与权威校验
-- 下一工作包：`M8-T06` Gameplay Handler 与可见反馈
+- 当前活动工作包：`M8-T06` Gameplay Handler 与可见反馈
+- 下一工作包：`M8-T07` 过期、失败与确定性降级
 - 协议状态：Decision 方案已确认，`Protocol.md` 与 Python/UE 契约类型和测试已同步
 
 ## 工作包
@@ -20,8 +20,8 @@
 | `M8-T02` | Decision 协议确认与契约基线 | 经确认的 Endpoint、请求/响应、边界、错误与兼容规则；两端契约测试骨架 | `M8-T01`、用户明确确认 | `已完成` | 满足 `M8-A02`；`Protocol.md` 与契约测试一致 |
 | `M8-T03` | Python Decision Planner | 独立 Route/Schema/Service/Context Builder、Stub/Kimi Planner 和失败分类 | `M8-T02` | `已完成` | 支撑 `M8-A03`、`M8-A04`、`M8-A05`、`M8-A08`、`M8-A09` 的服务端部分 |
 | `M8-T04` | UE Decision Client 与个人上下文 | 单 NPC 选择、个人 Observation 裁剪、异步请求、响应解析和一次完成语义 | `M8-T02` | `已完成` | 支撑 `M8-A03`、`M8-A07`、`M8-A08`、`M8-A09` 的客户端部分 |
-| `M8-T05` | Tool Registry 与权威校验 | FaceTarget、MoveToward、MoveAway、Stop 注册、参数/能力/状态/距离/冷却/幂等校验 | `M8-T02` | `进行中` | 满足 `M8-A06`、`M8-A07` 的纯规则与无副作用拒绝部分 |
-| `M8-T06` | Gameplay Handler 与可见反馈 | 合法动作真实执行、Speech/Tool 独立呈现、动作结果和 Inspector 拒绝原因 | `M8-T04`, `M8-T05` | `待开始` | 满足 `M8-A04`、`M8-A06`、`M8-A07` 的场景可见部分 |
+| `M8-T05` | Tool Registry 与权威校验 | FaceTarget、MoveToward、MoveAway、Stop 注册、参数/能力/状态/距离/冷却/幂等校验 | `M8-T02` | `已完成` | 满足 `M8-A06`、`M8-A07` 的纯规则与无副作用拒绝部分 |
+| `M8-T06` | Gameplay Handler 与可见反馈 | 合法动作真实执行、Speech/Tool 独立呈现、动作结果和 Inspector 拒绝原因 | `M8-T04`, `M8-T05` | `进行中` | 满足 `M8-A04`、`M8-A06`、`M8-A07` 的场景可见部分 |
 | `M8-T07` | 过期、失败与确定性降级 | 请求期间世界变化、超时/离线/无效结构、本地降级和有界结果 Event | `M8-T03`, `M8-T04`, `M8-T06` | `待开始` | 满足 `M8-A07`、`M8-A08`、`M8-A09` |
 | `M8-T08` | 纵向集成、真实模型与收口 | Stub 端到端、Kimi 人工验收、编译回归、Validation、架构与参考文档同步 | `M8-T03` 至 `M8-T07` | `待开始` | `M8-A01` 至 `M8-A10` 全部有证据并达到完成定义 |
 

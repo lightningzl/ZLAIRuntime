@@ -3,7 +3,7 @@
 ## 状态
 
 - 里程碑：Milestone 8——单 NPC LLM 具身反馈与受控动作
-- 当前阶段：Python Planner 完成，UE Decision Client 实施中
+- 当前阶段：Tool Registry 完成，Gameplay Handler 实施中
 - 最后更新：2026-09-01
 - 结论：未完成；当前只记录已实际执行的基线检查，不声明 `M8-A01` 至 `M8-A10` 通过
 
@@ -32,6 +32,7 @@
 | UE Decision/Dialogue 契约 | NullRHI 执行 `Automation RunTests ZLAIRuntime.Protocol` | 通过 | 收集 9 项，9 项全部 `Success`；包含 3 项 Decision 与 6 项 Dialogue 回归，退出码 0 |
 | UE Decision Client 编译与完成语义 | 编译 Target 后 NullRHI 执行 `Automation RunTests ZLAIRuntime.DecisionClient` | 通过 | 1 项通过；覆盖成功关联、30 秒本地 TTL 过期和状态版本不匹配，均只走一次完成路径 |
 | UE 单 NPC 个人上下文 | NullRHI 执行 `Automation RunTests ZL.Social.Sandbox.PersonalDecisionContext` | 通过 | 1 项通过；只保留选定 NPC 的已感知 Trigger/历史，过滤其他 Observer，未听见 Speech 不能构造请求 |
+| UE Tool Registry 编译与规则验收 | 编译 Target 后 NullRHI 执行 `Automation RunTests ZL.Social.ToolRegistry.Validation` | 通过 | 1 项通过，退出码 0；覆盖四 Tool 白名单、Capability、目标、状态版本、TTL、距离、导航、可执行状态、冷却、速率、幂等、拒绝不提交和 128 条有界 Call ID 缓存 |
 
 ## 基线结论
 
@@ -40,6 +41,7 @@
 - `AZLSocialSandboxGameMode::SubmitSpeech` 已逐 NPC 生成独立 Observation；里程碑 8 只能从选定 NPC 的 Observation 构造请求，不得把全体接收结果作为其个人知识。
 - `AZLSocialSandboxPawn` 当前实现 Face、Approach、MoveAway 和 Stop，但它只代表玩家。NPC Tool Handler 必须在 `AZLSocialSandboxNpc` 或 `ZL` 的独立适配器中执行，并由通用 Registry 校验后调用。
 - Decision 协议已在用户明确确认后同步；现有 Dialogue 字段和纯文本语义未改变，也没有从 Dialogue 文本推断 Gameplay 动作。
+- `FZLSocialToolRegistry` 已完成纯规则权威校验并只在接受后提交幂等与冷却状态；具体 NPC 世界副作用仍由下一工作包接入和验证。
 
 ## 验收进度
 
@@ -52,6 +54,8 @@
 | `M8-A05` | Kimi Planner 的离线 JSON 映射、结构校验和异常分类通过；真实模型人工闭环待执行 | `部分` |
 | `M8-A08` | Python 已覆盖无效 Planner 结构和 Provider 超时分类；UE 可见降级待完成 | `部分` |
 | `M8-A07` | UE Client 已验证本地 TTL 与响应状态版本关联；Gameplay 当前版本变化和零副作用拒绝待接入 | `部分` |
-| `M8-A06`、`M8-A09`、`M8-A10` | 尚无完整实现或验证证据 | `未开始` |
+| `M8-A06` | Tool Registry 已覆盖全部纯规则校验、拒绝不提交和明确 Reason Code；NPC Gameplay 零副作用与 Inspector 可见性待接入 | `部分` |
+| `M8-A09` | Decision Context、协议和 Tool Registry 的历史、字符串、Tool 数量与 Call ID 缓存已有硬上限；场景并发、结果 Event 和调试记录待接入 | `部分` |
+| `M8-A10` | 尚无完整场景实现或验证证据 | `未开始` |
 
 后续每次工作包验证只追加实际命令、环境、结果和与验收 ID 的对应关系；未执行项目不得写成通过。

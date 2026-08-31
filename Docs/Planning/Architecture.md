@@ -60,7 +60,7 @@ Python AI Service
 - 插件不从 Actor、World、GameState、SaveGame、账号、UI 或内容资产自动抓取上下文或 Memory 标识。
 - UE 不负责 Prompt、模型 SDK、Provider 选择、密钥、Memory 存储检索或 Python 生成编排。
 - 插件不得依赖 `ZL` 游戏模块、具体 UI 或 NPC Actor。
-- Decision 契约类型、请求序列化/响应解析和独立 HTTP Client 已实现；Client 校验请求/NPC/状态版本关联和本地 TTL，完成回调回到 Game Thread。Gameplay Tool 执行尚未接入，现有 Dialogue 路径继续只消费纯文本回复。
+- Decision 契约类型、请求序列化/响应解析和独立 HTTP Client 已实现；Client 校验请求/NPC/状态版本关联和本地 TTL，完成回调回到 Game Thread。Gameplay Tool Registry 已实现纯规则校验，具体 NPC Handler 尚未接入；现有 Dialogue 路径继续只消费纯文本回复。
 
 `ZLASocialRuntime` 是同一插件内与 HTTP Client 隔离的 Runtime Module：
 
@@ -97,6 +97,8 @@ Milestone 8 当前已增加协议确认后的客户端与个人上下文基础�
 - `ZL` 的 `FZLSocialSandboxDecisionContextBuilder` 只接受一个明确 NPC 的 Trigger Observation 和该 NPC 自己的 Observation Buffer，过滤其他 Observer，并把说话内容只放入已听见的 Speech Trigger；Action 历史只保存事实摘要。
 - Builder 显式提供人物、关系/即时状态默认快照和四个固定允许 Tool；`ZLAIRuntime` 不从 Actor、World 或其他 NPC 自动收集这些数据。
 - `UZLAIServiceSubsystem::SendDecisionRequest` 调用独立 `/v1/decision`，在成功前校验关联字段和本地 TTL；当前世界状态版本的最终比较仍由 Gameplay 层负责。
+- `ZLASocialRuntime` 的 `FZLSocialToolRegistry` 只注册 FaceTarget、MoveToward、MoveAway、Stop，按 Capability、目标、状态版本、有效期、距离、导航、可执行状态、冷却、速率和 Call ID 幂等顺序执行无副作用校验；已接受 Call ID 缓存和注册表容量均有硬上限。
+- Registry 不访问 Actor、World、HTTP 或 Provider，也不执行移动；`ZL` Gameplay Handler 必须提供当前权威快照，并且只在校验接受后改变世界。
 
 ### Python AI Service
 

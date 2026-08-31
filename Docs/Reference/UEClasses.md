@@ -61,8 +61,10 @@
 | `FZLSocialObservationBuffer` | 保存固定容量的单 NPC Observation，并提供确定性重置和最近项读取 |
 | `FZLSocialActionParser` | 只把 Face、Approach、MoveAway、Stop 的中英文受控别名解析为行为枚举 |
 | `FZLSocialInputValidation` | 按 Unicode 码点校验 1 至 512 字符，并拒绝缺少显式目标的 InEar 输入 |
+| `FZLSocialToolRegistry` | 注册里程碑 8 的四个固定 Tool，并在提交 Call ID 前执行 Capability、目标、状态版本、TTL、距离、导航、状态、冷却、速率和幂等校验 |
+| `FZLSocialToolDefinition` / `FZLSocialToolCall` / `FZLSocialToolValidationContext` | 表示纯数据工具定义、建议和 Gameplay 提供的当前权威校验快照；不持有 Actor、World 或执行回调 |
 
-这些类型不包含 Actor、Widget、HTTP、Provider、Python 或 Dialogue Memory 引用。`ZL` 负责把具体 Gameplay 对象转换为稳定 ID 和位置快照。
+这些类型不包含 Actor、Widget、HTTP、Provider、Python 或 Dialogue Memory 引用。`ZL` 负责把具体 Gameplay 对象转换为稳定 ID 和位置快照，并只在 Registry 接受后调用具体 Handler。
 
 Runtime 固定上限为 10000 个注册 Agent、1024 个活动 Root、4096 条 Personal Relationship 边和 1024 条 Faction Standing；活动 Root 过期后清理其去重状态。
 
