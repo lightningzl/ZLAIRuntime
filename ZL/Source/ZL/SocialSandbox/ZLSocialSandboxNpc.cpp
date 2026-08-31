@@ -52,6 +52,7 @@ void AZLSocialSandboxNpc::InitializeSandboxNpc(const FName InStableId, const FTe
 void AZLSocialSandboxNpc::ResetToSandboxStart()
 {
 	SetActorTransform(SandboxStartTransform, false, nullptr, ETeleportType::TeleportPhysics);
+	ObservationBuffer.Reset();
 }
 
 FVector AZLSocialSandboxNpc::GetPlanarForwardVector() const

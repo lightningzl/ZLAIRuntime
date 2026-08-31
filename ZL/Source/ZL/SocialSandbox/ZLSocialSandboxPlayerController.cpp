@@ -54,17 +54,16 @@ void AZLSocialSandboxPlayerController::RefreshSandboxTargets()
 	SandboxWidget->SetTargets(StableIds, DisplayNames);
 }
 
-FText AZLSocialSandboxPlayerController::SubmitSandboxInput(const EZLSocialSandboxInputMode, const FName, const FName TargetId, const FString&)
+FText AZLSocialSandboxPlayerController::SubmitSandboxInput(const EZLSocialSandboxInputMode InputMode, const FName SpeechMode, const FName TargetId, const FString& Input)
 {
-	if (!TargetId.IsNone())
+	AZLSocialSandboxGameMode* GameMode = GetWorld() == nullptr ? nullptr : GetWorld()->GetAuthGameMode<AZLSocialSandboxGameMode>();
+	if (GameMode == nullptr)
 	{
-		const AZLSocialSandboxGameMode* GameMode = GetWorld() == nullptr ? nullptr : GetWorld()->GetAuthGameMode<AZLSocialSandboxGameMode>();
-		if (GameMode == nullptr || GameMode->FindSandboxNpc(TargetId) == nullptr)
-		{
-			return FText::FromString(TEXT("拒绝：所选目标已失效"));
-		}
+		return FText::FromString(TEXT("拒绝：交互舞台不可用"));
 	}
-	return FText::GetEmpty();
+	return InputMode == EZLSocialSandboxInputMode::Speech
+		? GameMode->SubmitSpeech(SpeechMode, TargetId, Input)
+		: GameMode->SubmitAction(TargetId, Input);
 }
 
 void AZLSocialSandboxPlayerController::ResetSandbox()

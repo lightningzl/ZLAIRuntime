@@ -57,6 +57,72 @@ AZLSocialSandboxNpc* AZLSocialSandboxGameMode::FindSandboxNpc(const FName Stable
 	return nullptr;
 }
 
+FText AZLSocialSandboxGameMode::SubmitSpeech(const FName SpeechMode, const FName TargetId, const FString& Text)
+{
+	const TMap<FName, EZLSocialSpeechMode> Modes = {
+		{ TEXT("Whisper"), EZLSocialSpeechMode::Whisper },
+		{ TEXT("Talk"), EZLSocialSpeechMode::Talk },
+		{ TEXT("Shout"), EZLSocialSpeechMode::Shout },
+		{ TEXT("InEar"), EZLSocialSpeechMode::InEar }
+	};
+	const EZLSocialSpeechMode* Mode = Modes.Find(SpeechMode);
+	if (Mode == nullptr)
+	{
+		return FText::FromString(TEXT("拒绝：未知说话模式"));
+	}
+	AZLSocialSandboxPawn* Player = Cast<AZLSocialSandboxPawn>(UGameplayStatics::GetPlayerPawn(this, 0));
+	if (Player == nullptr)
+	{
+		return FText::FromString(TEXT("拒绝：玩家角色不可用"));
+	}
+	AZLSocialSandboxNpc* Target = TargetId.IsNone() ? nullptr : FindSandboxNpc(TargetId);
+	if (!TargetId.IsNone() && Target == nullptr)
+	{
+		return FText::FromString(TEXT("拒绝：目标已失效"));
+	}
+	FZLSocialObservationSettings Settings = ObservationSettings;
+	Settings.Clamp();
+	if (*Mode == EZLSocialSpeechMode::InEar && (Target == nullptr || FVector::Dist2D(Player->GetActorLocation(), Target->GetActorLocation()) > Settings.InEarRange))
+	{
+		return FText::FromString(TEXT("拒绝：耳边说话目标必须在近距离内"));
+	}
+
+	FZLSocialSpeechEvent Event;
+	Event.EventId = FGuid::NewGuid();
+	Event.SpeakerId = TEXT("player");
+	Event.Text = Text;
+	Event.Mode = *Mode;
+	Event.ExplicitTargetId = TargetId;
+	Event.Position = Player->GetActorLocation();
+	Event.Forward = Player->GetActorForwardVector();
+	Event.TimestampSeconds = GetWorld()->GetTimeSeconds();
+	Event.LifetimeSeconds = 4.0f;
+	if (!Event.IsValid(Event.TimestampSeconds))
+	{
+		return FText::FromString(TEXT("拒绝：说话事件边界无效"));
+	}
+
+	const FZLSocialObservationEvaluator Evaluator(Settings);
+	for (AZLSocialSandboxNpc* Npc : SandboxNpcs)
+	{
+		if (!IsValid(Npc))
+		{
+			continue;
+		}
+		FZLSocialObserver Observer;
+		Observer.AgentId = Npc->GetStableId();
+		Observer.Position = Npc->GetActorLocation();
+		Observer.Forward = Npc->GetPlanarForwardVector();
+		Npc->RecordObservation(Evaluator.ObserveSpeech(Event, Observer, Event.TimestampSeconds));
+	}
+	return FText::GetEmpty();
+}
+
+FText AZLSocialSandboxGameMode::SubmitAction(const FName, const FString&)
+{
+	return FText::FromString(TEXT("拒绝：行为执行器将在下一工作包启用"));
+}
+
 void AZLSocialSandboxGameMode::SpawnEnvironment()
 {
 	if (GetWorld() == nullptr)

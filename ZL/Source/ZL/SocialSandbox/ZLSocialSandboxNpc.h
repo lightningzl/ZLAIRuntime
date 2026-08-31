@@ -2,6 +2,7 @@
 
 #include "CoreMinimal.h"
 #include "GameFramework/Actor.h"
+#include "ZLSocialObservation.h"
 #include "ZLSocialSandboxNpc.generated.h"
 
 class UArrowComponent;
@@ -23,6 +24,9 @@ public:
 	FName GetStableId() const { return StableId; }
 	const FText& GetDisplayName() const { return DisplayName; }
 	FVector GetPlanarForwardVector() const;
+	void RecordObservation(const FZLSocialObservation& Observation) { ObservationBuffer.Add(Observation); }
+	const FZLSocialObservation* GetLatestObservation() const { return ObservationBuffer.Latest(); }
+	void ClearObservations() { ObservationBuffer.Reset(); }
 
 private:
 	UPROPERTY(VisibleAnywhere, Category="Sandbox")
@@ -44,4 +48,5 @@ private:
 	FText DisplayName;
 
 	FTransform SandboxStartTransform;
+	FZLSocialObservationBuffer ObservationBuffer;
 };
