@@ -12,6 +12,7 @@
 
 AZLSocialSandboxPawn::AZLSocialSandboxPawn()
 {
+	PrimaryActorTick.bCanEverTick = true;
 	GetCapsuleComponent()->InitCapsuleSize(42.0f, 96.0f);
 	bUseControllerRotationYaw = true;
 	GetCharacterMovement()->bOrientRotationToMovement = false;
@@ -71,6 +72,7 @@ void AZLSocialSandboxPawn::SetupPlayerInputComponent(UInputComponent* PlayerInpu
 
 void AZLSocialSandboxPawn::ResetToSandboxStart()
 {
+	StopScriptedAction();
 	GetCharacterMovement()->StopMovementImmediately();
 	SetActorTransform(SandboxStartTransform, false, nullptr, ETeleportType::TeleportPhysics);
 	if (Controller != nullptr)
@@ -79,9 +81,66 @@ void AZLSocialSandboxPawn::ResetToSandboxStart()
 	}
 }
 
+bool AZLSocialSandboxPawn::StartScriptedAction(const EZLSocialActionType Action, AActor* Target, TFunction<void()> OnCompleted)
+{
+	if ((Action == EZLSocialActionType::Approach || Action == EZLSocialActionType::MoveAway) && !IsValid(Target))
+	{
+		return false;
+	}
+	StopScriptedAction();
+	ScriptedAction = Action;
+	ScriptedTarget = Target;
+	ScriptedCompletion = MoveTemp(OnCompleted);
+	bScriptedActionActive = Action == EZLSocialActionType::Approach || Action == EZLSocialActionType::MoveAway;
+	return true;
+}
+
+void AZLSocialSandboxPawn::StopScriptedAction()
+{
+	bScriptedActionActive = false;
+	ScriptedTarget.Reset();
+	ScriptedCompletion = nullptr;
+	GetCharacterMovement()->StopMovementImmediately();
+}
+
+void AZLSocialSandboxPawn::Tick(const float DeltaSeconds)
+{
+	Super::Tick(DeltaSeconds);
+	if (!bScriptedActionActive || !ScriptedTarget.IsValid())
+	{
+		return;
+	}
+	FVector DeltaToTarget = ScriptedTarget->GetActorLocation() - GetActorLocation();
+	DeltaToTarget.Z = 0.0f;
+	const float Distance = DeltaToTarget.Size();
+	const float DesiredDistance = ScriptedAction == EZLSocialActionType::Approach ? 180.0f : 650.0f;
+	const bool bComplete = ScriptedAction == EZLSocialActionType::Approach ? Distance <= DesiredDistance : Distance >= DesiredDistance;
+	if (bComplete)
+	{
+		bScriptedActionActive = false;
+		ScriptedTarget.Reset();
+		TFunction<void()> Completion = MoveTemp(ScriptedCompletion);
+		ScriptedCompletion = nullptr;
+		if (Completion) { Completion(); }
+		return;
+	}
+
+	FVector Direction = DeltaToTarget.GetSafeNormal();
+	if (ScriptedAction == EZLSocialActionType::MoveAway)
+	{
+		Direction *= -1.0f;
+	}
+	const float MaxStep = FMath::Max(0.0f, DeltaSeconds) * ScriptedSpeed;
+	const float Remaining = FMath::Abs(Distance - DesiredDistance);
+	const FVector Step = Direction * FMath::Min(MaxStep, Remaining);
+	SetActorRotation(Direction.Rotation());
+	if (Controller != nullptr) { Controller->SetControlRotation(Direction.Rotation()); }
+	AddActorWorldOffset(Step, true);
+}
+
 void AZLSocialSandboxPawn::MoveForward(const float Value)
 {
-	if (!FMath::IsNearlyZero(Value))
+	if (!bScriptedActionActive && !FMath::IsNearlyZero(Value))
 	{
 		AddMovementInput(GetActorForwardVector(), Value);
 	}
@@ -89,7 +148,7 @@ void AZLSocialSandboxPawn::MoveForward(const float Value)
 
 void AZLSocialSandboxPawn::MoveRight(const float Value)
 {
-	if (!FMath::IsNearlyZero(Value))
+	if (!bScriptedActionActive && !FMath::IsNearlyZero(Value))
 	{
 		AddMovementInput(GetActorRightVector(), Value);
 	}

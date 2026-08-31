@@ -1,5 +1,6 @@
 #include "SocialSandbox/ZLSocialSandboxGameMode.h"
 
+#include "ZLSocialActionParser.h"
 #include "Components/StaticMeshComponent.h"
 #include "Engine/DirectionalLight.h"
 #include "Engine/StaticMeshActor.h"
@@ -118,9 +119,97 @@ FText AZLSocialSandboxGameMode::SubmitSpeech(const FName SpeechMode, const FName
 	return FText::GetEmpty();
 }
 
-FText AZLSocialSandboxGameMode::SubmitAction(const FName, const FString&)
+FText AZLSocialSandboxGameMode::SubmitAction(const FName TargetId, const FString& Text)
 {
-	return FText::FromString(TEXT("拒绝：行为执行器将在下一工作包启用"));
+	const FZLSocialActionParseResult Parsed = FZLSocialActionParser::Parse(Text);
+	if (!Parsed.bMatched)
+	{
+		return FText::FromString(TEXT("拒绝：仅支持 Face、Approach、MoveAway 和 Stop 的受控别名"));
+	}
+	const bool bNeedsTarget = Parsed.Action != EZLSocialActionType::Stop;
+	AZLSocialSandboxNpc* Target = TargetId.IsNone() ? nullptr : FindSandboxNpc(TargetId);
+	if (bNeedsTarget && Target == nullptr)
+	{
+		return FText::FromString(TEXT("拒绝：该行为必须选择有效目标"));
+	}
+	AZLSocialSandboxPawn* Player = Cast<AZLSocialSandboxPawn>(UGameplayStatics::GetPlayerPawn(this, 0));
+	if (Player == nullptr)
+	{
+		return FText::FromString(TEXT("拒绝：玩家角色不可用"));
+	}
+	if (Target != nullptr && FVector::Dist2D(Player->GetActorLocation(), Target->GetActorLocation()) > 3000.0f)
+	{
+		return FText::FromString(TEXT("拒绝：目标超出行为执行范围"));
+	}
+
+	if (Parsed.Action == EZLSocialActionType::Face)
+	{
+		FVector Direction = Target->GetActorLocation() - Player->GetActorLocation();
+		Direction.Z = 0.0f;
+		if (Direction.IsNearlyZero())
+		{
+			return FText::FromString(TEXT("拒绝：目标方向无效"));
+		}
+		DispatchActionObservation(Parsed.Action, EZLSocialActionPhase::Started, TargetId);
+		Player->SetActorRotation(Direction.Rotation());
+		if (Player->GetController() != nullptr) { Player->GetController()->SetControlRotation(Direction.Rotation()); }
+		DispatchActionObservation(Parsed.Action, EZLSocialActionPhase::Completed, TargetId);
+		return FText::GetEmpty();
+	}
+	if (Parsed.Action == EZLSocialActionType::Stop)
+	{
+		DispatchActionObservation(Parsed.Action, EZLSocialActionPhase::Started, NAME_None);
+		Player->StopScriptedAction();
+		DispatchActionObservation(Parsed.Action, EZLSocialActionPhase::Completed, NAME_None);
+		return FText::GetEmpty();
+	}
+
+	TWeakObjectPtr<AZLSocialSandboxGameMode> WeakThis(this);
+	if (!Player->StartScriptedAction(Parsed.Action, Target, [WeakThis, Action = Parsed.Action, TargetId]()
+	{
+		if (WeakThis.IsValid())
+		{
+			WeakThis->DispatchActionObservation(Action, EZLSocialActionPhase::Completed, TargetId);
+		}
+	}))
+	{
+		return FText::FromString(TEXT("拒绝：玩家当前无法执行该行为"));
+	}
+	DispatchActionObservation(Parsed.Action, EZLSocialActionPhase::Started, TargetId);
+	return FText::GetEmpty();
+}
+
+void AZLSocialSandboxGameMode::DispatchActionObservation(const EZLSocialActionType Action, const EZLSocialActionPhase Phase, const FName TargetId)
+{
+	AZLSocialSandboxPawn* Player = Cast<AZLSocialSandboxPawn>(UGameplayStatics::GetPlayerPawn(this, 0));
+	if (Player == nullptr)
+	{
+		return;
+	}
+	const double NowSeconds = GetWorld()->GetTimeSeconds();
+	FZLSocialActionEvent Event;
+	Event.EventId = FGuid::NewGuid();
+	Event.Action = Action;
+	Event.Phase = Phase;
+	Event.ActorId = TEXT("player");
+	Event.TargetId = TargetId;
+	Event.Position = Player->GetActorLocation();
+	Event.Forward = Player->GetActorForwardVector();
+	Event.TimestampSeconds = NowSeconds;
+	if (!Event.IsValid(NowSeconds))
+	{
+		return;
+	}
+	const FZLSocialObservationEvaluator Evaluator(ObservationSettings);
+	for (AZLSocialSandboxNpc* Npc : SandboxNpcs)
+	{
+		if (!IsValid(Npc)) { continue; }
+		FZLSocialObserver Observer;
+		Observer.AgentId = Npc->GetStableId();
+		Observer.Position = Npc->GetActorLocation();
+		Observer.Forward = Npc->GetPlanarForwardVector();
+		Npc->RecordObservation(Evaluator.ObserveAction(Event, Observer, NowSeconds));
+	}
 }
 
 void AZLSocialSandboxGameMode::SpawnEnvironment()

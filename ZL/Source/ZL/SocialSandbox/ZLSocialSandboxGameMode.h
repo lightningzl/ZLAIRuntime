@@ -30,6 +30,7 @@ protected:
 private:
 	void SpawnEnvironment();
 	void SpawnNpc(FName StableId, const TCHAR* DisplayName, const FVector& Location, const FRotator& Rotation);
+	void DispatchActionObservation(EZLSocialActionType Action, EZLSocialActionPhase Phase, FName TargetId);
 
 	UPROPERTY()
 	TArray<TObjectPtr<AZLSocialSandboxNpc>> SandboxNpcs;
