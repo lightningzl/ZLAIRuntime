@@ -1,5 +1,9 @@
 # Decision Log
 
+## 2026-09-01：公开冲突立场保持为 UE 有界状态机
+
+Milestone 9 以 `Calm`、`Alert`、`Escalated`、`Recovering` 表示单 Guard 的公开立场。攻击、距离、停止、已接受的高层 Intent 和服务失败是唯一输入；模型不直接改变生命、命中、防卫或状态机。服务失败的确定性安全结果是停止当前计划、进入防卫并显示 `LocalFallback`，使离线时仍具备可见且有界的 Gameplay 行为。
+
 新增或调整决策前，必须遵守 [DocumentationRules.md](../Process/DocumentationRules.md) 中的“Decision Log 规则”。
 
 ## 2026-07-16：使用 PythonService 作为 AI Runtime
@@ -425,6 +429,50 @@ Milestone 8 在现有 `POST /v1/dialogue` 旁新增独立 `POST /v1/decision`。
 - UE 与 Python 需要维护一套新的共享 Schema 和契约测试。
 - 单次响应只能建议一个动作，连续重新规划留到 Milestone 9。
 - `ttl_ms` 使用 UE 本地单调时间判定，服务端不能替代客户端判断过期。
+
+状态：
+已接受
+
+重要性：
+重要
+
+## 2026-09-01：连续 Decision 使用事件触发与有界最新合并
+
+决定：
+Milestone 9 的单 Guard 连续判断继续使用现有 Decision v1，不增加协议字段或 Tool。UE 只在 Guard 实际感知到新 Speech、已完成玩家行为、距离跨稳定阈值、受击、计划完成或计划失效等显著变化时调度请求。调度器固定最多一个请求在途和一个最新 Pending Trigger，执行冷却，并限制没有新玩家输入时的连续自动重规划次数。
+
+Guard 已公开的 Speech 和真实 Action Result 可以作为个人历史事实进入后续请求；未执行 Tool、隐藏目标、模型隐式推理和其他 NPC Observation 不进入历史。距离检测允许每帧检查数值，但只有跨阈值时产生 Observation 和调度，不进行逐帧 LLM 控制。
+
+原因：
+- 连续互动需要对世界变化重新判断，但逐帧请求会造成成本、竞态和请求风暴。
+- 只保留最新待处理事实能在异步响应期间吸收变化，同时维持固定内存和确定完成语义。
+- 沿用现有 Trigger、History、Intent 与四个 Tool 足以表达当前高层变化；命中、伤害和即时安全动作继续由 UE 权威执行。
+- 公开 Speech 与真实动作历史可以保持角色外部立场连续性，而不保存或传输 Chain-of-Thought。
+
+取舍：
+- 中间的重复触发可能被更新事实覆盖，调试视图只保留合并计数和最新原因。
+- 单 Pending 与冷却不适合高并发群体规划；Milestone 9 仍只服务一个 Guard。
+- 当前历史表达外部事实，不持久化隐藏长期计划；更复杂目标记忆需要未来独立设计。
+
+状态：
+已接受
+
+重要性：
+重要
+
+## 2026-09-01：基础攻击与伤害保持 UE 即时权威
+
+决定：
+Milestone 9 将玩家 Attack 加入本地受控 Action 白名单，但不加入 Decision 协议或 LLM Tool。GameMode 在产生 Action Observation 前以固定距离、冷却、目标和可执行状态校验攻击；NPC 在 UE 内维护生命、防卫减伤、受击无敌窗口、失能和状态版本。Python 只能看到已发生的有界 Action Result，不能决定命中、伤害、生命、无敌、失能或攻击频率。
+
+原因：
+- 冲突升级需要可见且真实的受击后果，但将即时命中交给异步模型会破坏 UE 的权威与可复现性。
+- 独立的纯数据攻击校验使非法距离、冷却和失能攻击能证明零 Gameplay 副作用。
+- 维持现有四个 Decision Tool 可避免未经确认的协议扩展，同时将高层应对策略与即时伤害分层。
+
+取舍：
+- 当前只有最小 Attack/生命/防卫/失能，不包含武器、连招、GAS、动画或完整战斗系统。
+- 防卫状态在后续升级—缓和工作包中由规则和可见状态驱动；本提交只提供权威状态与伤害边界。
 
 状态：
 已接受

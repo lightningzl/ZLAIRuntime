@@ -98,6 +98,7 @@ FZLSocialObservation FZLSocialObservationEvaluator::ObserveSpeech(const FZLSocia
 	FZLSocialObservation Result;
 	Result.EventId = Event.EventId;
 	Result.ObserverId = Observer.AgentId;
+	Result.SourceId = Event.SpeakerId;
 	Result.Source = EZLSocialObservationSource::Speech;
 	Result.SpeechMode = Event.Mode;
 	Result.ExplicitTargetId = Event.ExplicitTargetId;
@@ -147,6 +148,7 @@ FZLSocialObservation FZLSocialObservationEvaluator::ObserveAction(const FZLSocia
 	FZLSocialObservation Result;
 	Result.EventId = Event.EventId;
 	Result.ObserverId = Observer.AgentId;
+	Result.SourceId = Event.ActorId;
 	Result.Source = EZLSocialObservationSource::Action;
 	Result.Action = Event.Action;
 	Result.ActionPhase = Event.Phase;

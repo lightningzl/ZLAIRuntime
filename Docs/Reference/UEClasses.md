@@ -20,6 +20,7 @@
 
 | 类型 | 职责 | 不负责 |
 | --- | --- | --- |
+| `FZLSocialSandboxConflictState` | 维护 `Calm`、`Alert`、`Escalated`、`Recovering` 公开等级；攻击/已接受 `engage` 升级，距离拉开、停止/缓和意图降低等级，并给出防卫状态 | 生命、伤害、模型推理、HTTP 或 Tool 执行 |
 | `UZLAIServiceSubsystem` | 分别发送 Dialogue/Decision 请求，管理 HTTP、超时、关联、本地 Decision TTL 和单次 Game Thread 完成回调 | UI、Prompt、数据库、Gameplay 行为、当前世界状态比较和 Tool 执行 |
 | `UZLAIServiceSettings` | 通过 UE Config 提供 Base URL 和外层请求超时 | API Key、模型选择和运行时请求状态 |
 | `FZLDialogueRequest` | 表示请求 ID、NPC ID、玩家输入、可选 Context 和可选 Memory 范围 | 保存跨请求正文或访问数据库 |
@@ -57,9 +58,9 @@
 | `ZLSocialDebug` | 格式化安全快照，运行确定性 120 Level 1 基线与 120 Level 1 + 5 Important NPC 的传播/关系/Memory 聚合基准 |
 | `FZLSocialSpeechEvent` / `FZLSocialActionEvent` | 分别表示有界玩家说话和已经接受的 Gameplay 行为状态；Action 类型不保存输入原文 |
 | `FZLSocialObserver` / `FZLSocialObservationSettings` | 表示单个稳定 ID 观察者快照，以及可配置视野、听觉范围和清晰阈值 |
-| `FZLSocialObservationEvaluator` | 按距离、朝向、模式和显式目标为一个 NPC 生成独立视觉/听觉 Observation |
+| `FZLSocialObservationEvaluator` | 按距离、朝向、模式和显式目标为一个 NPC 生成含已感知来源稳定 ID 的独立视觉/听觉 Observation |
 | `FZLSocialObservationBuffer` | 保存固定容量的单 NPC Observation，并提供确定性重置和最近项读取 |
-| `FZLSocialActionParser` | 只把 Face、Approach、MoveAway、Stop 的中英文受控别名解析为行为枚举 |
+| `FZLSocialActionParser` | 只把 Face、Approach、MoveAway、Attack、Stop 的中英文受控别名解析为行为枚举；不解析叙述性文本 |
 | `FZLSocialInputValidation` | 按 Unicode 码点校验 1 至 512 字符，并拒绝缺少显式目标的 InEar 输入 |
 | `FZLSocialToolRegistry` | 注册里程碑 8 的四个固定 Tool，并在提交 Call ID 前执行 Capability、目标、状态版本、TTL、距离、导航、状态、冷却、速率和幂等校验 |
 | `FZLSocialToolDefinition` / `FZLSocialToolCall` / `FZLSocialToolValidationContext` | 表示纯数据工具定义、建议和 Gameplay 提供的当前权威校验快照；不持有 Actor、World 或执行回调 |
@@ -79,18 +80,21 @@ Runtime 固定上限为 10000 个注册 Agent、1024 个活动 Root、4096 条 P
 
 | 类型 | 职责 | 不负责 |
 | --- | --- | --- |
-| `AZLSocialSandboxGameMode` | 生成确定环境与 4 个稳定 NPC，逐 NPC 计算 Observation，只为 Guard 构造并发送单在途 Decision，使用当前权威快照校验 Tool，记录安全调试状态并产生动作结果 Observation | Prompt、Provider SDK、任意 Tool、多 NPC LLM 或 Python 社会状态 |
-| `AZLSocialSandboxPawn` | 提供玩家移动/转向、Face/Approach/MoveAway/Stop 的权威执行和说话/动作气泡 | 从自由文本推断未注册行为、伪造完成状态 |
-| `AZLSocialSandboxNpc` | 保存稳定 ID、显示名、权威状态版本、位置/朝向和容量 32 的个人 Observation；显示规则/Decision/降级反馈，并执行已接受的 Face/Approach/MoveAway/Stop | 读取其他 NPC Observation、解析模型输出、绕过 Registry 或读取玩家输入原文 |
+| `AZLSocialSandboxGameMode` | 生成确定环境与 4 个稳定 NPC，逐 NPC 计算 Observation，只为 Guard 构造并发送单在途 Decision，使用当前权威快照校验 Tool；同时校验玩家 Attack 的目标/距离/冷却并调用 UE 伤害入口 | Prompt、Provider SDK、任意 Tool、多 NPC LLM 或 Python 社会状态 |
+| `AZLSocialSandboxPawn` | 提供玩家移动/转向、Face/Approach/MoveAway/Stop 的权威执行和说话/动作气泡；Attack 只由 GameMode 的即时权威路径执行 | 从自由文本推断未注册行为、伪造完成状态或直接伤害 NPC |
+| `AZLSocialSandboxNpc` | 保存稳定 ID、显示名、权威状态版本、位置/朝向、生命、防卫、短暂无敌、失能和容量 32 的个人 Observation；显示规则/Decision/受击/降级反馈，并执行已接受的 Face/Approach/MoveAway/Stop | 读取其他 NPC Observation、解析模型输出、绕过 Registry 或读取玩家输入原文 |
 | `AZLSocialSandboxPlayerController` | 创建交互 Widget，连接提交/重置并刷新目标与 Inspector | 持有协议或 Provider 状态 |
 | `UZLSocialSandboxWidget` | 提供说话/行为、模式、目标、文本、提交、错误状态和逐 NPC Observation Inspector | 保存持久历史、Prompt、scope 或凭据 |
 | `UZLSocialBubbleWidget` | 使用屏幕空间 UMG 显示有界时长的中英文说话、动作和 `RulePlaceholder` 反馈 | 产生事件或改变 Gameplay 状态 |
 | `FZLSocialSandboxMotion` | 计算 Approach/MoveAway 的单步平面位移、完成边界与面向 | 导航、避障、动画或复杂路径规划 |
 | `FZLSocialSandboxDecisionContextBuilder` | 从一个选定 NPC 已感知的 Trigger 和个人 Observation 历史构造有界 Decision 请求，过滤其他 Observer | 自动读取 World、其他 NPC 知识、执行 Tool 或保存 Prompt |
+| `FZLSocialSandboxDecisionScheduler` | 合并单 Guard 的最新显著 Trigger，执行单在途、冷却和最多 3 次连续自动重规划硬上限 | Tick 逐帧请求、无限队列、HTTP、Tool 校验或 Gameplay 执行 |
 
 专用地图为 `/Game/SocialSandbox/Lvl_SocialSandbox`，默认使用上述 GameMode、Pawn 和 PlayerController。GameMode 保持世界状态权威；Widget 只提交请求并展示结果。
 
-Guard Decision 调试快照固定只保留最新一项，包含 Request ID、请求状态版本、逻辑 Provider、公开 Intent、Speech 是否接受、Tool 名、稳定结果码和有界耗时。在途并发硬上限为 1，Tool 执行窗口硬上限为 4，幂等 Call ID 历史硬上限为 128。
+Guard Decision 调试快照固定只保留最新一项，包含 Trigger 原因、公开冲突等级、本地降级、Pending/合并/自动重规划状态、Request ID、请求状态版本、逻辑 Provider、公开 Intent、Speech 是否接受、Tool 名、稳定结果码和有界耗时。在途并发硬上限为 1，Pending 固定为最新 1 项，自动重规划硬上限为 3，Tool 执行窗口硬上限为 4，幂等 Call ID 历史硬上限为 128。
+
+基础玩家 Attack 的硬上限为 220 cm 命中距离、25 点基础伤害和 1 秒冷却；NPC 生命为 100，防卫将单次伤害降至 35% 向上取整，受击无敌窗口为 0.35 秒。它们是 UE Gameplay 状态，不进入 Python Tool 或协议。
 
 ## Context 类型
 
@@ -151,6 +155,7 @@ ZL Gameplay / UI
 - `ZL.Social.BenchmarkM6`：运行固定 120 Level 1 + 5 Important NPC 的传播、关系、Faction、Long Memory 和规则聚合基准。
 - `ResetSocialSandbox`：在专用场景中恢复玩家、NPC、气泡和个人 Observation 的确定初始状态。
 - `RunSocialSandboxDemo` 或启动参数 `-ZLSandboxDemo`：经正常提交路径选择 Guard 并执行一次本地 Talk，不依赖 Python Service。
+- `-ZLSandboxDecisionSmoke`、`-ZLSandboxDecisionFallbackSmoke`：分别验证 Stub 首次合法 Tool 与服务离线后的本地防卫降级；烟测保留自动重规划的硬上限，Stub 成功依据首次已接受 Tool，而不是后续的调度状态。
 
 演示日志只记录关联元数据、匹配结果和长度，不记录完整输入、Context、scope 或回复正文。
 

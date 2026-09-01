@@ -63,14 +63,12 @@ void AZLSocialSandboxNpc::InitializeSandboxNpc(const FName InStableId, const FTe
 	DisplayName = InDisplayName;
 	SandboxStartTransform = InStartTransform;
 	StateVersion = 1;
+	Health = MaxHealth;
+	LastDamageSeconds = -DBL_MAX;
+	bDefending = false;
+	bIncapacitated = false;
 	SetActorTransform(SandboxStartTransform, false, nullptr, ETeleportType::TeleportPhysics);
-	FString ShortName = DisplayName.ToString();
-	int32 Separator = INDEX_NONE;
-	if (ShortName.FindLastChar(TEXT(' '), Separator))
-	{
-		ShortName.RightChopInline(Separator + 1);
-	}
-	NameLabel->SetText(FText::FromString(ShortName));
+	RefreshNameLabel();
 	if (UMaterialInstanceDynamic* Material = BodyMesh->CreateDynamicMaterialInstance(0))
 	{
 		const uint32 Hash = GetTypeHash(StableId);
@@ -102,7 +100,71 @@ void AZLSocialSandboxNpc::ResetToSandboxStart()
 	++StateVersion;
 	ObservationBuffer.Reset();
 	LastDecisionSpeech.Reset();
+	Health = MaxHealth;
+	LastDamageSeconds = -DBL_MAX;
+	bDefending = false;
+	bIncapacitated = false;
+	RefreshNameLabel();
 	ClearBubble();
+}
+
+bool AZLSocialSandboxNpc::ApplySandboxDamage(
+	const float RawDamage,
+	const double NowSeconds,
+	FZLSocialSandboxDamageResult& OutResult)
+{
+	OutResult = FZLSocialSandboxDamageResult();
+	OutResult.HealthBefore = Health;
+	OutResult.HealthAfter = Health;
+	if (!FMath::IsFinite(RawDamage) || RawDamage <= 0.0f || !FMath::IsFinite(NowSeconds) || NowSeconds < 0.0)
+	{
+		OutResult.ReasonCode = TEXT("InvalidDamage");
+		return false;
+	}
+	if (bIncapacitated)
+	{
+		OutResult.ReasonCode = TEXT("TargetIncapacitated");
+		return false;
+	}
+	if (NowSeconds - LastDamageSeconds < 0.35)
+	{
+		OutResult.ReasonCode = TEXT("DamageInvulnerable");
+		return false;
+	}
+
+	const bool bWasDefending = bDefending;
+	const float AppliedDamage = bWasDefending
+		? FMath::Max(1.0f, FMath::CeilToFloat(RawDamage * 0.35f))
+		: RawDamage;
+	Health = FMath::Clamp(Health - AppliedDamage, 0.0f, MaxHealth);
+	LastDamageSeconds = NowSeconds;
+	bIncapacitated = Health <= 0.0f;
+	if (bIncapacitated)
+	{
+		StopDecisionAction();
+		bDefending = false;
+	}
+	++StateVersion;
+	RefreshNameLabel();
+	OutResult.ReasonCode = TEXT("Accepted");
+	OutResult.HealthAfter = Health;
+	OutResult.AppliedDamage = OutResult.HealthBefore - OutResult.HealthAfter;
+	OutResult.bAccepted = true;
+	OutResult.bDefended = bWasDefending;
+	OutResult.bIncapacitated = bIncapacitated;
+	return true;
+}
+
+void AZLSocialSandboxNpc::SetDefending(const bool bValue)
+{
+	const bool bNewValue = bValue && !bIncapacitated;
+	if (bDefending == bNewValue)
+	{
+		return;
+	}
+	bDefending = bNewValue;
+	++StateVersion;
+	RefreshNameLabel();
 }
 
 FVector AZLSocialSandboxNpc::GetPlanarForwardVector() const
@@ -150,6 +212,14 @@ bool AZLSocialSandboxNpc::StartDecisionAction(
 	AActor* Target,
 	TFunction<void()> OnCompleted)
 {
+	if (bIncapacitated)
+	{
+		return false;
+	}
+	if (Action == EZLSocialActionType::Attack)
+	{
+		return false;
+	}
 	const bool bNeedsTarget = Action != EZLSocialActionType::Stop;
 	if (bNeedsTarget && !IsValid(Target))
 	{
@@ -229,6 +299,7 @@ void AZLSocialSandboxNpc::ShowActionObservation(const FZLSocialObservation& Obse
 	case EZLSocialActionType::Face: ActionText = TEXT("面向"); break;
 	case EZLSocialActionType::Approach: ActionText = TEXT("靠近"); break;
 	case EZLSocialActionType::MoveAway: ActionText = TEXT("远离"); break;
+	case EZLSocialActionType::Attack: ActionText = TEXT("攻击"); break;
 	default: break;
 	}
 	const TCHAR* PhaseText = Observation.ActionPhase == EZLSocialActionPhase::Started ? TEXT("开始") : TEXT("完成");
@@ -251,6 +322,7 @@ void AZLSocialSandboxNpc::ShowDecisionAction(const EZLSocialActionType Action, c
 	case EZLSocialActionType::Face: ActionText = TEXT("面向 Face"); break;
 	case EZLSocialActionType::Approach: ActionText = TEXT("靠近 Approach"); break;
 	case EZLSocialActionType::MoveAway: ActionText = TEXT("远离 MoveAway"); break;
+	case EZLSocialActionType::Attack: ActionText = TEXT("攻击 Attack"); break;
 	default: break;
 	}
 	const TCHAR* PhaseText = Phase == EZLSocialActionPhase::Started ? TEXT("执行") : TEXT("完成");
@@ -267,7 +339,7 @@ void AZLSocialSandboxNpc::ShowDecisionRejection(const FName ReasonCode)
 void AZLSocialSandboxNpc::ShowDecisionFallback()
 {
 	LastDecisionSpeech.Reset();
-	ShowBubble(FText::FromString(TEXT("[LocalFallback] 我听见了，先保持警戒。")), FColor(255, 210, 80), 5.0f);
+	ShowBubble(FText::FromString(TEXT("[LocalFallback] 服务不可用：停止当前计划并进入防卫。")), FColor(255, 210, 80), 5.0f);
 }
 
 void AZLSocialSandboxNpc::ShowBubble(const FText& Text, const FColor& Color, const float DurationSeconds)
@@ -297,4 +369,50 @@ void AZLSocialSandboxNpc::FaceLabelsToCamera() const
 	{
 		NameLabel->SetWorldRotation((Camera->GetCameraLocation() - NameLabel->GetComponentLocation()).Rotation());
 	}
+}
+
+void AZLSocialSandboxNpc::ShowDamageResult(const FZLSocialSandboxDamageResult& Result)
+{
+	if (!Result.bAccepted)
+	{
+		ShowBubble(
+			FText::FromString(FString::Printf(TEXT("[Attack rejected] %s"), *Result.ReasonCode.ToString())),
+			FColor(255, 170, 70),
+			3.0f);
+		return;
+	}
+	const FString Defense = Result.bDefended ? TEXT(" · DEFENDED") : FString();
+	const FString State = Result.bIncapacitated ? TEXT(" · INCAPACITATED") : FString();
+	ShowBubble(
+		FText::FromString(FString::Printf(
+			TEXT("[Hit] -%.0f HP · %.0f remaining%s%s"),
+			Result.AppliedDamage,
+			Result.HealthAfter,
+			*Defense,
+			*State)),
+		FColor(255, 90, 80),
+		5.0f);
+}
+
+void AZLSocialSandboxNpc::RefreshNameLabel()
+{
+	if (NameLabel == nullptr)
+	{
+		return;
+	}
+	FString ShortName = DisplayName.ToString();
+	int32 Separator = INDEX_NONE;
+	if (ShortName.FindLastChar(TEXT(' '), Separator))
+	{
+		ShortName.RightChopInline(Separator + 1);
+	}
+	const FString State = bIncapacitated
+		? TEXT("INCAPACITATED")
+		: (bDefending ? TEXT("DEFEND") : TEXT("READY"));
+	NameLabel->SetText(FText::FromString(FString::Printf(
+		TEXT("%s  HP %.0f/%.0f  %s"),
+		*ShortName,
+		Health,
+		MaxHealth,
+		*State)));
 }

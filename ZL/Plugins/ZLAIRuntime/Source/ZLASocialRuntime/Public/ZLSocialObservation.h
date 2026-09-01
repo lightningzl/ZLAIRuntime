@@ -18,6 +18,7 @@ enum class EZLSocialActionType : uint8
 	Face,
 	Approach,
 	MoveAway,
+	Attack,
 	Stop
 };
 
@@ -132,6 +133,7 @@ struct ZLASOCIALRUNTIME_API FZLSocialObservation
 
 	UPROPERTY(BlueprintReadOnly) FGuid EventId;
 	UPROPERTY(BlueprintReadOnly) FName ObserverId;
+	UPROPERTY(BlueprintReadOnly) FName SourceId;
 	UPROPERTY(BlueprintReadOnly) EZLSocialObservationSource Source = EZLSocialObservationSource::Speech;
 	UPROPERTY(BlueprintReadOnly) EZLSocialSpeechMode SpeechMode = EZLSocialSpeechMode::Talk;
 	UPROPERTY(BlueprintReadOnly) EZLSocialActionType Action = EZLSocialActionType::Stop;
