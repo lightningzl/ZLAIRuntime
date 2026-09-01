@@ -47,3 +47,4 @@ def test_decision_context_declares_strict_public_output_shape() -> None:
     assert "never return speech as a string" in generated.system_instructions
     assert '"tool_call"' in generated.system_instructions
     assert "Do not return explanations" in generated.system_instructions
+    assert "Keep one continuous response" in generated.system_instructions

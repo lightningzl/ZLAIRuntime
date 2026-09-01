@@ -50,3 +50,14 @@
 | 既有回归 | Action Parser、Observation、Tool Registry、连续调度、个人上下文和其余社会模拟测试同批通过 |
 
 本工作包尚未完成 `M9-A03`、`M9-A04` 的最终场景操作验收；以上结果作为对应实现基础证据，最终状态在集成验证后更新。
+
+### `M9-T05` Python 连续 Planner 行为
+
+| 验证项 | 实际结果 |
+| --- | --- |
+| 定向 Planner 回归 | 项目虚拟环境执行 Stub、Decision Context Builder 与 Kimi Planner 测试，11 项全部通过，退出码 0 |
+| 离线连续路径 | Stub 覆盖可感知 Attack 的 `engage + move_away`、道歉的 `respond + stop`、近期 Attack 后的 `disengage + move_away`；均仅使用既有允许 Tool |
+| Kimi 约束 | 系统指令明确要求依据最新 Trigger 与有限个人历史保持连续性；禁止虚构事件、关系、生命、命中或伤害事实 |
+| 协议边界 | 未修改 Decision Schema、HTTP 路由、Tool 枚举或响应字段 |
+
+本工作包为 `M9-A05`、`M9-A06`、`M9-A10` 提供服务端基础证据；真实 Kimi 的行为属性和最终端到端状态将在收口验证中记录。
