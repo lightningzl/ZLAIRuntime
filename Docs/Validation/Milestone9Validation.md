@@ -61,3 +61,14 @@
 | 协议边界 | 未修改 Decision Schema、HTTP 路由、Tool 枚举或响应字段 |
 
 本工作包为 `M9-A05`、`M9-A06`、`M9-A10` 提供服务端基础证据；真实 Kimi 的行为属性和最终端到端状态将在收口验证中记录。
+
+### `M9-T04` 升级、缓和与本地安全行为
+
+| 验证项 | 实际结果 |
+| --- | --- |
+| UE Target 编译 | `ZLEditor Win64 Development` 编译成功，冲突状态机、GameMode 映射和本地降级反馈均完成链接 |
+| UE 社会回归 | NullRHI 执行 `ZL.Social`，收集 27 项并全部 `Success`，退出码 0 |
+| 纯状态边界 | `ConflictState` 覆盖初始平静、攻击升级/开启防卫、距离远离进入缓和、停止回到平静，以及 Planner 的升级/缓和意图 |
+| 本地安全行为 | 请求失败会进入 `Escalated`、停止当前 Guard Decision 动作、开启防卫并显示 `LocalFallback`；不调用新 Tool 或改变协议 |
+
+本工作包尚未完成 Stub 场景纵向路径与离线端到端验收；其自动化和可见反馈基础将在后续集成工作包完成。

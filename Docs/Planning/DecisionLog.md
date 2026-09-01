@@ -1,5 +1,9 @@
 # Decision Log
 
+## 2026-09-01：公开冲突立场保持为 UE 有界状态机
+
+Milestone 9 以 `Calm`、`Alert`、`Escalated`、`Recovering` 表示单 Guard 的公开立场。攻击、距离、停止、已接受的高层 Intent 和服务失败是唯一输入；模型不直接改变生命、命中、防卫或状态机。服务失败的确定性安全结果是停止当前计划、进入防卫并显示 `LocalFallback`，使离线时仍具备可见且有界的 Gameplay 行为。
+
 新增或调整决策前，必须遵守 [DocumentationRules.md](../Process/DocumentationRules.md) 中的“Decision Log 规则”。
 
 ## 2026-07-16：使用 PythonService 作为 AI Runtime

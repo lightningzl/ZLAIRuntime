@@ -115,7 +115,12 @@ Milestone 9 当前已增加最小冲突 Gameplay 基础：
 - `ZLASocialRuntime` 的受控玩家行为解析增加 Attack 别名；该 Action 只代表 UE 已接受的玩家行为，不是 Decision Tool，也不能由 Python 建议或执行。
 - `ZL` 的纯数据攻击校验先检查目标、玩家可执行状态、目标失能、220 cm 距离与 1 秒冷却。只有通过校验后，GameMode 才产生 Attack Observation 并调用 NPC 权威伤害入口。
 - `AZLSocialSandboxNpc` 保存有界生命、防卫、0.35 秒受击无敌窗口与失能状态；命中、减伤、状态版本、停止当前动作和生命显示均在 UE 内完成。拒绝攻击和拒绝伤害不改变生命或状态版本。
-- 攻击、受击和失能通过动作气泡、命中气泡、名称生命标识和 Inspector 显化；后续工作包才决定冲突等级、自动防卫/后退/求助和升级—缓和策略。
+- 攻击、受击和失能通过动作气泡、命中气泡、名称生命标识和 Inspector 显化。
+
+Milestone 9 当前还增加公开冲突立场与本地安全规则：
+
+- `ZLSocialSandboxConflictState` 是纯 UE 状态机，使用 `Calm`、`Alert`、`Escalated`、`Recovering` 四个有界公开等级；只接收已感知攻击、距离变化、停止、已接受 Decision Intent 或本地失败，绝不读取模型推理或直接修改伤害。
+- `ZLSocialSandboxGameMode` 是唯一把该立场映射为 Guard 防卫、Authority State Version、Inspector 和本地失败反馈的边界。请求失败会停止当前计划、进入防卫并显示 `LocalFallback`；其余 Tool 仍经 Registry 校验。
 
 ### Python AI Service
 

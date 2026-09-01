@@ -339,7 +339,7 @@ void AZLSocialSandboxNpc::ShowDecisionRejection(const FName ReasonCode)
 void AZLSocialSandboxNpc::ShowDecisionFallback()
 {
 	LastDecisionSpeech.Reset();
-	ShowBubble(FText::FromString(TEXT("[LocalFallback] 我听见了，先保持警戒。")), FColor(255, 210, 80), 5.0f);
+	ShowBubble(FText::FromString(TEXT("[LocalFallback] 服务不可用：停止当前计划并进入防卫。")), FColor(255, 210, 80), 5.0f);
 }
 
 void AZLSocialSandboxNpc::ShowBubble(const FText& Text, const FColor& Color, const float DurationSeconds)

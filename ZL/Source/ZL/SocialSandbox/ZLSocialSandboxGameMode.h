@@ -7,6 +7,7 @@
 #include "ZLSocialToolRegistry.h"
 #include "SocialSandbox/ZLSocialSandboxDecisionContext.h"
 #include "SocialSandbox/ZLSocialSandboxDecisionScheduler.h"
+#include "SocialSandbox/ZLSocialSandboxConflictState.h"
 #include "ZLSocialSandboxGameMode.generated.h"
 
 class AZLSocialSandboxNpc;
@@ -26,6 +27,8 @@ struct FZLSocialSandboxDecisionDebug
 	FName TriggerReason;
 	int32 CoalescedTriggers = 0;
 	int32 AutomaticReplans = 0;
+	FString ConflictLevel;
+	bool bLocalFallback = false;
 };
 
 UCLASS()
@@ -69,6 +72,7 @@ private:
 	void RecordGuardSpeechFact(const FString& Text, double OccurredAtSeconds);
 	void RecordGuardActionFact(EZLSocialActionType Action, EZLSocialActionPhase Phase, double OccurredAtSeconds);
 	void UpdateGuardDistanceBand();
+	void ApplyGuardConflict(AZLSocialSandboxNpc* Guard, EZLSocialSandboxConflictEvent Event, bool bLocalFallback = false);
 	void FinishDecisionSmokeTest();
 	void RefreshInspector() const;
 
@@ -79,6 +83,7 @@ private:
 	FZLSocialObservationSettings ObservationSettings;
 	FZLSocialToolRegistry ToolRegistry;
 	FZLSocialSandboxDecisionScheduler GuardDecisionScheduler;
+	FZLSocialSandboxConflictState GuardConflictState;
 	FZLSocialSandboxDecisionDebug DecisionDebug;
 	TArray<FZLSocialSandboxPublicHistoryFact> GuardPublicHistory;
 	TArray<double> GuardExecutionTimes;

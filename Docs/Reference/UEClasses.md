@@ -20,6 +20,7 @@
 
 | 类型 | 职责 | 不负责 |
 | --- | --- | --- |
+| `FZLSocialSandboxConflictState` | 维护 `Calm`、`Alert`、`Escalated`、`Recovering` 公开等级；攻击/已接受 `engage` 升级，距离拉开、停止/缓和意图降低等级，并给出防卫状态 | 生命、伤害、模型推理、HTTP 或 Tool 执行 |
 | `UZLAIServiceSubsystem` | 分别发送 Dialogue/Decision 请求，管理 HTTP、超时、关联、本地 Decision TTL 和单次 Game Thread 完成回调 | UI、Prompt、数据库、Gameplay 行为、当前世界状态比较和 Tool 执行 |
 | `UZLAIServiceSettings` | 通过 UE Config 提供 Base URL 和外层请求超时 | API Key、模型选择和运行时请求状态 |
 | `FZLDialogueRequest` | 表示请求 ID、NPC ID、玩家输入、可选 Context 和可选 Memory 范围 | 保存跨请求正文或访问数据库 |
@@ -91,7 +92,7 @@ Runtime 固定上限为 10000 个注册 Agent、1024 个活动 Root、4096 条 P
 
 专用地图为 `/Game/SocialSandbox/Lvl_SocialSandbox`，默认使用上述 GameMode、Pawn 和 PlayerController。GameMode 保持世界状态权威；Widget 只提交请求并展示结果。
 
-Guard Decision 调试快照固定只保留最新一项，包含 Trigger 原因、Pending/合并/自动重规划状态、Request ID、请求状态版本、逻辑 Provider、公开 Intent、Speech 是否接受、Tool 名、稳定结果码和有界耗时。在途并发硬上限为 1，Pending 固定为最新 1 项，自动重规划硬上限为 3，Tool 执行窗口硬上限为 4，幂等 Call ID 历史硬上限为 128。
+Guard Decision 调试快照固定只保留最新一项，包含 Trigger 原因、公开冲突等级、本地降级、Pending/合并/自动重规划状态、Request ID、请求状态版本、逻辑 Provider、公开 Intent、Speech 是否接受、Tool 名、稳定结果码和有界耗时。在途并发硬上限为 1，Pending 固定为最新 1 项，自动重规划硬上限为 3，Tool 执行窗口硬上限为 4，幂等 Call ID 历史硬上限为 128。
 
 基础玩家 Attack 的硬上限为 220 cm 命中距离、25 点基础伤害和 1 秒冷却；NPC 生命为 100，防卫将单次伤害降至 35% 向上取整，受击无敌窗口为 0.35 秒。它们是 UE Gameplay 状态，不进入 Python Tool 或协议。
 
