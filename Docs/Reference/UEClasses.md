@@ -155,6 +155,7 @@ ZL Gameplay / UI
 - `ZL.Social.BenchmarkM6`：运行固定 120 Level 1 + 5 Important NPC 的传播、关系、Faction、Long Memory 和规则聚合基准。
 - `ResetSocialSandbox`：在专用场景中恢复玩家、NPC、气泡和个人 Observation 的确定初始状态。
 - `RunSocialSandboxDemo` 或启动参数 `-ZLSandboxDemo`：经正常提交路径选择 Guard 并执行一次本地 Talk，不依赖 Python Service。
+- `-ZLSandboxDecisionSmoke`、`-ZLSandboxDecisionFallbackSmoke`：分别验证 Stub 首次合法 Tool 与服务离线后的本地防卫降级；烟测保留自动重规划的硬上限，Stub 成功依据首次已接受 Tool，而不是后续的调度状态。
 
 演示日志只记录关联元数据、匹配结果和长度，不记录完整输入、Context、scope 或回复正文。
 
