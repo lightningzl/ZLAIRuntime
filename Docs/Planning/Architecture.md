@@ -122,6 +122,22 @@ Milestone 9 当前还增加公开冲突立场与本地安全规则：
 - `ZLSocialSandboxConflictState` 是纯 UE 状态机，使用 `Calm`、`Alert`、`Escalated`、`Recovering` 四个有界公开等级；只接收已感知攻击、距离变化、停止、已接受 Decision Intent 或本地失败，绝不读取模型推理或直接修改伤害。
 - `ZLSocialSandboxGameMode` 是唯一把该立场映射为 Guard 防卫、Authority State Version、Inspector 和本地失败反馈的边界。请求失败会停止当前计划、进入防卫并显示 `LocalFallback`；其余 Tool 仍经 Registry 校验。
 
+当前最终场景配置基础已将 4 个占位 NPC 固定为 Guard、Merchant、Rival 和 Civilian：
+
+- `FZLSocialSandboxNpcProfile` 为每个稳定 ID 提供独立身份、人物、表达风格、目标、初始 Relationship/Instant State 和可见颜色；Rival 显式包含既有矛盾，其他 NPC 使用不同熟悉度和风险倾向。
+- `AZLSocialSandboxNpc` 持有自己的只读 Profile；Decision Context Builder 从选定 NPC Profile 构造人物、关系和状态，不再把 Guard 人物常量复用于其他 NPC。
+- Profile 只属于 UE 场景配置，不进入协议扩展、不由 Python 推导，也不授权跨 NPC 共享 Observation。
+- `FZLSocialSandboxMultiNpcDecision` 为非 Guard NPC 维护逐 NPC 单在途/最新 Pending、冷却、自动重规划上限和稳定轮转；GameMode 将它与原 Guard Scheduler 组合为全局最多 2 个请求在途。
+- 新 Speech 和已完成 Action 只在对应 NPC 实际听清或看见后进入它自己的 Scheduler；回调同时捕获 NPC、请求代次和本地发送时间，重置后的旧回调不能改变新场景。
+- Guard 与其他 NPC 的请求仍分别调用单 NPC `/v1/decision`，多 NPC 队列、并发和调试状态不会进入 Python 或协议字段。
+- Speech 只有在该 NPC `bHeardClearly` 时才进入它的 Decision 队列；已完成玩家动作和其他 NPC 动作只有在该观察者 `bSaw` 时才触发旁观判断。未通过个人感知的 Event 仍可保留过滤结果用于 Inspector，但不会进入 Planner。
+- 每个 NPC 的公开 Speech/已执行 Action History 和 `Calm`/`Alert`/`Escalated`/`Recovering` 冲突状态均按稳定 ID 隔离；攻击、Planner Intent 或本地失败只改变对应 NPC。
+- Python Stub 现在按当前请求中的 Guard、Merchant、Rival、Civilian Profile 和 Relationship 选择稳定的差异化表达；Kimi 固定约束要求只扮演当前 NPC，并禁止从一个 NPC 请求推断其他 NPC 的感知或决定。
+- 非 Guard NPC 现在复用同一 `FZLSocialToolRegistry` 硬校验和各自的执行速率窗口；合法 Face/MoveToward/MoveAway/Stop 只改变响应关联 NPC，开始/完成结果写入其个人公开历史并由其他 NPC 重新感知。
+- GameMode 为每个非 Guard NPC 独立跟踪 250/800 cm 距离带；只有跨带且该 NPC 实际看见玩家移动时才推进状态版本并重新判断，不在 Tick 中逐帧请求。
+- 个人 Inspector 对任意 NPC 显示最近感知、生命、防卫/失能、冲突等级、调度、Provider、Intent、Tool 结果和延迟；没有该 NPC Decision 时继续标明规则占位来源。
+- `-ZLSandboxMultiNpcSmoke` 在默认地图经无目标 Shout 和正常感知/调度入口验证 4 个 Stub Speech 与全局并发上限；既有离线烟测继续验证明确目标即使只满足 Direct 听见也能进入有界本地降级。
+
 ### Python AI Service
 
 Python Service 负责 AI 推理编排，不直接访问或修改 UE 世界。

@@ -7,32 +7,32 @@
 | 项目 | 当前值 |
 | --- | --- |
 | 最后更新 | 2026-09-01 |
-| 当前里程碑 | Milestone 9：连续互动、冲突升级与缓和 |
+| 当前里程碑 | Milestone 10：最终场景 1 多 NPC 交付 |
 | 里程碑状态 | `已完成` |
 | 当前活动任务 | 无 |
-| 下一候选任务 | 由后续里程碑另行定义 |
+| 下一候选任务 | 无 |
 | 已知阻塞 | 无 |
-| 最近验收 | Milestone 9：10/10 项已验证 |
+| 最近验收 | Milestone 10：11/11 项及 FS1 11/11 属性已验证 |
 
 ## 当前能力基线
 
-- Milestone 1 至 8 已完成；范围与证据见 [Milestones](../Milestones/) 和 [Validation](../Validation/)。
-- 当前已验证 UE→Python→Kimi Dialogue、瞬时 Context 和 SQLite 对话 Memory。
-- 当前已完成纯 UE Event→Perception→State→Memory→Rule Decision→Gameplay Intent 闭环、单 Agent 调试命令和 120 Agent 聚合基准。
-- 当前已完成有界 Event Chain、显式报告传播、稀疏 Relationship/Faction Authority、Important NPC Long Memory、关系感知规则决策、5 个 Important NPC 无界面纵向切片和 120+5 聚合基准。
-- Milestone 7 已交付专用可操作平面场景、文本说话/行为 UI、Speech/Action 分离事件、定向视觉、分级听觉、逐 NPC Observation、受控玩家行为、气泡和开发视图。
-- Milestone 8 已交付 UE `/v1/decision` 异步 Client、个人上下文、单 Guard Decision、四个固定 Tool 的 Registry/Handler、真实移动、过期拒绝和可见本地降级。
-- 当前单 Guard Decision 已支持新 Speech、玩家已完成 Action、距离跨阈值和计划完成触发；调度固定一个在途、一个最新 Pending、0.75 秒冷却和最多 3 次连续自动重规划，并将 Guard 自己的公开 Speech/真实 Action Result 合并进有界个人历史。
-- 当前已实现玩家 Attack 白名单、目标/距离/冷却校验、Guard 生命、受击无敌、防卫减伤、失能、状态版本推进和可见生命/受击反馈；这些即时结果由 UE 权威处理并反馈为个人 Action Observation。
-- 当前 Stub 已可重复地根据可感知攻击、近期攻击和道歉选择升级、保持距离或受限缓和；Kimi 系统约束明确要求连续使用最新 Trigger 与个人历史，不得虚构事件或 Gameplay 事实。
-- 当前 Guard 还维护 UE 权威的 `Calm`、`Alert`、`Escalated` 和 `Recovering` 公开冲突等级；攻击、距离/停止、已接受 Intent 与请求失败可改变等级，升级时开启防卫，失败时停止计划并显示本地防卫降级。
-- 默认地图 Stub 烟测已验证 Speech、一次合法 `move_away`、位置/版本变化和有界自动重规划；服务离线烟测验证 `LocalFallback` 导致防卫版本推进但不会移动或执行 Tool。
-- Python 全量回归 197/197、UE `ZL.Social` 27/27 和受影响 UE Target 编译均通过；默认地图真实 Kimi 烟测返回 `provider=kimi`、接受公开 Speech，未建议 Tool 时保持世界状态不变。
-- 最终 Milestone 8 证据：Python 194/194、UE Social 24/24、UE AI Runtime 13/13、ZLEditor Win64 Development 编译均通过；Stub、状态失效、服务离线和真实 Kimi 默认地图纵向链路通过。
+- Milestone 1 至 9 已完成；范围与证据见 [Milestones](../Milestones/) 和 [Validation](../Validation/)。
+- UE/Python 已具有真实 Kimi Dialogue、SQLite 对话 Memory、独立 Decision v1、Kimi/Stub Planner 和脱敏失败映射。
+- 纯 UE 社会模拟已具有 Event、空间查询、个人感知、状态、关系、长期记忆、规则决策、5 Important NPC 无界面切片和 120+5 基准。
+- 可操作社会沙盒稳定生成 4 个 NPC，并具有 Speech/Action 分离输入、定向视觉、分级听觉、逐 NPC Observation、气泡和个人 Inspector 基础。
+- 当前只有 Guard 接入 LLM Decision、四个受控移动 Tool、连续调度、基础 Attack、生命/防卫/失能、冲突升级—缓和和本地失败降级。
+- 当前场景 4 个 NPC 已固定为 Guard、Merchant、Rival 和 Civilian，并分别具有身份、人物、表达风格、目标、初始关系/状态和可见颜色；个人 Decision Context 已消费选定 NPC Profile。
+- 当前已接入逐 NPC Scheduler、稳定轮转和全局最多 2 个 Decision 在途；实际听清 Speech 或看见已完成 Action 的 NPC 才进入自己的有界队列，回调按 NPC 与重置代次隔离。
+- 当前逐 NPC 公开历史、冲突状态和本地失败已按稳定 ID 隔离；旁观者只有看见其他 NPC 已执行动作后才重新判断，未听清或未看见的 Event 不进入 Planner。
+- 当前 Stub 已按 Guard、Merchant、Rival、Civilian Profile 与关系生成 4 种可复现表达；Kimi 固定约束要求保持当前 NPC 身份、人物和个人视角，并禁止推断其他 NPC 的感知与决定。
+- 当前任意 NPC 已可独立接收和执行通过 UE 校验的四个 Tool，并产生可见移动/动作与个人公开历史；每个 NPC 的距离跨带、生命、防卫、冲突状态和 Inspector 结果彼此隔离。
+- 当前完整验证基线为 Python 198/198、UE `ZL.Social` 28/28、UE `ZLAIRuntime` 13/13、最终 Target 编译、4 NPC Stub 默认地图烟测和服务离线降级烟测通过。
+- 真实 Kimi 已对 Guard、Merchant、Rival、Civilian 的同一威胁输入分别返回 `provider=kimi`；Intent 分为 engage/disengage，动作建议分为 face_target/move_away，Speech 长度各异且结构合法。默认 UE 地图 Kimi 烟测也已接受 Speech，未建议 Tool 时保持位置不变。
+- Milestone 9 最终基线为 Python 197/197、UE `ZL.Social` 27/27、受影响 UE Target 编译、Stub/离线烟测和默认地图真实 Kimi 验收通过。
 
 ## 当前执行边界
 
-- 当前只实施 [CurrentMilestone.md](./CurrentMilestone.md) 定义的单 Guard 连续互动、最小冲突 Gameplay 和升级—缓和闭环。
-- 沿用 2026-08-31 已确认的 Decision v1；本里程碑不修改 `Protocol.md`，不新增 Tool、Intent 或字段。
-- UE 继续权威维护生命、命中、伤害、防卫、冲突等级、状态版本和动作结果；Python 只返回现有结构化表达和高层建议。
-- 按 `M9-T01` 至 `M9-T08` 的依赖顺序实施、验证和同步状态；工作包分步提交到里程碑集成分支，完整验证后统一合并和推送。
+- Milestone 10 已完成并归档为 [Milestone10.md](../Milestones/Milestone10.md)；当前没有活动功能任务。
+- 沿用 2026-08-31 已确认的 Decision v1；不修改 `Protocol.md`，不新增 Tool、Intent、字段或批量请求。
+- UE 继续权威维护逐 NPC 感知、关系输入、生命、冲突、状态版本、调度和动作执行；Python 每次只返回一个 NPC 的现有结构化建议。
+- `M10-T01` 至 `M10-T08` 已按依赖顺序完成并形成独立逻辑提交；交付不包含未验证的未来能力。

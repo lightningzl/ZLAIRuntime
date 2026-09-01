@@ -7,6 +7,7 @@
 #include "ZLSocialToolRegistry.h"
 #include "SocialSandbox/ZLSocialSandboxDecisionContext.h"
 #include "SocialSandbox/ZLSocialSandboxDecisionScheduler.h"
+#include "SocialSandbox/ZLSocialSandboxMultiNpcDecision.h"
 #include "SocialSandbox/ZLSocialSandboxConflictState.h"
 #include "ZLSocialSandboxGameMode.generated.h"
 
@@ -45,6 +46,9 @@ public:
 	UFUNCTION(Exec)
 	void RunSocialSandboxDemo();
 
+	UFUNCTION(Exec)
+	void RunMultiNpcSandboxDemo();
+
 	const TArray<TObjectPtr<AZLSocialSandboxNpc>>& GetSandboxNpcs() const { return SandboxNpcs; }
 	AZLSocialSandboxNpc* FindSandboxNpc(FName StableId) const;
 	FText SubmitSpeech(FName SpeechMode, FName TargetId, const FString& Text);
@@ -59,10 +63,16 @@ protected:
 
 private:
 	void SpawnEnvironment();
-	void SpawnNpc(FName StableId, const TCHAR* DisplayName, const FVector& Location, const FRotator& Rotation);
+	void SpawnNpc(FName StableId, const FVector& Location, const FRotator& Rotation);
 	void DispatchActionObservation(EZLSocialActionType Action, EZLSocialActionPhase Phase, FName TargetId);
 	FZLSocialObservation DispatchNpcActionObservation(AZLSocialSandboxNpc* Actor, EZLSocialActionType Action, EZLSocialActionPhase Phase, FName TargetId);
 	void QueueGuardDecision(AZLSocialSandboxNpc* Guard, const FZLSocialObservation& Trigger, const FString& SpeechContent, EZLSocialSandboxDecisionTriggerReason Reason, bool bAdvanceStateVersion = false);
+	void QueueNpcDecision(AZLSocialSandboxNpc* Npc, const FZLSocialObservation& Trigger, const FString& SpeechContent, EZLSocialSandboxDecisionTriggerReason Reason, bool bAdvanceStateVersion = false);
+	void TryDispatchNpcDecisions();
+	void RequestNpcDecision(AZLSocialSandboxNpc* Npc, const FZLSocialSandboxScheduledDecision& Scheduled);
+	void HandleNpcDecision(AZLSocialSandboxNpc* Npc, const FZLDecisionResponse& Response, double SentAtSeconds);
+	void HandleNpcDecisionFailure(AZLSocialSandboxNpc* Npc, const FZLServiceError& Error, double SentAtSeconds);
+	void ExecuteNpcTool(AZLSocialSandboxNpc* Npc, const FZLDecisionResponse& Response);
 	void TryDispatchGuardDecision();
 	void SchedulePendingGuardDecision(double DelaySeconds);
 	void RequestGuardDecision(AZLSocialSandboxNpc* Guard, const FZLSocialObservation& Trigger, const FString& SpeechContent, EZLSocialSandboxDecisionTriggerReason Reason);
@@ -72,8 +82,10 @@ private:
 	void RecordGuardSpeechFact(const FString& Text, double OccurredAtSeconds);
 	void RecordGuardActionFact(EZLSocialActionType Action, EZLSocialActionPhase Phase, double OccurredAtSeconds);
 	void UpdateGuardDistanceBand();
+	void UpdateNpcDistanceBands();
 	void ApplyGuardConflict(AZLSocialSandboxNpc* Guard, EZLSocialSandboxConflictEvent Event, bool bLocalFallback = false);
 	void FinishDecisionSmokeTest();
+	void FinishMultiNpcSmokeTest();
 	void RefreshInspector() const;
 
 	UPROPERTY()
@@ -83,14 +95,23 @@ private:
 	FZLSocialObservationSettings ObservationSettings;
 	FZLSocialToolRegistry ToolRegistry;
 	FZLSocialSandboxDecisionScheduler GuardDecisionScheduler;
+	FZLSocialSandboxMultiNpcDecision MultiNpcDecision;
 	FZLSocialSandboxConflictState GuardConflictState;
 	FZLSocialSandboxDecisionDebug DecisionDebug;
 	TArray<FZLSocialSandboxPublicHistoryFact> GuardPublicHistory;
 	TArray<double> GuardExecutionTimes;
+	TMap<FName, FZLSocialSandboxDecisionDebug> NpcDecisionDebug;
+	TMap<FName, TArray<FZLSocialSandboxPublicHistoryFact>> NpcPublicHistory;
+	TMap<FName, TArray<double>> NpcExecutionTimes;
+	TMap<FName, FZLSocialSandboxConflictState> NpcConflictStates;
+	TMap<FName, int32> NpcDistanceBands;
+	TMap<FName, float> NpcLastDistances;
 	int32 GuardRequestGeneration = 0;
 	FTimerHandle DemoTimer;
 	FTimerHandle DecisionSmokeTimer;
+	FTimerHandle MultiNpcSmokeTimer;
 	FTimerHandle GuardDecisionCooldownTimer;
+	FTimerHandle NpcDecisionCooldownTimer;
 	FString ExpectedSmokeProvider;
 	bool bExpectStaleSmoke = false;
 	bool bSmokeSawAcceptedTool = false;

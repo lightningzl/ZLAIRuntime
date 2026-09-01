@@ -29,7 +29,7 @@ struct FZLSocialSandboxConflictTransition
 	bool bShouldDefend = false;
 };
 
-/** Bounded UE-authoritative public conflict stance for the one Guard. */
+/** Bounded UE-authoritative public conflict stance for one social sandbox NPC. */
 class FZLSocialSandboxConflictState
 {
 public:

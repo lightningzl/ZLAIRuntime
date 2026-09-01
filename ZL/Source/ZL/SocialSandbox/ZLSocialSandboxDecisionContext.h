@@ -3,6 +3,7 @@
 #include "CoreMinimal.h"
 #include "ZLAIServiceTypes.h"
 #include "ZLSocialObservation.h"
+#include "SocialSandbox/ZLSocialSandboxNpcProfile.h"
 
 struct FZLSocialSandboxPublicHistoryFact
 {
@@ -17,6 +18,7 @@ struct FZLSocialSandboxDecisionContextInput
 {
 	FName NpcId;
 	FText DisplayName;
+	FZLSocialSandboxNpcProfile Profile;
 	FName TriggerSourceId = TEXT("player");
 	FZLSocialObservation TriggerObservation;
 	FString TriggerSpeechContent;

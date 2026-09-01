@@ -59,8 +59,17 @@ AZLSocialSandboxNpc::AZLSocialSandboxNpc()
 
 void AZLSocialSandboxNpc::InitializeSandboxNpc(const FName InStableId, const FText& InDisplayName, const FTransform& InStartTransform)
 {
-	StableId = InStableId;
-	DisplayName = InDisplayName;
+	FZLSocialSandboxNpcProfile InProfile = FZLSocialSandboxNpcProfile::Create(InStableId);
+	InProfile.DisplayName = InDisplayName;
+	InitializeSandboxNpc(InProfile, InStartTransform);
+}
+
+void AZLSocialSandboxNpc::InitializeSandboxNpc(const FZLSocialSandboxNpcProfile& InProfile, const FTransform& InStartTransform)
+{
+	check(InProfile.IsValid());
+	Profile = InProfile;
+	StableId = Profile.StableId;
+	DisplayName = Profile.DisplayName;
 	SandboxStartTransform = InStartTransform;
 	StateVersion = 1;
 	Health = MaxHealth;
@@ -71,14 +80,7 @@ void AZLSocialSandboxNpc::InitializeSandboxNpc(const FName InStableId, const FTe
 	RefreshNameLabel();
 	if (UMaterialInstanceDynamic* Material = BodyMesh->CreateDynamicMaterialInstance(0))
 	{
-		const uint32 Hash = GetTypeHash(StableId);
-		const FLinearColor Palette[] = {
-			FLinearColor(0.85f, 0.18f, 0.08f),
-			FLinearColor(0.90f, 0.48f, 0.05f),
-			FLinearColor(0.18f, 0.62f, 0.22f),
-			FLinearColor(0.55f, 0.18f, 0.75f)
-		};
-		Material->SetVectorParameterValue(TEXT("Color"), Palette[Hash % UE_ARRAY_COUNT(Palette)]);
+		Material->SetVectorParameterValue(TEXT("Color"), Profile.BodyColor);
 	}
 	const TCHAR* MeshPaths[] = {
 		TEXT("/Engine/BasicShapes/Cube.Cube"),

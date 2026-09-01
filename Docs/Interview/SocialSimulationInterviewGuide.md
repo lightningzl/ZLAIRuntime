@@ -14,26 +14,27 @@
 
 ## 10 分钟展示流程
 
-以下内容是最终目标演示脚本，不代表 Milestone 5 已具备全部展示能力。当前已实现能力以 [ProjectState.md](../Current/ProjectState.md) 和 [Architecture.md](../Planning/Architecture.md) 为准；尚未实现的 Mass、事件二级传播、Relationship、AI Decision、ToolCall 和完整 Runtime Debugger 不得在当前演示中表述为已完成。
+以下流程以已完成的 Milestone 10 为主线；100+ NPC 确定性基准与 4 NPC 真实 LLM 场景分别展示，不声称它们在同一地图同时运行。当前事实见 [ProjectState.md](../Current/ProjectState.md)、[Architecture.md](../Planning/Architecture.md) 和 [Milestone10Validation.md](../Validation/Milestone10Validation.md)。
 
 | 时间 | 展示内容 | 讲解重点 |
 | --- | --- | --- |
-| 0:00–0:45 | 总体架构图 | UE 权威；LLM 只做高层 Decision/Dialogue |
-| 0:45–1:30 | 平静市场和 100+ NPC | Mass/LOD、人格分布、没有每帧全量事件扫描 |
-| 1:30–3:20 | 玩家 Punch | 同一事件产生围观、逃跑、报警、协助和愤怒 |
-| 3:20–4:20 | Event Graph | Root ID、空间过滤、传播深度、预算和去重 |
-| 4:20–5:20 | Gunshot | 大范围反应、事件优先级和安全覆盖规则 |
-| 5:20–6:20 | Help 或 Steal | Trust、Relationship、Memory 与后续行为变化 |
-| 6:20–7:40 | Important/Core NPC | 规则候选、AI Decision、可选 Speech 与 ToolCall |
-| 7:40–8:30 | UE Tool 校验 | Capability、参数、目标、距离、冷却和状态版本 |
-| 8:30–9:15 | 非法/过期 Tool 或 Service 离线 | UE 拒绝执行，NPC 使用规则降级 |
-| 9:15–10:00 | Debugger 与性能 | 事件查询量、决策来源、延迟、失败和可复现验证 |
+| 0:00–0:45 | 总体架构图 | UE 权威；Kimi 每次只消费一个 NPC 的个人 Context |
+| 0:45–1:30 | 默认社会沙盒与 4 NPC | Guard、Merchant、Rival、Civilian 的人物、关系和可见差异 |
+| 1:30–2:30 | Whisper、Talk、Shout、InEar | 定向视觉、分级听觉、明确目标与无目标判断 |
+| 2:30–3:40 | 无目标开放语言 | 只有实际听清的 NPC 进入个人 Decision；旁观者不获得上帝视角 |
+| 3:40–5:00 | 同一句威胁分别指向 4 NPC | Kimi/Stub 的人物差异、Rival 既有矛盾与 Civilian 回避倾向 |
+| 5:00–6:10 | NPC Speech 与移动 | 结构化 Intent、可选 Speech、单 Tool 建议和真实动作落地 |
+| 6:10–7:15 | 靠近、退让与 Attack | 连续重新判断、生命/防卫、冲突升级和缓和都由 UE 维护 |
+| 7:15–8:15 | 个人 Inspector | Trigger、感知来源、状态版本、Provider、Intent、Tool 结果与延迟 |
+| 8:15–9:10 | 非法/过期 Tool 或 Service 离线 | UE 零副作用拒绝，NPC 显示有界本地降级 |
+| 9:10–10:00 | 120+5 独立基准与回归证据 | 空间查询、事件预算、全局 LLM 并发 2、198+28+13 项回归 |
 
 ## 展示时必须强调
 
 - Event 到达后 UE 立即更新状态，不等待 LLM。
 - Level 1 永远不调用 LLM。
 - Important NPC 只有在高价值决策点才调用 AI。
+- 4 NPC 共享协议和执行器，但不共享 Observation、隐藏历史或请求；全局最多 2 个 Decision 在途。
 - Python 不读取 UE World，也不能直接造成 Damage、Movement 或 Spawn。
 - ToolCall 是建议，不是命令。
 - Runtime Debugger 显示稳定 Reason Code，不展示 Chain-of-Thought。
