@@ -69,6 +69,7 @@ private:
 	void RequestNpcDecision(AZLSocialSandboxNpc* Npc, const FZLSocialSandboxScheduledDecision& Scheduled);
 	void HandleNpcDecision(AZLSocialSandboxNpc* Npc, const FZLDecisionResponse& Response, double SentAtSeconds);
 	void HandleNpcDecisionFailure(AZLSocialSandboxNpc* Npc, const FZLServiceError& Error, double SentAtSeconds);
+	void ExecuteNpcTool(AZLSocialSandboxNpc* Npc, const FZLDecisionResponse& Response);
 	void TryDispatchGuardDecision();
 	void SchedulePendingGuardDecision(double DelaySeconds);
 	void RequestGuardDecision(AZLSocialSandboxNpc* Guard, const FZLSocialObservation& Trigger, const FString& SpeechContent, EZLSocialSandboxDecisionTriggerReason Reason);
@@ -78,6 +79,7 @@ private:
 	void RecordGuardSpeechFact(const FString& Text, double OccurredAtSeconds);
 	void RecordGuardActionFact(EZLSocialActionType Action, EZLSocialActionPhase Phase, double OccurredAtSeconds);
 	void UpdateGuardDistanceBand();
+	void UpdateNpcDistanceBands();
 	void ApplyGuardConflict(AZLSocialSandboxNpc* Guard, EZLSocialSandboxConflictEvent Event, bool bLocalFallback = false);
 	void FinishDecisionSmokeTest();
 	void RefreshInspector() const;
@@ -96,7 +98,10 @@ private:
 	TArray<double> GuardExecutionTimes;
 	TMap<FName, FZLSocialSandboxDecisionDebug> NpcDecisionDebug;
 	TMap<FName, TArray<FZLSocialSandboxPublicHistoryFact>> NpcPublicHistory;
+	TMap<FName, TArray<double>> NpcExecutionTimes;
 	TMap<FName, FZLSocialSandboxConflictState> NpcConflictStates;
+	TMap<FName, int32> NpcDistanceBands;
+	TMap<FName, float> NpcLastDistances;
 	int32 GuardRequestGeneration = 0;
 	FTimerHandle DemoTimer;
 	FTimerHandle DecisionSmokeTimer;

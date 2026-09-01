@@ -133,6 +133,9 @@ Milestone 9 当前还增加公开冲突立场与本地安全规则：
 - Speech 只有在该 NPC `bHeardClearly` 时才进入它的 Decision 队列；已完成玩家动作和其他 NPC 动作只有在该观察者 `bSaw` 时才触发旁观判断。未通过个人感知的 Event 仍可保留过滤结果用于 Inspector，但不会进入 Planner。
 - 每个 NPC 的公开 Speech/已执行 Action History 和 `Calm`/`Alert`/`Escalated`/`Recovering` 冲突状态均按稳定 ID 隔离；攻击、Planner Intent 或本地失败只改变对应 NPC。
 - Python Stub 现在按当前请求中的 Guard、Merchant、Rival、Civilian Profile 和 Relationship 选择稳定的差异化表达；Kimi 固定约束要求只扮演当前 NPC，并禁止从一个 NPC 请求推断其他 NPC 的感知或决定。
+- 非 Guard NPC 现在复用同一 `FZLSocialToolRegistry` 硬校验和各自的执行速率窗口；合法 Face/MoveToward/MoveAway/Stop 只改变响应关联 NPC，开始/完成结果写入其个人公开历史并由其他 NPC 重新感知。
+- GameMode 为每个非 Guard NPC 独立跟踪 250/800 cm 距离带；只有跨带且该 NPC 实际看见玩家移动时才推进状态版本并重新判断，不在 Tick 中逐帧请求。
+- 个人 Inspector 对任意 NPC 显示最近感知、生命、防卫/失能、冲突等级、调度、Provider、Intent、Tool 结果和延迟；没有该 NPC Decision 时继续标明规则占位来源。
 
 ### Python AI Service
 

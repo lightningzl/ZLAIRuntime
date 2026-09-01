@@ -21,7 +21,7 @@
 | 类型 | 职责 | 不负责 |
 | --- | --- | --- |
 | `FZLSocialSandboxNpcProfile` | 为 Guard、Merchant、Rival、Civilian 提供稳定身份、人物、表达风格、目标、初始关系/即时状态和可见颜色配置 | 运行时推理、跨 NPC 知识共享或修改协议 |
-| `FZLSocialSandboxConflictState` | 维护 `Calm`、`Alert`、`Escalated`、`Recovering` 公开等级；攻击/已接受 `engage` 升级，距离拉开、停止/缓和意图降低等级，并给出防卫状态 | 生命、伤害、模型推理、HTTP 或 Tool 执行 |
+| `FZLSocialSandboxConflictState` | 为一个 NPC 维护 `Calm`、`Alert`、`Escalated`、`Recovering` 公开等级；攻击/已接受 `engage` 升级，距离拉开、停止/缓和意图降低等级，并给出防卫状态 | 生命、伤害、模型推理、HTTP 或 Tool 执行 |
 | `UZLAIServiceSubsystem` | 分别发送 Dialogue/Decision 请求，管理 HTTP、超时、关联、本地 Decision TTL 和单次 Game Thread 完成回调 | UI、Prompt、数据库、Gameplay 行为、当前世界状态比较和 Tool 执行 |
 | `UZLAIServiceSettings` | 通过 UE Config 提供 Base URL 和外层请求超时 | API Key、模型选择和运行时请求状态 |
 | `FZLDialogueRequest` | 表示请求 ID、NPC ID、玩家输入、可选 Context 和可选 Memory 范围 | 保存跨请求正文或访问数据库 |
@@ -81,7 +81,7 @@ Runtime 固定上限为 10000 个注册 Agent、1024 个活动 Root、4096 条 P
 
 | 类型 | 职责 | 不负责 |
 | --- | --- | --- |
-| `AZLSocialSandboxGameMode` | 生成确定环境与 4 个稳定 NPC，逐 NPC 计算 Observation，只为 Guard 构造并发送单在途 Decision，使用当前权威快照校验 Tool；同时校验玩家 Attack 的目标/距离/冷却并调用 UE 伤害入口 | Prompt、Provider SDK、任意 Tool、多 NPC LLM 或 Python 社会状态 |
+| `AZLSocialSandboxGameMode` | 生成 4 个稳定差异化 NPC，逐 NPC 计算 Observation、调度单 NPC Decision，并使用当前权威快照校验对应 NPC Tool；同时校验任意 NPC 玩家 Attack 的目标/距离/冷却并调用 UE 伤害入口 | Prompt、Provider SDK、任意 Tool、跨 NPC 隐式知识或 Python 社会状态 |
 | `AZLSocialSandboxPawn` | 提供玩家移动/转向、Face/Approach/MoveAway/Stop 的权威执行和说话/动作气泡；Attack 只由 GameMode 的即时权威路径执行 | 从自由文本推断未注册行为、伪造完成状态或直接伤害 NPC |
 | `AZLSocialSandboxNpc` | 保存稳定人物配置、权威状态版本、位置/朝向、生命、防卫、短暂无敌、失能和容量 32 的个人 Observation；显示规则/Decision/受击/降级反馈，并执行已接受的 Face/Approach/MoveAway/Stop | 读取其他 NPC Observation、解析模型输出、绕过 Registry 或读取玩家输入原文 |
 | `AZLSocialSandboxPlayerController` | 创建交互 Widget，连接提交/重置并刷新目标与 Inspector | 持有协议或 Provider 状态 |
@@ -96,7 +96,7 @@ Runtime 固定上限为 10000 个注册 Agent、1024 个活动 Root、4096 条 P
 
 每个 NPC 的 Decision 调试快照固定只保留最新一项，包含 Trigger 原因、本地降级、Pending/合并/自动重规划状态、Request ID、请求状态版本、逻辑 Provider、公开 Intent、Speech 是否接受、Tool 名、稳定结果码和有界耗时。全局在途并发硬上限为 2，每 NPC 在途和 Pending 各固定最多 1 项，自动重规划硬上限为 3；Guard 已执行 Tool 窗口硬上限为 4，幂等 Call ID 历史硬上限为 128。
 
-基础玩家 Attack 的硬上限为 220 cm 命中距离、25 点基础伤害和 1 秒冷却；NPC 生命为 100，防卫将单次伤害降至 35% 向上取整，受击无敌窗口为 0.35 秒。它们是 UE Gameplay 状态，不进入 Python Tool 或协议。
+基础玩家 Attack 的硬上限为 220 cm 命中距离、25 点基础伤害和 1 秒冷却；每个 NPC 生命为 100，自己的防卫将单次伤害降至 35% 向上取整，受击无敌窗口为 0.35 秒。它们是 UE Gameplay 状态，不进入 Python Tool 或协议。
 
 ## Context 类型
 

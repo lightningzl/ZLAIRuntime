@@ -80,7 +80,10 @@ void AZLSocialSandboxGameMode::ResetSocialSandbox()
 	DecisionDebug = FZLSocialSandboxDecisionDebug();
 	NpcDecisionDebug.Reset();
 	NpcPublicHistory.Reset();
+	NpcExecutionTimes.Reset();
 	NpcConflictStates.Reset();
+	NpcDistanceBands.Reset();
+	NpcLastDistances.Reset();
 	GuardPublicHistory.Reset();
 	GuardDistanceBand = INDEX_NONE;
 	LastGuardDistance = TNumericLimits<float>::Max();
@@ -101,6 +104,7 @@ void AZLSocialSandboxGameMode::ResetSocialSandbox()
 		Pawn->ResetToSandboxStart();
 	}
 	UpdateGuardDistanceBand();
+	UpdateNpcDistanceBands();
 	RefreshInspector();
 }
 
@@ -108,6 +112,7 @@ void AZLSocialSandboxGameMode::Tick(const float DeltaSeconds)
 {
 	Super::Tick(DeltaSeconds);
 	UpdateGuardDistanceBand();
+	UpdateNpcDistanceBands();
 }
 
 void AZLSocialSandboxGameMode::RunSocialSandboxDemo()
@@ -543,12 +548,105 @@ void AZLSocialSandboxGameMode::HandleNpcDecision(
 		History.Add(MoveTemp(Fact));
 		if (History.Num() > 16) { History.RemoveAt(0, History.Num() - 16, EAllowShrinking::No); }
 	}
-	Debug.ToolName = Response.bHasToolCall ? Response.ToolCall.Name.Left(32) : FString();
-	Debug.ToolResult = Response.bHasToolCall ? FName(TEXT("PendingGameplayHandler")) : FName(TEXT("NoTool"));
+	if (Response.bHasToolCall)
+	{
+		ExecuteNpcTool(Npc, Response);
+	}
+	else
+	{
+		Debug.ToolName.Reset();
+		Debug.ToolResult = TEXT("NoTool");
+	}
 	Debug.bPending = MultiNpcDecision.HasPending(Npc->GetStableId());
 	TryDispatchGuardDecision();
 	TryDispatchNpcDecisions();
 	RefreshInspector();
+}
+
+void AZLSocialSandboxGameMode::ExecuteNpcTool(
+	AZLSocialSandboxNpc* Npc,
+	const FZLDecisionResponse& Response)
+{
+	if (!IsValid(Npc) || GetWorld() == nullptr)
+	{
+		return;
+	}
+	AZLSocialSandboxPawn* Player = Cast<AZLSocialSandboxPawn>(UGameplayStatics::GetPlayerPawn(this, 0));
+	const double NowSeconds = GetWorld()->GetTimeSeconds();
+	TArray<double>& ExecutionTimes = NpcExecutionTimes.FindOrAdd(Npc->GetStableId());
+	ExecutionTimes.RemoveAll([NowSeconds](const double Value) { return NowSeconds - Value >= 10.0; });
+
+	FZLSocialToolCall Call;
+	Call.CallId = Response.ToolCall.CallId;
+	Call.Name = FName(*Response.ToolCall.Name);
+	Call.TargetId = Response.ToolCall.TargetId.IsEmpty() ? NAME_None : FName(*Response.ToolCall.TargetId);
+	Call.StateVersion = Response.StateVersion;
+	FZLSocialToolValidationContext Context;
+	Context.CurrentStateVersion = Npc->GetStateVersion();
+	Context.NowSeconds = NowSeconds;
+	Context.DistanceToTarget = Player == nullptr
+		? TNumericLimits<float>::Max()
+		: FVector::Dist2D(Npc->GetActorLocation(), Player->GetActorLocation());
+	Context.bTargetValid = Player != nullptr && (Call.TargetId.IsNone() || Call.TargetId == TEXT("player"));
+	Context.bNavigationReachable = Player != nullptr
+		&& FMath::Abs(Npc->GetActorLocation().Z - Player->GetActorLocation().Z) <= 200.0f;
+	Context.bExecutable = !Npc->IsIncapacitated();
+	Context.ExecutionsInWindow = ExecutionTimes.Num();
+	Context.Capabilities = {TEXT("Tool.FaceTarget"), TEXT("Tool.MoveToward"), TEXT("Tool.MoveAway"), TEXT("Tool.Stop")};
+	const FZLSocialToolValidationResult Validation = ToolRegistry.ValidateAndCommit(Call, Context);
+	FZLSocialSandboxDecisionDebug& Debug = NpcDecisionDebug.FindOrAdd(Npc->GetStableId());
+	Debug.ToolName = Response.ToolCall.Name.Left(32);
+	Debug.ToolResult = Validation.ReasonCode;
+	if (!Validation.bAccepted)
+	{
+		if (!Response.bHasSpeech) { Npc->ShowDecisionRejection(Validation.ReasonCode); }
+		return;
+	}
+
+	EZLSocialActionType Action = EZLSocialActionType::Stop;
+	if (Call.Name == TEXT("face_target")) { Action = EZLSocialActionType::Face; }
+	else if (Call.Name == TEXT("move_toward")) { Action = EZLSocialActionType::Approach; }
+	else if (Call.Name == TEXT("move_away")) { Action = EZLSocialActionType::MoveAway; }
+	const FName TargetId = Action == EZLSocialActionType::Stop ? NAME_None : FName(TEXT("player"));
+	DispatchNpcActionObservation(Npc, Action, EZLSocialActionPhase::Started, TargetId);
+	TWeakObjectPtr<AZLSocialSandboxGameMode> WeakThis(this);
+	TWeakObjectPtr<AZLSocialSandboxNpc> WeakNpc(Npc);
+	if (!Npc->StartDecisionAction(Action, Player, [WeakThis, WeakNpc, Action, TargetId]()
+	{
+		if (WeakThis.IsValid() && WeakNpc.IsValid())
+		{
+			const FZLSocialObservation Completed = WeakThis->DispatchNpcActionObservation(
+				WeakNpc.Get(),
+				Action,
+				EZLSocialActionPhase::Completed,
+				TargetId);
+			WeakNpc->ShowDecisionAction(Action, EZLSocialActionPhase::Completed);
+			if (Completed.EventId.IsValid())
+			{
+				WeakThis->QueueNpcDecision(
+					WeakNpc.Get(),
+					Completed,
+					FString(),
+					EZLSocialSandboxDecisionTriggerReason::PlanCompleted);
+			}
+			WeakThis->RefreshInspector();
+		}
+	}))
+	{
+		Debug.ToolResult = TEXT("HandlerRejected");
+		if (!Response.bHasSpeech) { Npc->ShowDecisionRejection(Debug.ToolResult); }
+		return;
+	}
+	ExecutionTimes.Add(NowSeconds);
+	while (ExecutionTimes.Num() > FZLSocialToolRegistry::MaxExecutionsPerWindow)
+	{
+		ExecutionTimes.RemoveAt(0, 1, EAllowShrinking::No);
+	}
+	Debug.ToolResult = ZLSocialToolReason::Accepted;
+	if (Npc->IsDecisionActionActive())
+	{
+		Npc->ShowDecisionAction(Action, EZLSocialActionPhase::Started);
+	}
 }
 
 void AZLSocialSandboxGameMode::HandleNpcDecisionFailure(
@@ -1097,6 +1195,75 @@ void AZLSocialSandboxGameMode::UpdateGuardDistanceBand()
 			? EZLSocialSandboxDecisionTriggerReason::DistanceNear
 			: EZLSocialSandboxDecisionTriggerReason::DistanceFar,
 		true);
+}
+
+void AZLSocialSandboxGameMode::UpdateNpcDistanceBands()
+{
+	AZLSocialSandboxPawn* Player = Cast<AZLSocialSandboxPawn>(UGameplayStatics::GetPlayerPawn(this, 0));
+	if (!IsValid(Player) || GetWorld() == nullptr)
+	{
+		return;
+	}
+	for (AZLSocialSandboxNpc* Npc : SandboxNpcs)
+	{
+		if (!IsValid(Npc) || Npc->GetStableId() == TEXT("npc_guard"))
+		{
+			continue;
+		}
+		const FName NpcId = Npc->GetStableId();
+		const float Distance = FVector::Dist2D(Npc->GetActorLocation(), Player->GetActorLocation());
+		const int32 NewBand = Distance < 250.0f ? 0 : (Distance < 800.0f ? 1 : 2);
+		int32* PreviousBand = NpcDistanceBands.Find(NpcId);
+		float* PreviousDistance = NpcLastDistances.Find(NpcId);
+		if (PreviousBand == nullptr || PreviousDistance == nullptr)
+		{
+			NpcDistanceBands.Add(NpcId, NewBand);
+			NpcLastDistances.Add(NpcId, Distance);
+			continue;
+		}
+		if (*PreviousBand == NewBand)
+		{
+			*PreviousDistance = Distance;
+			continue;
+		}
+		const bool bMovedNearer = Distance < *PreviousDistance;
+		ApplyGuardConflict(
+			Npc,
+			bMovedNearer ? EZLSocialSandboxConflictEvent::DistanceNear : EZLSocialSandboxConflictEvent::DistanceFar);
+		*PreviousBand = NewBand;
+		*PreviousDistance = Distance;
+
+		const double NowSeconds = GetWorld()->GetTimeSeconds();
+		FZLSocialActionEvent Event;
+		Event.EventId = FGuid::NewGuid();
+		Event.Action = bMovedNearer ? EZLSocialActionType::Approach : EZLSocialActionType::MoveAway;
+		Event.Phase = EZLSocialActionPhase::Completed;
+		Event.ActorId = TEXT("player");
+		Event.TargetId = NpcId;
+		Event.Position = Player->GetActorLocation();
+		Event.Forward = Player->GetActorForwardVector();
+		Event.TimestampSeconds = NowSeconds;
+		FZLSocialObserver Observer;
+		Observer.AgentId = NpcId;
+		Observer.Position = Npc->GetActorLocation();
+		Observer.Forward = Npc->GetPlanarForwardVector();
+		const FZLSocialObservation Observation = FZLSocialObservationEvaluator(ObservationSettings).ObserveAction(
+			Event,
+			Observer,
+			NowSeconds);
+		Npc->RecordObservation(Observation);
+		if (Observation.bSaw)
+		{
+			QueueNpcDecision(
+				Npc,
+				Observation,
+				FString(),
+				bMovedNearer
+					? EZLSocialSandboxDecisionTriggerReason::DistanceNear
+					: EZLSocialSandboxDecisionTriggerReason::DistanceFar,
+				true);
+		}
+	}
 }
 
 void AZLSocialSandboxGameMode::FinishDecisionSmokeTest()
