@@ -79,9 +79,9 @@ Runtime 固定上限为 10000 个注册 Agent、1024 个活动 Root、4096 条 P
 
 | 类型 | 职责 | 不负责 |
 | --- | --- | --- |
-| `AZLSocialSandboxGameMode` | 生成确定环境与 4 个稳定 NPC，接收已校验输入，构造事件，逐 NPC 计算 Observation，执行重置和受控演示 | HTTP、LLM Decision、NPC ToolCall、Python 社会状态 |
+| `AZLSocialSandboxGameMode` | 生成确定环境与 4 个稳定 NPC，逐 NPC 计算 Observation，只为 Guard 构造并发送单在途 Decision，使用当前权威快照校验 Tool，记录安全调试状态并产生动作结果 Observation | Prompt、Provider SDK、任意 Tool、多 NPC LLM 或 Python 社会状态 |
 | `AZLSocialSandboxPawn` | 提供玩家移动/转向、Face/Approach/MoveAway/Stop 的权威执行和说话/动作气泡 | 从自由文本推断未注册行为、伪造完成状态 |
-| `AZLSocialSandboxNpc` | 保存稳定 ID、显示名、位置/朝向和容量 32 的个人 Observation，显示明确标记的规则占位反馈 | 读取其他 NPC Observation 或玩家行为输入原文 |
+| `AZLSocialSandboxNpc` | 保存稳定 ID、显示名、权威状态版本、位置/朝向和容量 32 的个人 Observation；显示规则/Decision/降级反馈，并执行已接受的 Face/Approach/MoveAway/Stop | 读取其他 NPC Observation、解析模型输出、绕过 Registry 或读取玩家输入原文 |
 | `AZLSocialSandboxPlayerController` | 创建交互 Widget，连接提交/重置并刷新目标与 Inspector | 持有协议或 Provider 状态 |
 | `UZLSocialSandboxWidget` | 提供说话/行为、模式、目标、文本、提交、错误状态和逐 NPC Observation Inspector | 保存持久历史、Prompt、scope 或凭据 |
 | `UZLSocialBubbleWidget` | 使用屏幕空间 UMG 显示有界时长的中英文说话、动作和 `RulePlaceholder` 反馈 | 产生事件或改变 Gameplay 状态 |
@@ -89,6 +89,8 @@ Runtime 固定上限为 10000 个注册 Agent、1024 个活动 Root、4096 条 P
 | `FZLSocialSandboxDecisionContextBuilder` | 从一个选定 NPC 已感知的 Trigger 和个人 Observation 历史构造有界 Decision 请求，过滤其他 Observer | 自动读取 World、其他 NPC 知识、执行 Tool 或保存 Prompt |
 
 专用地图为 `/Game/SocialSandbox/Lvl_SocialSandbox`，默认使用上述 GameMode、Pawn 和 PlayerController。GameMode 保持世界状态权威；Widget 只提交请求并展示结果。
+
+Guard Decision 调试快照固定只保留最新一项，包含 Request ID、请求状态版本、逻辑 Provider、公开 Intent、Speech 是否接受、Tool 名、稳定结果码和有界耗时。在途并发硬上限为 1，Tool 执行窗口硬上限为 4，幂等 Call ID 历史硬上限为 128。
 
 ## Context 类型
 

@@ -3,7 +3,7 @@
 ## 状态
 
 - 里程碑：Milestone 8——单 NPC LLM 具身反馈与受控动作
-- 当前阶段：Tool Registry 完成，Gameplay Handler 实施中
+- 当前阶段：Gameplay Handler 与降级链路完成，执行最终收口
 - 最后更新：2026-09-01
 - 结论：未完成；当前只记录已实际执行的基线检查，不声明 `M8-A01` 至 `M8-A10` 通过
 
@@ -33,6 +33,11 @@
 | UE Decision Client 编译与完成语义 | 编译 Target 后 NullRHI 执行 `Automation RunTests ZLAIRuntime.DecisionClient` | 通过 | 1 项通过；覆盖成功关联、30 秒本地 TTL 过期和状态版本不匹配，均只走一次完成路径 |
 | UE 单 NPC 个人上下文 | NullRHI 执行 `Automation RunTests ZL.Social.Sandbox.PersonalDecisionContext` | 通过 | 1 项通过；只保留选定 NPC 的已感知 Trigger/历史，过滤其他 Observer，未听见 Speech 不能构造请求 |
 | UE Tool Registry 编译与规则验收 | 编译 Target 后 NullRHI 执行 `Automation RunTests ZL.Social.ToolRegistry.Validation` | 通过 | 1 项通过，退出码 0；覆盖四 Tool 白名单、Capability、目标、状态版本、TTL、距离、导航、可执行状态、冷却、速率、幂等、拒绝不提交和 128 条有界 Call ID 缓存 |
+| NPC Decision Handler | NullRHI 执行 `Automation RunTests ZL.Social.Sandbox.NpcDecisionAction` | 通过 | 1 项通过，退出码 0；覆盖无效 Face 零状态副作用、合法 Face 立即完成、Authority Version 推进、MoveAway 真实 Transform 变化和 Stop 清理 |
+| Stub 场景纵向闭环 | Stub Service + 默认沙盒地图 + `-ZLSandboxDecisionSmoke` | 通过 | 正常 Demo 提交路径返回 `provider=stub`，Speech 接受，`move_away` 校验接受，Guard 版本与位置改变，耗时 10 ms |
+| 请求期间状态变化 | Stub Service + 默认沙盒地图 + `-ZLSandboxDecisionStaleSmoke` | 通过 | Speech 接受；Tool 以 `StateVersionMismatch` 拒绝；版本按测试推进但位置不变，证明表达与 Tool 拒绝独立且零 Tool Transform 副作用 |
+| 服务离线降级 | 端口 8000 无监听时运行默认沙盒地图 + `-ZLSandboxDecisionFallbackSmoke` | 通过 | 连接失败映射为 `provider=local` / `network_error`，Guard 版本与位置均不变，耗时 2042 ms |
+| 真实 Kimi 场景闭环 | 检测本机配置后尝试启动 Kimi Service 并运行默认沙盒地图 | 未执行 | 外部数据发送安全门禁拒绝执行；未发出请求、未泄露凭据或 Decision 内容。需要用户另行明确授权该外发后才能补充人工证据 |
 
 ## 基线结论
 
@@ -49,13 +54,13 @@
 | --- | --- | --- |
 | `M8-A01` | Python 全量 180 项通过；当前 UE Target 编译与 6 项 Dialogue Protocol 回归通过；后续 Social/Service 完整回归仍待执行 | `部分` |
 | `M8-A02` | 用户已明确确认；`Protocol.md`、Python Schema、UE 类型及两端契约测试一致，Python 14 项与 UE 3 项 Decision 契约测试通过 | `通过` |
-| `M8-A03` | Python Context Builder 与 UE Gameplay Builder 都只包含单 NPC 已感知 Trigger、人物/关系/即时状态/个人历史和允许 Tool；场景实际发送待接入 | `部分` |
-| `M8-A04` | Stub Route/Service 能返回相关 Speech 与允许的 `move_away` 建议；UE 可见执行待完成 | `部分` |
+| `M8-A03` | Python Context Builder 与 UE Gameplay Builder 只包含 Guard 已感知 Trigger、人物/关系/即时状态/个人历史和允许 Tool；Stub 场景实际发送通过 | `通过` |
+| `M8-A04` | Stub 经默认 Demo/UI 提交路径返回 Speech 与 `move_away`；Guard 真实移动、状态版本推进并产生动作结果 Observation | `通过` |
 | `M8-A05` | Kimi Planner 的离线 JSON 映射、结构校验和异常分类通过；真实模型人工闭环待执行 | `部分` |
-| `M8-A08` | Python 已覆盖无效 Planner 结构和 Provider 超时分类；UE 可见降级待完成 | `部分` |
-| `M8-A07` | UE Client 已验证本地 TTL 与响应状态版本关联；Gameplay 当前版本变化和零副作用拒绝待接入 | `部分` |
-| `M8-A06` | Tool Registry 已覆盖全部纯规则校验、拒绝不提交和明确 Reason Code；NPC Gameplay 零副作用与 Inspector 可见性待接入 | `部分` |
-| `M8-A09` | Decision Context、协议和 Tool Registry 的历史、字符串、Tool 数量与 Call ID 缓存已有硬上限；场景并发、结果 Event 和调试记录待接入 | `部分` |
+| `M8-A08` | Python 覆盖无效 Planner/Provider 超时；UE 离线场景显示 `LocalFallback`，错误码脱敏且 Authority State/位置不变 | `通过` |
+| `M8-A07` | UE Client 覆盖 TTL/响应关联；场景状态变化证明 Speech 保留、Tool 以 `StateVersionMismatch` 拒绝且位置不变 | `通过` |
+| `M8-A06` | Registry 全规则测试和场景执行共同证明合法动作才改变 Transform；拒绝有稳定 Reason Code，Inspector 可见 | `通过` |
+| `M8-A09` | Context/协议/历史/字符串/Tool/Call ID 均有硬上限；场景固定单在途请求、4 次执行窗口和单项安全调试快照 | `通过` |
 | `M8-A10` | 尚无完整场景实现或验证证据 | `未开始` |
 
 后续每次工作包验证只追加实际命令、环境、结果和与验收 ID 的对应关系；未执行项目不得写成通过。

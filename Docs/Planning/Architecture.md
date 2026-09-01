@@ -60,7 +60,7 @@ Python AI Service
 - 插件不从 Actor、World、GameState、SaveGame、账号、UI 或内容资产自动抓取上下文或 Memory 标识。
 - UE 不负责 Prompt、模型 SDK、Provider 选择、密钥、Memory 存储检索或 Python 生成编排。
 - 插件不得依赖 `ZL` 游戏模块、具体 UI 或 NPC Actor。
-- Decision 契约类型、请求序列化/响应解析和独立 HTTP Client 已实现；Client 校验请求/NPC/状态版本关联和本地 TTL，完成回调回到 Game Thread。Gameplay Tool Registry 已实现纯规则校验，具体 NPC Handler 尚未接入；现有 Dialogue 路径继续只消费纯文本回复。
+- Decision 契约类型、请求序列化/响应解析和独立 HTTP Client 已实现；Client 校验请求/NPC/状态版本关联和本地 TTL，完成回调回到 Game Thread。Gameplay Tool Registry 与单 Guard Handler 已接入；现有 Dialogue 路径继续只消费纯文本回复。
 
 `ZLASocialRuntime` 是同一插件内与 HTTP Client 隔离的 Runtime Module：
 
@@ -99,6 +99,9 @@ Milestone 8 当前已增加协议确认后的客户端与个人上下文基础�
 - `UZLAIServiceSubsystem::SendDecisionRequest` 调用独立 `/v1/decision`，在成功前校验关联字段和本地 TTL；当前世界状态版本的最终比较仍由 Gameplay 层负责。
 - `ZLASocialRuntime` 的 `FZLSocialToolRegistry` 只注册 FaceTarget、MoveToward、MoveAway、Stop，按 Capability、目标、状态版本、有效期、距离、导航、可执行状态、冷却、速率和 Call ID 幂等顺序执行无副作用校验；已接受 Call ID 缓存和注册表容量均有硬上限。
 - Registry 不访问 Actor、World、HTTP 或 Provider，也不执行移动；`ZL` Gameplay Handler 必须提供当前权威快照，并且只在校验接受后改变世界。
+- `AZLSocialSandboxGameMode` 只对玩家明确指向 `npc_guard` 且 Guard 实际感知到的 Speech/已完成 Action 发起 Decision；固定最多一个请求在途，重置通过 Generation 使旧回调失效。
+- Response Speech 先作为独立合法表达保存；可选 Tool 使用响应状态版本和收到回复时的当前 Guard/玩家位置、目标、平面可达性、执行状态、10 秒执行窗口再次校验。接受后由 `AZLSocialSandboxNpc` 执行受碰撞约束的真实 Transform 变化并产生 Started/Completed Action Observation；拒绝只更新公开 Reason Code。
+- Guard Authority State Version 在重置、动作开始/停止/完成时推进。服务离线、超时、解析或 Provider 失败统一进入不执行 Tool 的可见本地降级；Inspector 只显示有界关联元数据、Provider、公开 Intent、Tool/结果和耗时，不显示 Prompt、输入全文、凭据或原始 Provider 异常。
 
 ### Python AI Service
 

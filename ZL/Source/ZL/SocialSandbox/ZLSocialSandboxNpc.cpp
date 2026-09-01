@@ -1,6 +1,7 @@
 #include "SocialSandbox/ZLSocialSandboxNpc.h"
 
 #include "SocialSandbox/ZLSocialBubbleWidget.h"
+#include "SocialSandbox/ZLSocialSandboxMotion.h"
 
 #include "Components/ArrowComponent.h"
 #include "Components/CapsuleComponent.h"
@@ -61,6 +62,7 @@ void AZLSocialSandboxNpc::InitializeSandboxNpc(const FName InStableId, const FTe
 	StableId = InStableId;
 	DisplayName = InDisplayName;
 	SandboxStartTransform = InStartTransform;
+	StateVersion = 1;
 	SetActorTransform(SandboxStartTransform, false, nullptr, ETeleportType::TeleportPhysics);
 	FString ShortName = DisplayName.ToString();
 	int32 Separator = INDEX_NONE;
@@ -95,8 +97,11 @@ void AZLSocialSandboxNpc::InitializeSandboxNpc(const FName InStableId, const FTe
 
 void AZLSocialSandboxNpc::ResetToSandboxStart()
 {
+	StopDecisionAction();
 	SetActorTransform(SandboxStartTransform, false, nullptr, ETeleportType::TeleportPhysics);
+	++StateVersion;
 	ObservationBuffer.Reset();
+	LastDecisionSpeech.Reset();
 	ClearBubble();
 }
 
@@ -111,6 +116,89 @@ void AZLSocialSandboxNpc::Tick(const float DeltaSeconds)
 {
 	Super::Tick(DeltaSeconds);
 	FaceLabelsToCamera();
+	AdvanceDecisionAction(DeltaSeconds);
+}
+
+void AZLSocialSandboxNpc::AdvanceDecisionAction(const float DeltaSeconds)
+{
+	if (!bDecisionActionActive || !DecisionTarget.IsValid())
+	{
+		return;
+	}
+	const FZLSocialSandboxMotionStep Motion = FZLSocialSandboxMotion::Compute(
+		DecisionAction,
+		GetActorLocation(),
+		DecisionTarget->GetActorLocation(),
+		DeltaSeconds,
+		DecisionSpeed);
+	if (Motion.bComplete)
+	{
+		bDecisionActionActive = false;
+		DecisionTarget.Reset();
+		++StateVersion;
+		TFunction<void()> Completion = MoveTemp(DecisionCompletion);
+		DecisionCompletion = nullptr;
+		if (Completion) { Completion(); }
+		return;
+	}
+	SetActorRotation(Motion.Facing.Rotation());
+	AddActorWorldOffset(Motion.Translation, true);
+}
+
+bool AZLSocialSandboxNpc::StartDecisionAction(
+	const EZLSocialActionType Action,
+	AActor* Target,
+	TFunction<void()> OnCompleted)
+{
+	const bool bNeedsTarget = Action != EZLSocialActionType::Stop;
+	if (bNeedsTarget && !IsValid(Target))
+	{
+		return false;
+	}
+	FVector FaceDirection = FVector::ZeroVector;
+	if (Action == EZLSocialActionType::Face)
+	{
+		FaceDirection = Target->GetActorLocation() - GetActorLocation();
+		FaceDirection.Z = 0.0f;
+		if (FaceDirection.IsNearlyZero())
+		{
+			return false;
+		}
+	}
+	StopDecisionAction();
+	DecisionAction = Action;
+	DecisionTarget = Target;
+	DecisionCompletion = MoveTemp(OnCompleted);
+	++StateVersion;
+
+	if (Action == EZLSocialActionType::Face)
+	{
+		SetActorRotation(FaceDirection.Rotation());
+		TFunction<void()> Completion = MoveTemp(DecisionCompletion);
+		DecisionTarget.Reset();
+		if (Completion) { Completion(); }
+		return true;
+	}
+	if (Action == EZLSocialActionType::Stop)
+	{
+		TFunction<void()> Completion = MoveTemp(DecisionCompletion);
+		DecisionTarget.Reset();
+		if (Completion) { Completion(); }
+		return true;
+	}
+	bDecisionActionActive = true;
+	return true;
+}
+
+void AZLSocialSandboxNpc::StopDecisionAction()
+{
+	if (bDecisionActionActive)
+	{
+		++StateVersion;
+	}
+	bDecisionActionActive = false;
+	DecisionTarget.Reset();
+	DecisionCompletion = nullptr;
 }
 
 void AZLSocialSandboxNpc::ShowRuleSpeech(const FZLSocialObservation& Observation)
@@ -145,6 +233,41 @@ void AZLSocialSandboxNpc::ShowActionObservation(const FZLSocialObservation& Obse
 	}
 	const TCHAR* PhaseText = Observation.ActionPhase == EZLSocialActionPhase::Started ? TEXT("开始") : TEXT("完成");
 	ShowBubble(FText::FromString(FString::Printf(TEXT("[观察] 玩家%s%s"), PhaseText, ActionText)), FColor(255, 170, 70), 3.0f);
+}
+
+void AZLSocialSandboxNpc::ShowDecisionSpeech(const FString& Text, const FString& Provider)
+{
+	const FString Bounded = Text.Len() > 96 ? Text.Left(96) + TEXT("…") : Text;
+	const FString Source = Provider.Equals(TEXT("kimi"), ESearchCase::IgnoreCase) ? TEXT("Kimi") : TEXT("Stub");
+	LastDecisionSpeech = FString::Printf(TEXT("[%s] %s"), *Source, *Bounded);
+	ShowBubble(FText::FromString(LastDecisionSpeech), FColor(90, 235, 170), 6.0f);
+}
+
+void AZLSocialSandboxNpc::ShowDecisionAction(const EZLSocialActionType Action, const EZLSocialActionPhase Phase)
+{
+	const TCHAR* ActionText = TEXT("停止 Stop");
+	switch (Action)
+	{
+	case EZLSocialActionType::Face: ActionText = TEXT("面向 Face"); break;
+	case EZLSocialActionType::Approach: ActionText = TEXT("靠近 Approach"); break;
+	case EZLSocialActionType::MoveAway: ActionText = TEXT("远离 MoveAway"); break;
+	default: break;
+	}
+	const TCHAR* PhaseText = Phase == EZLSocialActionPhase::Started ? TEXT("执行") : TEXT("完成");
+	const FString SpeechPrefix = LastDecisionSpeech.IsEmpty() ? FString() : LastDecisionSpeech + TEXT("\n");
+	ShowBubble(FText::FromString(FString::Printf(TEXT("%s[Decision %s] %s"), *SpeechPrefix, PhaseText, ActionText)), FColor(90, 235, 170), 5.0f);
+}
+
+void AZLSocialSandboxNpc::ShowDecisionRejection(const FName ReasonCode)
+{
+	const FString SpeechPrefix = LastDecisionSpeech.IsEmpty() ? FString() : LastDecisionSpeech + TEXT("\n");
+	ShowBubble(FText::FromString(FString::Printf(TEXT("%s[Tool rejected] %s"), *SpeechPrefix, *ReasonCode.ToString())), FColor(255, 115, 95), 5.0f);
+}
+
+void AZLSocialSandboxNpc::ShowDecisionFallback()
+{
+	LastDecisionSpeech.Reset();
+	ShowBubble(FText::FromString(TEXT("[LocalFallback] 我听见了，先保持警戒。")), FColor(255, 210, 80), 5.0f);
 }
 
 void AZLSocialSandboxNpc::ShowBubble(const FText& Text, const FColor& Color, const float DurationSeconds)
