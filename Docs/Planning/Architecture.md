@@ -122,6 +122,12 @@ Milestone 9 当前还增加公开冲突立场与本地安全规则：
 - `ZLSocialSandboxConflictState` 是纯 UE 状态机，使用 `Calm`、`Alert`、`Escalated`、`Recovering` 四个有界公开等级；只接收已感知攻击、距离变化、停止、已接受 Decision Intent 或本地失败，绝不读取模型推理或直接修改伤害。
 - `ZLSocialSandboxGameMode` 是唯一把该立场映射为 Guard 防卫、Authority State Version、Inspector 和本地失败反馈的边界。请求失败会停止当前计划、进入防卫并显示 `LocalFallback`；其余 Tool 仍经 Registry 校验。
 
+当前最终场景配置基础已将 4 个占位 NPC 固定为 Guard、Merchant、Rival 和 Civilian：
+
+- `FZLSocialSandboxNpcProfile` 为每个稳定 ID 提供独立身份、人物、表达风格、目标、初始 Relationship/Instant State 和可见颜色；Rival 显式包含既有矛盾，其他 NPC 使用不同熟悉度和风险倾向。
+- `AZLSocialSandboxNpc` 持有自己的只读 Profile；Decision Context Builder 从选定 NPC Profile 构造人物、关系和状态，不再把 Guard 人物常量复用于其他 NPC。
+- Profile 只属于 UE 场景配置，不进入协议扩展、不由 Python 推导，也不授权跨 NPC 共享 Observation。
+
 ### Python AI Service
 
 Python Service 负责 AI 推理编排，不直接访问或修改 UE 世界。

@@ -9,8 +9,8 @@
 | 最后更新 | 2026-09-01 |
 | 当前里程碑 | Milestone 10：最终场景 1 多 NPC 交付 |
 | 里程碑状态 | `进行中` |
-| 当前活动任务 | `M10-T02`：多 NPC 配置与个人状态 |
-| 下一候选任务 | `M10-T03`：多 NPC Decision 调度与关联 |
+| 当前活动任务 | `M10-T03`：多 NPC Decision 调度与关联 |
+| 下一候选任务 | `M10-T04`：个人感知与旁观反应 |
 | 已知阻塞 | 无 |
 | 最近验收 | Milestone 9：10/10 项已验证 |
 
@@ -21,6 +21,7 @@
 - 纯 UE 社会模拟已具有 Event、空间查询、个人感知、状态、关系、长期记忆、规则决策、5 Important NPC 无界面切片和 120+5 基准。
 - 可操作社会沙盒稳定生成 4 个 NPC，并具有 Speech/Action 分离输入、定向视觉、分级听觉、逐 NPC Observation、气泡和个人 Inspector 基础。
 - 当前只有 Guard 接入 LLM Decision、四个受控移动 Tool、连续调度、基础 Attack、生命/防卫/失能、冲突升级—缓和和本地失败降级。
+- 当前场景 4 个 NPC 已固定为 Guard、Merchant、Rival 和 Civilian，并分别具有身份、人物、表达风格、目标、初始关系/状态和可见颜色；个人 Decision Context 已消费选定 NPC Profile。
 - Milestone 9 最终基线为 Python 197/197、UE `ZL.Social` 27/27、受影响 UE Target 编译、Stub/离线烟测和默认地图真实 Kimi 验收通过。
 
 ## 当前执行边界

@@ -3,6 +3,7 @@
 #include "CoreMinimal.h"
 #include "GameFramework/Actor.h"
 #include "ZLSocialObservation.h"
+#include "SocialSandbox/ZLSocialSandboxNpcProfile.h"
 #include "ZLSocialSandboxNpc.generated.h"
 
 class UArrowComponent;
@@ -31,10 +32,12 @@ public:
 	AZLSocialSandboxNpc();
 
 	void InitializeSandboxNpc(FName InStableId, const FText& InDisplayName, const FTransform& InStartTransform);
+	void InitializeSandboxNpc(const FZLSocialSandboxNpcProfile& InProfile, const FTransform& InStartTransform);
 	void ResetToSandboxStart();
 
 	FName GetStableId() const { return StableId; }
 	const FText& GetDisplayName() const { return DisplayName; }
+	const FZLSocialSandboxNpcProfile& GetProfile() const { return Profile; }
 	FVector GetPlanarForwardVector() const;
 	void RecordObservation(const FZLSocialObservation& Observation) { ObservationBuffer.Add(Observation); }
 	const FZLSocialObservation* GetLatestObservation() const { return ObservationBuffer.Latest(); }
@@ -84,6 +87,7 @@ private:
 
 	UPROPERTY(VisibleAnywhere, Category="Sandbox")
 	FText DisplayName;
+	FZLSocialSandboxNpcProfile Profile;
 
 	FTransform SandboxStartTransform;
 	FZLSocialObservationBuffer ObservationBuffer;

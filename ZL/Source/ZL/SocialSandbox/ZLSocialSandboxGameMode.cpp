@@ -34,10 +34,10 @@ void AZLSocialSandboxGameMode::BeginPlay()
 {
 	Super::BeginPlay();
 	SpawnEnvironment();
-	SpawnNpc(TEXT("npc_guard"), TEXT("守卫 Guard"), FVector(500.0f, -350.0f, 96.0f), FRotator(0.0f, 145.0f, 0.0f));
-	SpawnNpc(TEXT("npc_merchant"), TEXT("商人 Merchant"), FVector(500.0f, 350.0f, 96.0f), FRotator(0.0f, 215.0f, 0.0f));
-	SpawnNpc(TEXT("npc_scout"), TEXT("斥候 Scout"), FVector(950.0f, -350.0f, 96.0f), FRotator(0.0f, 160.0f, 0.0f));
-	SpawnNpc(TEXT("npc_civilian"), TEXT("居民 Civilian"), FVector(950.0f, 350.0f, 96.0f), FRotator(0.0f, 200.0f, 0.0f));
+	SpawnNpc(TEXT("npc_guard"), FVector(500.0f, -350.0f, 96.0f), FRotator(0.0f, 145.0f, 0.0f));
+	SpawnNpc(TEXT("npc_merchant"), FVector(500.0f, 350.0f, 96.0f), FRotator(0.0f, 215.0f, 0.0f));
+	SpawnNpc(TEXT("npc_rival"), FVector(950.0f, -350.0f, 96.0f), FRotator(0.0f, 160.0f, 0.0f));
+	SpawnNpc(TEXT("npc_civilian"), FVector(950.0f, 350.0f, 96.0f), FRotator(0.0f, 200.0f, 0.0f));
 	UpdateGuardDistanceBand();
 	if (AZLSocialSandboxPlayerController* Controller = Cast<AZLSocialSandboxPlayerController>(UGameplayStatics::GetPlayerController(this, 0)))
 	{
@@ -441,6 +441,7 @@ void AZLSocialSandboxGameMode::RequestGuardDecision(
 	FZLSocialSandboxDecisionContextInput Input;
 	Input.NpcId = Guard->GetStableId();
 	Input.DisplayName = Guard->GetDisplayName();
+	Input.Profile = Guard->GetProfile();
 	Input.TriggerObservation = Trigger;
 	Input.TriggerSpeechContent = SpeechContent;
 	Input.PersonalHistory = Guard->GetObservationItems();
@@ -1009,14 +1010,14 @@ void AZLSocialSandboxGameMode::SpawnEnvironment()
 	}
 }
 
-void AZLSocialSandboxGameMode::SpawnNpc(const FName StableId, const TCHAR* DisplayName, const FVector& Location, const FRotator& Rotation)
+void AZLSocialSandboxGameMode::SpawnNpc(const FName StableId, const FVector& Location, const FRotator& Rotation)
 {
 	FActorSpawnParameters Params;
 	Params.Name = StableId;
 	AZLSocialSandboxNpc* Npc = GetWorld()->SpawnActor<AZLSocialSandboxNpc>(AZLSocialSandboxNpc::StaticClass(), Location, Rotation, Params);
 	if (Npc != nullptr)
 	{
-		Npc->InitializeSandboxNpc(StableId, FText::FromString(DisplayName), FTransform(Rotation, Location));
+	Npc->InitializeSandboxNpc(FZLSocialSandboxNpcProfile::Create(StableId), FTransform(Rotation, Location));
 		SandboxNpcs.Add(Npc);
 	}
 }

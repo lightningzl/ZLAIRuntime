@@ -20,6 +20,7 @@
 
 | 类型 | 职责 | 不负责 |
 | --- | --- | --- |
+| `FZLSocialSandboxNpcProfile` | 为 Guard、Merchant、Rival、Civilian 提供稳定身份、人物、表达风格、目标、初始关系/即时状态和可见颜色配置 | 运行时推理、跨 NPC 知识共享或修改协议 |
 | `FZLSocialSandboxConflictState` | 维护 `Calm`、`Alert`、`Escalated`、`Recovering` 公开等级；攻击/已接受 `engage` 升级，距离拉开、停止/缓和意图降低等级，并给出防卫状态 | 生命、伤害、模型推理、HTTP 或 Tool 执行 |
 | `UZLAIServiceSubsystem` | 分别发送 Dialogue/Decision 请求，管理 HTTP、超时、关联、本地 Decision TTL 和单次 Game Thread 完成回调 | UI、Prompt、数据库、Gameplay 行为、当前世界状态比较和 Tool 执行 |
 | `UZLAIServiceSettings` | 通过 UE Config 提供 Base URL 和外层请求超时 | API Key、模型选择和运行时请求状态 |
@@ -82,12 +83,12 @@ Runtime 固定上限为 10000 个注册 Agent、1024 个活动 Root、4096 条 P
 | --- | --- | --- |
 | `AZLSocialSandboxGameMode` | 生成确定环境与 4 个稳定 NPC，逐 NPC 计算 Observation，只为 Guard 构造并发送单在途 Decision，使用当前权威快照校验 Tool；同时校验玩家 Attack 的目标/距离/冷却并调用 UE 伤害入口 | Prompt、Provider SDK、任意 Tool、多 NPC LLM 或 Python 社会状态 |
 | `AZLSocialSandboxPawn` | 提供玩家移动/转向、Face/Approach/MoveAway/Stop 的权威执行和说话/动作气泡；Attack 只由 GameMode 的即时权威路径执行 | 从自由文本推断未注册行为、伪造完成状态或直接伤害 NPC |
-| `AZLSocialSandboxNpc` | 保存稳定 ID、显示名、权威状态版本、位置/朝向、生命、防卫、短暂无敌、失能和容量 32 的个人 Observation；显示规则/Decision/受击/降级反馈，并执行已接受的 Face/Approach/MoveAway/Stop | 读取其他 NPC Observation、解析模型输出、绕过 Registry 或读取玩家输入原文 |
+| `AZLSocialSandboxNpc` | 保存稳定人物配置、权威状态版本、位置/朝向、生命、防卫、短暂无敌、失能和容量 32 的个人 Observation；显示规则/Decision/受击/降级反馈，并执行已接受的 Face/Approach/MoveAway/Stop | 读取其他 NPC Observation、解析模型输出、绕过 Registry 或读取玩家输入原文 |
 | `AZLSocialSandboxPlayerController` | 创建交互 Widget，连接提交/重置并刷新目标与 Inspector | 持有协议或 Provider 状态 |
 | `UZLSocialSandboxWidget` | 提供说话/行为、模式、目标、文本、提交、错误状态和逐 NPC Observation Inspector | 保存持久历史、Prompt、scope 或凭据 |
 | `UZLSocialBubbleWidget` | 使用屏幕空间 UMG 显示有界时长的中英文说话、动作和 `RulePlaceholder` 反馈 | 产生事件或改变 Gameplay 状态 |
 | `FZLSocialSandboxMotion` | 计算 Approach/MoveAway 的单步平面位移、完成边界与面向 | 导航、避障、动画或复杂路径规划 |
-| `FZLSocialSandboxDecisionContextBuilder` | 从一个选定 NPC 已感知的 Trigger 和个人 Observation 历史构造有界 Decision 请求，过滤其他 Observer | 自动读取 World、其他 NPC 知识、执行 Tool 或保存 Prompt |
+| `FZLSocialSandboxDecisionContextBuilder` | 从一个选定 NPC 的稳定人物配置、已感知 Trigger 和个人 Observation 历史构造有界 Decision 请求，过滤其他 Observer | 自动读取 World、其他 NPC 知识、执行 Tool 或保存 Prompt |
 | `FZLSocialSandboxDecisionScheduler` | 合并单 Guard 的最新显著 Trigger，执行单在途、冷却和最多 3 次连续自动重规划硬上限 | Tick 逐帧请求、无限队列、HTTP、Tool 校验或 Gameplay 执行 |
 
 专用地图为 `/Game/SocialSandbox/Lvl_SocialSandbox`，默认使用上述 GameMode、Pawn 和 PlayerController。GameMode 保持世界状态权威；Widget 只提交请求并展示结果。

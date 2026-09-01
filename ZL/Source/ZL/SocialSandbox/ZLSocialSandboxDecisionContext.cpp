@@ -97,12 +97,24 @@ bool FZLSocialSandboxDecisionContextBuilder::Build(
 		Request.Trigger.Channels.AddUnique(TEXT("direct"));
 	}
 
-	Request.Context.Npc.DisplayName = Input.DisplayName.ToString();
-	Request.Context.Npc.Role = TEXT("social sandbox guard");
-	Request.Context.Npc.Personality = {TEXT("cautious"), TEXT("dutiful")};
-	Request.Context.Npc.SpeakingStyle = TEXT("brief and direct");
-	Request.Context.Npc.Goals = {TEXT("maintain safe distance"), TEXT("keep order")};
-	Request.Context.InstantState.Alert = Input.TriggerObservation.bHeardClearly || Input.TriggerObservation.bSaw ? 0.7f : 0.3f;
+	const FZLSocialSandboxNpcProfile Profile = Input.Profile.IsValid()
+		? Input.Profile
+		: FZLSocialSandboxNpcProfile::Create(Input.NpcId);
+	Request.Context.Npc.DisplayName = Profile.DisplayName.ToString();
+	Request.Context.Npc.Role = Profile.Role;
+	Request.Context.Npc.Personality = Profile.Personality;
+	Request.Context.Npc.SpeakingStyle = Profile.SpeakingStyle;
+	Request.Context.Npc.Goals = Profile.Goals;
+	Request.Context.Relationship.Trust = Profile.Trust;
+	Request.Context.Relationship.Affinity = Profile.Affinity;
+	Request.Context.Relationship.Fear = Profile.RelationshipFear;
+	Request.Context.Relationship.Familiarity = Profile.Familiarity;
+	Request.Context.InstantState.Fear = Profile.Fear;
+	Request.Context.InstantState.Anger = Profile.Anger;
+	Request.Context.InstantState.Curiosity = Profile.Curiosity;
+	Request.Context.InstantState.Alert = FMath::Max(
+		Profile.Alert,
+		Input.TriggerObservation.bHeardClearly || Input.TriggerObservation.bSaw ? 0.7f : 0.3f);
 
 	TArray<FZLDecisionHistoryItem> CombinedHistory;
 	CombinedHistory.Reserve(Input.PersonalHistory.Num() + Input.PublicHistory.Num());
