@@ -43,8 +43,16 @@ PythonService/
 | --- | --- |
 | `app.main` | 创建 FastAPI App，组装 Settings、Repository、Memory Service、Provider 和 Dialogue Service，并管理关闭生命周期 |
 | `app.api.dialogue` | 提供 `POST /v1/dialogue` HTTP 适配，将已校验请求交给 Dialogue Service |
+| `app.api.decision` | 提供 `POST /v1/decision` HTTP 适配，只记录脱敏关联元数据并交给 Decision Service |
 | `app.core.settings` | 读取并校验 Provider、超时、输出预算、数据库路径和 Memory 检索预算 |
 | `app.schemas.dialogue` | 定义 v1 Dialogue、Context、Memory、成功响应和错误边界 |
+| `app.schemas.decision` | 定义经确认的 v1 Decision、个人上下文、允许 Tool、结构化 Speech/Tool 建议和硬边界 |
+| `app.services.decision_context_builder` | 将单 NPC Trigger、人物、关系、即时状态、个人历史和允许 Tool 确定性组装为不可信 JSON 数据 |
+| `app.services.decision_service` | 校验非空业务语义、调用一次 Planner、复核允许 Tool/目标并生成 Decision/Tool ID |
+| `app.planners.base` | 定义与 FastAPI、协议模型、UE 和 SDK 解耦的 Decision Planner 接口与内部结果 |
+| `app.planners.stub_planner` | 提供确定性离线 Speech/Intent/单 Tool 建议 |
+| `app.planners.kimi_planner` | 使用 Kimi JSON Object 输出并校验 Intent、Speech、单 Tool 与 Confidence，分类 SDK 异常 |
+| `app.planners.factory` | 使用显式 Provider 配置创建 Stub 或 Kimi Planner，不静默回退 |
 | `app.services.context_builder` | 将固定约束、Context、合并历史和当前输入组装为供应商无关生成上下文 |
 | `app.services.dialogue_service` | 协调业务校验、可选 Memory、单次 Provider 调用、合法响应和成功后完整写入 |
 | `app.services.memory_service` | 执行范围复核、检索预算、稳定排序、精确重叠消除和幂等轮次语义 |
@@ -79,6 +87,18 @@ app.main
 api.dialogue
   -> schemas.dialogue
   -> services.dialogue_service
+
+api.decision
+  -> schemas.decision
+  -> services.decision_service
+
+services.decision_service
+  -> services.decision_context_builder
+  -> planners.base
+
+planners.kimi_planner
+  -> planners.base / providers.errors
+  -> OpenAI-compatible SDK -> Kimi API
 
 services.dialogue_service
   -> services.context_builder
@@ -121,11 +141,11 @@ OpenAI 兼容 SDK 运行依赖为 `openai>=2.46,<3.0`。Kimi Client 禁用 SDK �
 - 省略 `memory` 时不读取或写入数据库。
 - 只有 Provider 成功产生合法回复后才保存完整轮次。
 - 当前不保存 NPC 人格、World Context、Prompt、Token、ToolCall、模型推理或 Gameplay 状态。
-- 当前不生成或执行 ToolCall。
+- Decision 路径只生成固定单 Tool 建议，不执行 Tool；Dialogue 路径继续不生成或解析 Gameplay 指令。
 
 ## 错误与日志
 
-Provider 错误分为鉴权、限流、超时、不可用、无效响应和通用错误，再由应用边界映射为协议状态。Memory Repository 错误映射为脱敏 `500 internal_error`。
+Provider 错误分为鉴权、限流、超时、不可用、无效响应和通用错误，再由应用边界映射为协议状态。Decision 契约允许脱敏 `502 planner_invalid_response`，其 Route 映射将在 Planner 工作包接入。Memory Repository 错误映射为脱敏 `500 internal_error`。
 
 日志只记录请求关联、NPC ID、Context/Memory 开关、数量和错误分类；不记录完整 scope、玩家输入、Context、历史、回复、SQL、数据库路径或原始 SDK 异常。
 

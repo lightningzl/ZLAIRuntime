@@ -20,13 +20,15 @@
 
 | 类型 | 职责 | 不负责 |
 | --- | --- | --- |
-| `UZLAIServiceSubsystem` | 校验并发送 Dialogue 请求，管理 HTTP、超时、关联和单次完成回调 | UI、Prompt、数据库、Gameplay 行为、ToolCall |
+| `UZLAIServiceSubsystem` | 分别发送 Dialogue/Decision 请求，管理 HTTP、超时、关联、本地 Decision TTL 和单次 Game Thread 完成回调 | UI、Prompt、数据库、Gameplay 行为、当前世界状态比较和 Tool 执行 |
 | `UZLAIServiceSettings` | 通过 UE Config 提供 Base URL 和外层请求超时 | API Key、模型选择和运行时请求状态 |
 | `FZLDialogueRequest` | 表示请求 ID、NPC ID、玩家输入、可选 Context 和可选 Memory 范围 | 保存跨请求正文或访问数据库 |
 | `FZLDialogueResponse` | 表示请求关联、NPC ID、纯文本回复和逻辑 Provider | 推断或执行 Gameplay 指令 |
+| `FZLDecisionRequest` | 表示请求/NPC/状态版本/TTL、单个个人 Trigger、人物/关系/即时状态/历史和允许 Tool | 访问 Actor、自动收集 World 或授权 Tool 执行 |
+| `FZLDecisionResponse` | 表示结构化 Intent、可选 Speech、可选单 Tool 建议、Confidence 和 Provider | 声明 Tool 已执行或绕过 UE 当前状态校验 |
 | `FZLServiceError` | 表示错误分类、错误码、消息、请求 ID 和 HTTP 状态 | 暴露底层堆栈、路径或原始 Provider 异常 |
 
-`ZLAIServiceProtocol` 命名空间负责请求序列化、成功响应解析和协议错误解析。字段必须与 [Protocol.md](./Protocol.md) 一致。
+`ZLAIServiceProtocol` 命名空间负责 Dialogue/Decision 请求校验与序列化、成功响应解析和协议错误解析。Decision 只允许四个固定 Tool、一个 ToolCall 和个人视角硬边界；字段必须与 [Protocol.md](./Protocol.md) 一致。
 
 ## Social Runtime 基础类型
 
@@ -59,8 +61,10 @@
 | `FZLSocialObservationBuffer` | 保存固定容量的单 NPC Observation，并提供确定性重置和最近项读取 |
 | `FZLSocialActionParser` | 只把 Face、Approach、MoveAway、Stop 的中英文受控别名解析为行为枚举 |
 | `FZLSocialInputValidation` | 按 Unicode 码点校验 1 至 512 字符，并拒绝缺少显式目标的 InEar 输入 |
+| `FZLSocialToolRegistry` | 注册里程碑 8 的四个固定 Tool，并在提交 Call ID 前执行 Capability、目标、状态版本、TTL、距离、导航、状态、冷却、速率和幂等校验 |
+| `FZLSocialToolDefinition` / `FZLSocialToolCall` / `FZLSocialToolValidationContext` | 表示纯数据工具定义、建议和 Gameplay 提供的当前权威校验快照；不持有 Actor、World 或执行回调 |
 
-这些类型不包含 Actor、Widget、HTTP、Provider、Python 或 Dialogue Memory 引用。`ZL` 负责把具体 Gameplay 对象转换为稳定 ID 和位置快照。
+这些类型不包含 Actor、Widget、HTTP、Provider、Python 或 Dialogue Memory 引用。`ZL` 负责把具体 Gameplay 对象转换为稳定 ID 和位置快照，并只在 Registry 接受后调用具体 Handler。
 
 Runtime 固定上限为 10000 个注册 Agent、1024 个活动 Root、4096 条 Personal Relationship 边和 1024 条 Faction Standing；活动 Root 过期后清理其去重状态。
 
@@ -75,15 +79,18 @@ Runtime 固定上限为 10000 个注册 Agent、1024 个活动 Root、4096 条 P
 
 | 类型 | 职责 | 不负责 |
 | --- | --- | --- |
-| `AZLSocialSandboxGameMode` | 生成确定环境与 4 个稳定 NPC，接收已校验输入，构造事件，逐 NPC 计算 Observation，执行重置和受控演示 | HTTP、LLM Decision、NPC ToolCall、Python 社会状态 |
+| `AZLSocialSandboxGameMode` | 生成确定环境与 4 个稳定 NPC，逐 NPC 计算 Observation，只为 Guard 构造并发送单在途 Decision，使用当前权威快照校验 Tool，记录安全调试状态并产生动作结果 Observation | Prompt、Provider SDK、任意 Tool、多 NPC LLM 或 Python 社会状态 |
 | `AZLSocialSandboxPawn` | 提供玩家移动/转向、Face/Approach/MoveAway/Stop 的权威执行和说话/动作气泡 | 从自由文本推断未注册行为、伪造完成状态 |
-| `AZLSocialSandboxNpc` | 保存稳定 ID、显示名、位置/朝向和容量 32 的个人 Observation，显示明确标记的规则占位反馈 | 读取其他 NPC Observation 或玩家行为输入原文 |
+| `AZLSocialSandboxNpc` | 保存稳定 ID、显示名、权威状态版本、位置/朝向和容量 32 的个人 Observation；显示规则/Decision/降级反馈，并执行已接受的 Face/Approach/MoveAway/Stop | 读取其他 NPC Observation、解析模型输出、绕过 Registry 或读取玩家输入原文 |
 | `AZLSocialSandboxPlayerController` | 创建交互 Widget，连接提交/重置并刷新目标与 Inspector | 持有协议或 Provider 状态 |
 | `UZLSocialSandboxWidget` | 提供说话/行为、模式、目标、文本、提交、错误状态和逐 NPC Observation Inspector | 保存持久历史、Prompt、scope 或凭据 |
 | `UZLSocialBubbleWidget` | 使用屏幕空间 UMG 显示有界时长的中英文说话、动作和 `RulePlaceholder` 反馈 | 产生事件或改变 Gameplay 状态 |
 | `FZLSocialSandboxMotion` | 计算 Approach/MoveAway 的单步平面位移、完成边界与面向 | 导航、避障、动画或复杂路径规划 |
+| `FZLSocialSandboxDecisionContextBuilder` | 从一个选定 NPC 已感知的 Trigger 和个人 Observation 历史构造有界 Decision 请求，过滤其他 Observer | 自动读取 World、其他 NPC 知识、执行 Tool 或保存 Prompt |
 
 专用地图为 `/Game/SocialSandbox/Lvl_SocialSandbox`，默认使用上述 GameMode、Pawn 和 PlayerController。GameMode 保持世界状态权威；Widget 只提交请求并展示结果。
+
+Guard Decision 调试快照固定只保留最新一项，包含 Request ID、请求状态版本、逻辑 Provider、公开 Intent、Speech 是否接受、Tool 名、稳定结果码和有界耗时。在途并发硬上限为 1，Tool 执行窗口硬上限为 4，幂等 Call ID 历史硬上限为 128。
 
 ## Context 类型
 
@@ -127,6 +134,7 @@ ZL Gameplay / UI
 
 - Client 使用 `UGameInstanceSubsystem`，生命周期覆盖关卡切换。
 - 每个请求由 UE 生成唯一 `request_id`。
+- Decision 请求保存发送时状态版本和本地 TTL；成功响应必须匹配请求 ID、NPC ID 和状态版本，超出 TTL 时返回 `stale_response`。
 - 请求 Context 和 Memory 在创建 HTTP 前完成边界校验。
 - 本地校验失败不创建 HTTP，并且只触发一次失败回调。
 - 网络失败、超时、HTTP 错误和解析错误走不同分类。

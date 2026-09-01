@@ -1,5 +1,8 @@
 #include "Misc/AutomationTest.h"
 #include "Misc/PackageName.h"
+#include "Engine/Engine.h"
+#include "Engine/StaticMeshActor.h"
+#include "Engine/World.h"
 #include "SocialSandbox/ZLSocialSandboxGameMode.h"
 #include "SocialSandbox/ZLSocialSandboxMotion.h"
 #include "SocialSandbox/ZLSocialSandboxNpc.h"
@@ -69,6 +72,56 @@ bool FZLSocialSandboxPerNpcSliceTest::RunTest(const FString&)
 	BehindBuffer.Reset();
 	DistantBuffer.Reset();
 	TestTrue(TEXT("Scene reset clears all bounded observations"), FrontBuffer.Latest() == nullptr && BehindBuffer.Latest() == nullptr && DistantBuffer.Latest() == nullptr);
+	return true;
+}
+
+IMPLEMENT_SIMPLE_AUTOMATION_TEST(FZLSocialSandboxNpcDecisionActionTest, "ZL.Social.Sandbox.NpcDecisionAction", EAutomationTestFlags::EditorContext | EAutomationTestFlags::EngineFilter)
+bool FZLSocialSandboxNpcDecisionActionTest::RunTest(const FString&)
+{
+	const FName WorldName = MakeUniqueObjectName(
+		nullptr,
+		UWorld::StaticClass(),
+		NAME_None,
+		EUniqueObjectNameOptions::GloballyUnique);
+	FWorldContext& WorldContext = GEngine->CreateNewWorldContext(EWorldType::Game);
+	UWorld* World = UWorld::CreateWorld(EWorldType::Game, false, WorldName, GetTransientPackage());
+	if (!TestNotNull(TEXT("A transient world is available"), World))
+	{
+		return false;
+	}
+	World->AddToRoot();
+	WorldContext.SetCurrentWorld(World);
+	World->InitializeActorsForPlay(FURL());
+
+	AZLSocialSandboxNpc* Npc = World->SpawnActor<AZLSocialSandboxNpc>(FVector::ZeroVector, FRotator::ZeroRotator);
+	AStaticMeshActor* Target = World->SpawnActor<AStaticMeshActor>(FVector(300.0f, 0.0f, 0.0f), FRotator::ZeroRotator);
+	TestNotNull(TEXT("Decision NPC spawns"), Npc);
+	TestNotNull(TEXT("Decision target spawns"), Target);
+	if (Npc != nullptr && Target != nullptr)
+	{
+		Npc->InitializeSandboxNpc(TEXT("npc_guard"), FText::FromString(TEXT("Guard")), FTransform::Identity);
+		Npc->SetActorEnableCollision(false);
+		const int64 InitialVersion = Npc->GetStateVersion();
+		TestFalse(TEXT("Face handler rejects a zero direction"), Npc->StartDecisionAction(EZLSocialActionType::Face, Npc, TFunction<void()>()));
+		TestEqual(TEXT("Rejected Face has no authority state side effect"), Npc->GetStateVersion(), InitialVersion);
+		int32 CompletionCount = 0;
+		TestTrue(TEXT("Face handler accepts a valid target"), Npc->StartDecisionAction(EZLSocialActionType::Face, Target, [&CompletionCount]() { ++CompletionCount; }));
+		TestTrue(TEXT("Face handler changes the NPC transform"), Npc->GetActorForwardVector().X > 0.99f);
+		TestEqual(TEXT("Immediate Face completes exactly once"), CompletionCount, 1);
+		TestTrue(TEXT("Accepted action advances authority version"), Npc->GetStateVersion() > InitialVersion);
+
+		const FVector BeforeMove = Npc->GetActorLocation();
+		TestTrue(TEXT("MoveAway handler starts"), Npc->StartDecisionAction(EZLSocialActionType::MoveAway, Target, [&CompletionCount]() { ++CompletionCount; }));
+		Npc->AdvanceDecisionAction(1.0f);
+		TestTrue(TEXT("MoveAway produces a real world transform change"), Npc->GetActorLocation().X < BeforeMove.X);
+		Npc->StopDecisionAction();
+		TestFalse(TEXT("Stop leaves no active NPC Decision action"), Npc->IsDecisionActionActive());
+	}
+	GEngine->ShutdownWorldNetDriver(World);
+	World->DestroyWorld(true);
+	World->SetPhysicsScene(nullptr);
+	GEngine->DestroyWorldContext(World);
+	World->RemoveFromRoot();
 	return true;
 }
 

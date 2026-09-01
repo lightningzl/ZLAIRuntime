@@ -11,7 +11,8 @@ enum class EZLServiceErrorCategory : uint8
 	Network,
 	Timeout,
 	Http,
-	Parse
+	Parse,
+	Stale
 };
 
 USTRUCT(BlueprintType)
@@ -132,6 +133,126 @@ struct ZLAIRUNTIME_API FZLDialogueResponse
 };
 
 USTRUCT(BlueprintType)
+struct ZLAIRUNTIME_API FZLDecisionTrigger
+{
+	GENERATED_BODY()
+
+	UPROPERTY(BlueprintReadWrite, Category = "ZL|AI|Decision") FString EventId;
+	UPROPERTY(BlueprintReadWrite, Category = "ZL|AI|Decision") FString Kind;
+	UPROPERTY(BlueprintReadWrite, Category = "ZL|AI|Decision") FString SourceId;
+	UPROPERTY(BlueprintReadWrite, Category = "ZL|AI|Decision") FString TargetId;
+	UPROPERTY(BlueprintReadWrite, Category = "ZL|AI|Decision") TArray<FString> Channels;
+	UPROPERTY(BlueprintReadWrite, Category = "ZL|AI|Decision") FString Content;
+	UPROPERTY(BlueprintReadWrite, Category = "ZL|AI|Decision") FString Summary;
+	UPROPERTY(BlueprintReadWrite, Category = "ZL|AI|Decision") int64 OccurredAtMs = 0;
+};
+
+USTRUCT(BlueprintType)
+struct ZLAIRUNTIME_API FZLDecisionRelationship
+{
+	GENERATED_BODY()
+
+	UPROPERTY(BlueprintReadWrite, Category = "ZL|AI|Decision") float Trust = 0.0f;
+	UPROPERTY(BlueprintReadWrite, Category = "ZL|AI|Decision") float Affinity = 0.0f;
+	UPROPERTY(BlueprintReadWrite, Category = "ZL|AI|Decision") float Fear = 0.0f;
+	UPROPERTY(BlueprintReadWrite, Category = "ZL|AI|Decision") float Familiarity = 0.0f;
+};
+
+USTRUCT(BlueprintType)
+struct ZLAIRUNTIME_API FZLDecisionInstantState
+{
+	GENERATED_BODY()
+
+	UPROPERTY(BlueprintReadWrite, Category = "ZL|AI|Decision") float Fear = 0.0f;
+	UPROPERTY(BlueprintReadWrite, Category = "ZL|AI|Decision") float Anger = 0.0f;
+	UPROPERTY(BlueprintReadWrite, Category = "ZL|AI|Decision") float Curiosity = 0.0f;
+	UPROPERTY(BlueprintReadWrite, Category = "ZL|AI|Decision") float Alert = 0.0f;
+};
+
+USTRUCT(BlueprintType)
+struct ZLAIRUNTIME_API FZLDecisionHistoryItem
+{
+	GENERATED_BODY()
+
+	UPROPERTY(BlueprintReadWrite, Category = "ZL|AI|Decision") FString Kind;
+	UPROPERTY(BlueprintReadWrite, Category = "ZL|AI|Decision") FString SourceId;
+	UPROPERTY(BlueprintReadWrite, Category = "ZL|AI|Decision") FString TargetId;
+	UPROPERTY(BlueprintReadWrite, Category = "ZL|AI|Decision") FString Summary;
+	UPROPERTY(BlueprintReadWrite, Category = "ZL|AI|Decision") int64 OccurredAtMs = 0;
+};
+
+USTRUCT(BlueprintType)
+struct ZLAIRUNTIME_API FZLDecisionContext
+{
+	GENERATED_BODY()
+
+	UPROPERTY(BlueprintReadWrite, Category = "ZL|AI|Decision") FZLDialogueNpcContext Npc;
+	UPROPERTY(BlueprintReadWrite, Category = "ZL|AI|Decision") FZLDecisionRelationship Relationship;
+	UPROPERTY(BlueprintReadWrite, Category = "ZL|AI|Decision") FZLDecisionInstantState InstantState;
+	UPROPERTY(BlueprintReadWrite, Category = "ZL|AI|Decision") TArray<FZLDecisionHistoryItem> RecentHistory;
+};
+
+USTRUCT(BlueprintType)
+struct ZLAIRUNTIME_API FZLDecisionAllowedTool
+{
+	GENERATED_BODY()
+
+	UPROPERTY(BlueprintReadWrite, Category = "ZL|AI|Decision") FString Name;
+	UPROPERTY(BlueprintReadWrite, Category = "ZL|AI|Decision") TArray<FString> TargetIds;
+};
+
+USTRUCT(BlueprintType)
+struct ZLAIRUNTIME_API FZLDecisionRequest
+{
+	GENERATED_BODY()
+
+	UPROPERTY(BlueprintReadOnly, Category = "ZL|AI|Decision") FString RequestId;
+	UPROPERTY(BlueprintReadOnly, Category = "ZL|AI|Decision") FString NpcId;
+	UPROPERTY(BlueprintReadWrite, Category = "ZL|AI|Decision") int64 StateVersion = 0;
+	UPROPERTY(BlueprintReadWrite, Category = "ZL|AI|Decision") int32 TtlMs = 30000;
+	UPROPERTY(BlueprintReadWrite, Category = "ZL|AI|Decision") FZLDecisionTrigger Trigger;
+	UPROPERTY(BlueprintReadWrite, Category = "ZL|AI|Decision") FZLDecisionContext Context;
+	UPROPERTY(BlueprintReadWrite, Category = "ZL|AI|Decision") TArray<FZLDecisionAllowedTool> AllowedTools;
+};
+
+USTRUCT(BlueprintType)
+struct ZLAIRUNTIME_API FZLDecisionSpeech
+{
+	GENERATED_BODY()
+
+	UPROPERTY(BlueprintReadOnly, Category = "ZL|AI|Decision") FString Text;
+	UPROPERTY(BlueprintReadOnly, Category = "ZL|AI|Decision") FString Emotion;
+};
+
+USTRUCT(BlueprintType)
+struct ZLAIRUNTIME_API FZLDecisionToolCall
+{
+	GENERATED_BODY()
+
+	UPROPERTY(BlueprintReadOnly, Category = "ZL|AI|Decision") FString CallId;
+	UPROPERTY(BlueprintReadOnly, Category = "ZL|AI|Decision") FString Name;
+	UPROPERTY(BlueprintReadOnly, Category = "ZL|AI|Decision") FString TargetId;
+};
+
+USTRUCT(BlueprintType)
+struct ZLAIRUNTIME_API FZLDecisionResponse
+{
+	GENERATED_BODY()
+
+	UPROPERTY(BlueprintReadOnly, Category = "ZL|AI|Decision") FString RequestId;
+	UPROPERTY(BlueprintReadOnly, Category = "ZL|AI|Decision") FString NpcId;
+	UPROPERTY(BlueprintReadOnly, Category = "ZL|AI|Decision") int64 StateVersion = 0;
+	UPROPERTY(BlueprintReadOnly, Category = "ZL|AI|Decision") FString DecisionId;
+	UPROPERTY(BlueprintReadOnly, Category = "ZL|AI|Decision") FString Intent;
+	UPROPERTY(BlueprintReadOnly, Category = "ZL|AI|Decision") bool bHasSpeech = false;
+	UPROPERTY(BlueprintReadOnly, Category = "ZL|AI|Decision") FZLDecisionSpeech Speech;
+	UPROPERTY(BlueprintReadOnly, Category = "ZL|AI|Decision") bool bHasToolCall = false;
+	UPROPERTY(BlueprintReadOnly, Category = "ZL|AI|Decision") FZLDecisionToolCall ToolCall;
+	UPROPERTY(BlueprintReadOnly, Category = "ZL|AI|Decision") float Confidence = 0.0f;
+	UPROPERTY(BlueprintReadOnly, Category = "ZL|AI|Decision") FString Provider;
+};
+
+USTRUCT(BlueprintType)
 struct ZLAIRUNTIME_API FZLServiceError
 {
 	GENERATED_BODY()
@@ -154,3 +275,5 @@ struct ZLAIRUNTIME_API FZLServiceError
 
 DECLARE_DELEGATE_OneParam(FZLDialogueSuccessDelegate, const FZLDialogueResponse&);
 DECLARE_DELEGATE_OneParam(FZLDialogueFailureDelegate, const FZLServiceError&);
+DECLARE_DELEGATE_OneParam(FZLDecisionSuccessDelegate, const FZLDecisionResponse&);
+DECLARE_DELEGATE_OneParam(FZLDecisionFailureDelegate, const FZLServiceError&);

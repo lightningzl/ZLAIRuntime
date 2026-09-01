@@ -407,3 +407,27 @@ Milestone 7 至 10 按玩家可操作、屏幕可见的纵向切片推进：交�
 
 重要性：
 重要
+
+## 2026-08-31：使用独立 Decision 契约和 UE 最终 Tool 校验
+
+决定：
+Milestone 8 在现有 `POST /v1/dialogue` 旁新增独立 `POST /v1/decision`。请求只携带一个明确选定 NPC 的状态版本、TTL、单个个人 Trigger、人物/关系/即时状态、有界个人历史，以及 UE 本次允许建议的固定 Tool 与目标。响应返回结构化 Intent、可选 Speech、最多一个 ToolCall、Confidence 和逻辑 Provider。
+
+第一阶段 Tool 固定为 `face_target`、`move_toward`、`move_away` 和 `stop`，不允许任意参数对象、多 Tool 数组、动态函数或脚本。Python 只能提出建议；UE 收到响应后仍重新校验请求关联、状态版本、本地 TTL、注册、Capability、目标、距离、冷却、速率和幂等。Speech 可以独立于被拒绝的 Tool 显示。
+
+原因：
+- Dialogue 文本适合开放表达，但从自然语言解析 Gameplay 指令会混淆表达与权威执行，无法稳定拒绝未知或过期动作。
+- 独立端点保持现有 Dialogue/Memory 客户端兼容，也让 Decision 的个人视角、状态版本和 Tool 边界可以独立测试。
+- 固定单 Tool 建议足以完成 Milestone 8 的可见具身闭环，同时避免提前引入多步 Agent 循环和无限动作面。
+- UE 二次校验保证 Python 延迟、模型错误或世界变化不会直接修改 Gameplay 事实。
+
+取舍：
+- UE 与 Python 需要维护一套新的共享 Schema 和契约测试。
+- 单次响应只能建议一个动作，连续重新规划留到 Milestone 9。
+- `ttl_ms` 使用 UE 本地单调时间判定，服务端不能替代客户端判断过期。
+
+状态：
+已接受
+
+重要性：
+重要

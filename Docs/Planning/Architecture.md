@@ -17,8 +17,8 @@ UE5 Runtime
     - Social Sandbox Stage + Interaction Widget
     - Player/NPC Actor Adapters + Bubble/Inspector Feedback
   - ZLAIRuntime Plugin
-    - AI Service Client
-    - Protocol Types
+    - Dialogue Service Client
+    - Dialogue + Decision Protocol Types
     - ZLASocialRuntime Module
       - Social Gameplay Tags
       - Event Chain/Agent/Profile Types
@@ -42,6 +42,11 @@ Python AI Service
   - Dialogue Provider Interface
       |- Kimi Provider
       `- Stub Provider
+  - Decision Route + Service
+      `- Personal Context Builder
+      `- Decision Planner Interface
+           |- Kimi Decision Planner
+           `- Stub Decision Planner
 ```
 
 ## 模块边界
@@ -55,7 +60,7 @@ Python AI Service
 - 插件不从 Actor、World、GameState、SaveGame、账号、UI 或内容资产自动抓取上下文或 Memory 标识。
 - UE 不负责 Prompt、模型 SDK、Provider 选择、密钥、Memory 存储检索或 Python 生成编排。
 - 插件不得依赖 `ZL` 游戏模块、具体 UI 或 NPC Actor。
-- 未来 Gameplay Tool 的最终校验和执行权仍属于 UE；当前实现只消费纯文本 Dialogue 回复。
+- Decision 契约类型、请求序列化/响应解析和独立 HTTP Client 已实现；Client 校验请求/NPC/状态版本关联和本地 TTL，完成回调回到 Game Thread。Gameplay Tool Registry 与单 Guard Handler 已接入；现有 Dialogue 路径继续只消费纯文本回复。
 
 `ZLASocialRuntime` 是同一插件内与 HTTP Client 隔离的 Runtime Module：
 
@@ -87,6 +92,17 @@ Milestone 7 在同一依赖方向上增加可操作社会沙盒：
 - 专用地图 `/Game/SocialSandbox/Lvl_SocialSandbox` 使用 `AZLSocialSandboxGameMode`；`ResetSocialSandbox` 恢复确定初始状态，`RunSocialSandboxDemo` 经正常 UI/GameMode 提交路径执行一次不依赖 Python 的受控 Talk。
 - 沙盒不会向现有 Dialogue 请求注入 Observation、Relationship 或 Social Memory，不新增 HTTP、Decision Endpoint、ToolCall 或 Python 行为。
 
+Milestone 8 当前已增加协议确认后的客户端与个人上下文基础：
+
+- `ZL` 的 `FZLSocialSandboxDecisionContextBuilder` 只接受一个明确 NPC 的 Trigger Observation 和该 NPC 自己的 Observation Buffer，过滤其他 Observer，并把说话内容只放入已听见的 Speech Trigger；Action 历史只保存事实摘要。
+- Builder 显式提供人物、关系/即时状态默认快照和四个固定允许 Tool；`ZLAIRuntime` 不从 Actor、World 或其他 NPC 自动收集这些数据。
+- `UZLAIServiceSubsystem::SendDecisionRequest` 调用独立 `/v1/decision`，在成功前校验关联字段和本地 TTL；当前世界状态版本的最终比较仍由 Gameplay 层负责。
+- `ZLASocialRuntime` 的 `FZLSocialToolRegistry` 只注册 FaceTarget、MoveToward、MoveAway、Stop，按 Capability、目标、状态版本、有效期、距离、导航、可执行状态、冷却、速率和 Call ID 幂等顺序执行无副作用校验；已接受 Call ID 缓存和注册表容量均有硬上限。
+- Registry 不访问 Actor、World、HTTP 或 Provider，也不执行移动；`ZL` Gameplay Handler 必须提供当前权威快照，并且只在校验接受后改变世界。
+- `AZLSocialSandboxGameMode` 只对玩家明确指向 `npc_guard` 且 Guard 实际感知到的 Speech/已完成 Action 发起 Decision；固定最多一个请求在途，重置通过 Generation 使旧回调失效。
+- Response Speech 先作为独立合法表达保存；可选 Tool 使用响应状态版本和收到回复时的当前 Guard/玩家位置、目标、平面可达性、执行状态、10 秒执行窗口再次校验。接受后由 `AZLSocialSandboxNpc` 执行受碰撞约束的真实 Transform 变化并产生 Started/Completed Action Observation；拒绝只更新公开 Reason Code。
+- Guard Authority State Version 在重置、动作开始/停止/完成时推进。服务离线、超时、解析或 Provider 失败统一进入不执行 Tool 的可见本地降级；Inspector 只显示有界关联元数据、Provider、公开 Intent、Tool/结果和耗时，不显示 Prompt、输入全文、凭据或原始 Provider 异常。
+
 ### Python AI Service
 
 Python Service 负责 AI 推理编排，不直接访问或修改 UE 世界。
@@ -99,6 +115,8 @@ Python Service 负责 AI 推理编排，不直接访问或修改 UE 世界。
 - Provider 接口隔离供应商 SDK 与上游数据格式。
 - Provider 实现负责把内部生成上下文映射为供应商请求，并完成供应商异常分类。
 - Service 不负责动画、移动、任务、战斗等 Gameplay 行为。
+- 独立 `/v1/decision` Route 将个人 Decision 请求交给 Decision Service；Service 完成业务边界和允许 Tool/目标复核，个人 Context Builder 只组装供应商无关 JSON，Stub/Kimi Planner 只返回结构化建议。
+- Decision Planner 不读取 UE World、不访问 Dialogue Memory、不执行 Tool，也不把建议描述为已经执行；非法 JSON、空结果、未知 Tool 或目标映射为脱敏 `planner_invalid_response`。
 - Memory Service 只持久化显式启用范围中的已完成对话轮次；Route、Context Builder 和 Provider 不直接访问数据库。
 - Service、Memory Service、Context Builder 和 Provider 都不读取 UE 世界。
 

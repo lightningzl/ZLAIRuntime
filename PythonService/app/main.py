@@ -10,6 +10,7 @@ from fastapi.exceptions import RequestValidationError
 from fastapi.responses import JSONResponse
 
 from app.api.dialogue import router as dialogue_router
+from app.api.decision import router as decision_router
 from app.core.settings import Settings
 from app.memory.base import DialogueMemoryRepository, MemoryRepositoryError
 from app.memory.sqlite_repository import SQLiteDialogueMemoryRepository
@@ -22,8 +23,12 @@ from app.providers.errors import (
     ProviderUnavailableError,
 )
 from app.providers.factory import create_dialogue_provider
+from app.planners.base import DecisionPlanner, DecisionPlannerInvalidResponse
+from app.planners.factory import create_decision_planner
+from app.planners.stub_planner import StubDecisionPlanner
 from app.schemas.dialogue import ErrorDetail, ErrorResponse
 from app.services.dialogue_service import DialogueService, InvalidDialogueRequest
+from app.services.decision_service import DecisionService, InvalidDecisionRequest
 from app.services.memory_service import DialogueMemoryService, MemoryService
 
 
@@ -61,6 +66,39 @@ async def _handle_invalid_request(
         request_id=exception.request_id,
         code="invalid_request",
         message=exception.message,
+    )
+
+
+async def _handle_invalid_decision_request(
+    _request: Request,
+    exception: InvalidDecisionRequest,
+) -> JSONResponse:
+    return _error_response(
+        status_code=400,
+        request_id=exception.request_id,
+        code="invalid_request",
+        message=exception.message,
+    )
+
+
+async def _handle_invalid_planner_response(
+    request: Request,
+    exception: DecisionPlannerInvalidResponse,
+) -> JSONResponse:
+    request_id = getattr(request.state, "request_id", "")
+    LOGGER.warning(
+        "Decision Planner rejected request_id=%s npc_id=%s provider=%s "
+        "state_version=%s category=planner_invalid_response http_status=502",
+        request_id,
+        getattr(request.state, "npc_id", ""),
+        exception.provider,
+        getattr(request.state, "state_version", ""),
+    )
+    return _error_response(
+        status_code=502,
+        request_id=request_id,
+        code="planner_invalid_response",
+        message="decision planner returned an invalid response",
     )
 
 
@@ -161,6 +199,7 @@ def create_app(
     *,
     settings: Settings | None = None,
     provider: DialogueProvider | None = None,
+    decision_planner: DecisionPlanner | None = None,
     memory_service: MemoryService | None = None,
     memory_repository: DialogueMemoryRepository | None = None,
 ) -> FastAPI:
@@ -171,10 +210,18 @@ def create_app(
     @asynccontextmanager
     async def lifespan(application: FastAPI) -> AsyncIterator[None]:
         selected_provider = provider
+        selected_decision_planner = decision_planner
         selected_settings = settings
         if selected_provider is None:
             selected_settings = selected_settings or Settings.from_env()
             selected_provider = create_dialogue_provider(selected_settings)
+
+        if selected_decision_planner is None:
+            selected_decision_planner = (
+                create_decision_planner(selected_settings)
+                if selected_settings is not None
+                else StubDecisionPlanner()
+            )
 
         selected_memory_service = memory_service
         active_repository: DialogueMemoryRepository | None = None
@@ -202,6 +249,7 @@ def create_app(
             selected_provider,
             selected_memory_service,
         )
+        application.state.decision_service = DecisionService(selected_decision_planner)
         try:
             yield
         finally:
@@ -210,11 +258,20 @@ def create_app(
 
     application = FastAPI(title="ZL AI Service", version="0.2.0", lifespan=lifespan)
     application.add_exception_handler(InvalidDialogueRequest, _handle_invalid_request)
+    application.add_exception_handler(
+        InvalidDecisionRequest,
+        _handle_invalid_decision_request,
+    )
+    application.add_exception_handler(
+        DecisionPlannerInvalidResponse,
+        _handle_invalid_planner_response,
+    )
     application.add_exception_handler(RequestValidationError, _handle_validation_error)
     application.add_exception_handler(DialogueProviderError, _handle_provider_error)
     application.add_exception_handler(MemoryRepositoryError, _handle_memory_error)
     application.add_exception_handler(Exception, _handle_internal_error)
     application.include_router(dialogue_router)
+    application.include_router(decision_router)
     return application
 
 
