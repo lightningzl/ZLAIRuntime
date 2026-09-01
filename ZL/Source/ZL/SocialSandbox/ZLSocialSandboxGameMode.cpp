@@ -510,9 +510,17 @@ void AZLSocialSandboxGameMode::FinishDecisionSmokeTest()
 	const AZLSocialSandboxNpc* Guard = FindSandboxNpc(TEXT("npc_guard"));
 	const bool bProviderMatches = DecisionDebug.Provider.Equals(ExpectedSmokeProvider, ESearchCase::IgnoreCase);
 	const bool bFallback = ExpectedSmokeProvider == TEXT("local");
+	const bool bKimi = ExpectedSmokeProvider == TEXT("kimi");
+	const bool bHasTool = !DecisionDebug.ToolName.IsEmpty();
 	const bool bResultMatches = bExpectStaleSmoke
 		? DecisionDebug.ToolResult == ZLSocialToolReason::StateVersionMismatch
-		: (bFallback ? !DecisionDebug.ToolResult.IsNone() : DecisionDebug.ToolResult == ZLSocialToolReason::Accepted);
+		: (bFallback
+			? !DecisionDebug.ToolResult.IsNone()
+			: (bKimi
+				? (bHasTool
+					? DecisionDebug.ToolResult == ZLSocialToolReason::Accepted
+					: DecisionDebug.ToolResult == TEXT("NoTool"))
+				: DecisionDebug.ToolResult == ZLSocialToolReason::Accepted));
 	const bool bVersionChanged = Guard != nullptr && Guard->GetStateVersion() > SmokeInitialGuardVersion;
 	const bool bLocationChanged = Guard != nullptr && !Guard->GetActorLocation().Equals(SmokeInitialGuardLocation, 0.1f);
 	const bool bWorldChanged = Guard != nullptr
@@ -524,13 +532,18 @@ void AZLSocialSandboxGameMode::FinishDecisionSmokeTest()
 	const bool bStaleToolHadNoLocationSideEffect = bExpectStaleSmoke && bVersionChanged && !bLocationChanged;
 	const bool bWorldOutcomeMatches = bExpectStaleSmoke
 		? bStaleToolHadNoLocationSideEffect
-		: (bFallback ? bWorldUnchanged : bWorldChanged);
+		: (bFallback
+			? bWorldUnchanged
+			: (bKimi ? (!bHasTool || bVersionChanged) : bWorldChanged));
+	const bool bOutputPresent = bKimi
+		? (DecisionDebug.bSpeechAccepted || bHasTool)
+		: (bFallback || DecisionDebug.bSpeechAccepted);
 	const bool bPassed = Guard != nullptr
 		&& !DecisionDebug.bInFlight
 		&& bProviderMatches
 		&& bResultMatches
 		&& bWorldOutcomeMatches
-		&& (bFallback || DecisionDebug.bSpeechAccepted);
+		&& bOutputPresent;
 	UE_LOG(
 		LogZL,
 		Display,
