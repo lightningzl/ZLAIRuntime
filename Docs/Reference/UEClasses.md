@@ -90,10 +90,11 @@ Runtime 固定上限为 10000 个注册 Agent、1024 个活动 Root、4096 条 P
 | `FZLSocialSandboxMotion` | 计算 Approach/MoveAway 的单步平面位移、完成边界与面向 | 导航、避障、动画或复杂路径规划 |
 | `FZLSocialSandboxDecisionContextBuilder` | 从一个选定 NPC 的稳定人物配置、已感知 Trigger 和个人 Observation 历史构造有界 Decision 请求，过滤其他 Observer | 自动读取 World、其他 NPC 知识、执行 Tool 或保存 Prompt |
 | `FZLSocialSandboxDecisionScheduler` | 合并单 Guard 的最新显著 Trigger，执行单在途、冷却和最多 3 次连续自动重规划硬上限 | Tick 逐帧请求、无限队列、HTTP、Tool 校验或 Gameplay 执行 |
+| `FZLSocialSandboxMultiNpcDecision` | 为最多 4 个注册 NPC 组合独立 Scheduler，按稳定轮转选择下一请求，并将全局在途数限制为 2 | HTTP、个人 Context 构造、Provider、Tool 执行或跨 NPC 事实共享 |
 
 专用地图为 `/Game/SocialSandbox/Lvl_SocialSandbox`，默认使用上述 GameMode、Pawn 和 PlayerController。GameMode 保持世界状态权威；Widget 只提交请求并展示结果。
 
-Guard Decision 调试快照固定只保留最新一项，包含 Trigger 原因、公开冲突等级、本地降级、Pending/合并/自动重规划状态、Request ID、请求状态版本、逻辑 Provider、公开 Intent、Speech 是否接受、Tool 名、稳定结果码和有界耗时。在途并发硬上限为 1，Pending 固定为最新 1 项，自动重规划硬上限为 3，Tool 执行窗口硬上限为 4，幂等 Call ID 历史硬上限为 128。
+每个 NPC 的 Decision 调试快照固定只保留最新一项，包含 Trigger 原因、本地降级、Pending/合并/自动重规划状态、Request ID、请求状态版本、逻辑 Provider、公开 Intent、Speech 是否接受、Tool 名、稳定结果码和有界耗时。全局在途并发硬上限为 2，每 NPC 在途和 Pending 各固定最多 1 项，自动重规划硬上限为 3；Guard 已执行 Tool 窗口硬上限为 4，幂等 Call ID 历史硬上限为 128。
 
 基础玩家 Attack 的硬上限为 220 cm 命中距离、25 点基础伤害和 1 秒冷却；NPC 生命为 100，防卫将单次伤害降至 35% 向上取整，受击无敌窗口为 0.35 秒。它们是 UE Gameplay 状态，不进入 Python Tool 或协议。
 

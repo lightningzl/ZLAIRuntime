@@ -127,6 +127,9 @@ Milestone 9 当前还增加公开冲突立场与本地安全规则：
 - `FZLSocialSandboxNpcProfile` 为每个稳定 ID 提供独立身份、人物、表达风格、目标、初始 Relationship/Instant State 和可见颜色；Rival 显式包含既有矛盾，其他 NPC 使用不同熟悉度和风险倾向。
 - `AZLSocialSandboxNpc` 持有自己的只读 Profile；Decision Context Builder 从选定 NPC Profile 构造人物、关系和状态，不再把 Guard 人物常量复用于其他 NPC。
 - Profile 只属于 UE 场景配置，不进入协议扩展、不由 Python 推导，也不授权跨 NPC 共享 Observation。
+- `FZLSocialSandboxMultiNpcDecision` 为非 Guard NPC 维护逐 NPC 单在途/最新 Pending、冷却、自动重规划上限和稳定轮转；GameMode 将它与原 Guard Scheduler 组合为全局最多 2 个请求在途。
+- 新 Speech 和已完成 Action 只在对应 NPC 实际听清或看见后进入它自己的 Scheduler；回调同时捕获 NPC、请求代次和本地发送时间，重置后的旧回调不能改变新场景。
+- Guard 与其他 NPC 的请求仍分别调用单 NPC `/v1/decision`，多 NPC 队列、并发和调试状态不会进入 Python 或协议字段。
 
 ### Python AI Service
 

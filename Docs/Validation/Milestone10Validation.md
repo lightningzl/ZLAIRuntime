@@ -17,5 +17,7 @@
 - 2026-09-01：确认固定交付 Guard、Merchant、Rival、Civilian 4 个 NPC；逐 NPC 请求和全局最多 2 个并发均位于 UE 编排边界。
 - 2026-09-01：`ZLEditor Win64 Development` 编译成功；4 NPC Profile、NPC 持有配置和个人 Context 接入通过 UHT、编译与链接。
 - 2026-09-01：NullRHI 执行 `ZL.Social.Sandbox.PersonalDecisionContext`，收集 1 项并通过；验证 Rival/Guard 人物与关系不同、Observer 隔离和协议请求仍合法。
+- 2026-09-01：`ZLEditor Win64 Development` 在多 NPC Scheduler、GameMode 分派和回调关联接入后编译成功。
+- 2026-09-01：NullRHI 执行 `ZL.Social.Sandbox.MultiNpcDecisionBounds`，收集 1 项并通过；验证 4 NPC 注册上限、逐 NPC Pending 合并、稳定轮转、全局并发 2 和 Reset 清理。
 
 后续只在实际执行验证后补充结果；未执行项目不得写为通过。
