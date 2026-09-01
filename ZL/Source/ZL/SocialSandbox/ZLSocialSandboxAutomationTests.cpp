@@ -117,6 +117,24 @@ bool FZLSocialSandboxNpcDecisionActionTest::RunTest(const FString&)
 		TestTrue(TEXT("MoveAway produces a real world transform change"), Npc->GetActorLocation().X < BeforeMove.X);
 		Npc->StopDecisionAction();
 		TestFalse(TEXT("Stop leaves no active NPC Decision action"), Npc->IsDecisionActionActive());
+
+		Npc->SetDefending(true);
+		const int64 BeforeDamageVersion = Npc->GetStateVersion();
+		FZLSocialSandboxDamageResult Damage;
+		TestTrue(TEXT("Valid damage is accepted"), Npc->ApplySandboxDamage(25.0f, 10.0, Damage));
+		TestTrue(TEXT("Defense reduces authoritative damage"), Damage.bDefended && FMath::IsNearlyEqual(Damage.AppliedDamage, 9.0f));
+		TestTrue(TEXT("Accepted damage advances authority version"), Npc->GetStateVersion() > BeforeDamageVersion);
+		const float HealthAfterDamage = Npc->GetHealth();
+		const int64 VersionAfterDamage = Npc->GetStateVersion();
+		TestFalse(TEXT("Damage invulnerability rejects a repeated hit"), Npc->ApplySandboxDamage(25.0f, 10.1, Damage));
+		TestEqual(TEXT("Rejected repeated hit preserves health"), Npc->GetHealth(), HealthAfterDamage);
+		TestEqual(TEXT("Rejected repeated hit preserves authority version"), Npc->GetStateVersion(), VersionAfterDamage);
+		Npc->SetDefending(false);
+		TestTrue(TEXT("Lethal damage is accepted after invulnerability"), Npc->ApplySandboxDamage(200.0f, 11.0, Damage));
+		TestTrue(TEXT("Lethal damage incapacitates the NPC"), Npc->IsIncapacitated() && FMath::IsNearlyZero(Npc->GetHealth()));
+		const int64 IncapacitatedVersion = Npc->GetStateVersion();
+		TestFalse(TEXT("Incapacitated NPC rejects more damage"), Npc->ApplySandboxDamage(25.0f, 12.0, Damage));
+		TestEqual(TEXT("Rejected incapacitated damage preserves version"), Npc->GetStateVersion(), IncapacitatedVersion);
 	}
 	GEngine->ShutdownWorldNetDriver(World);
 	World->DestroyWorld(true);

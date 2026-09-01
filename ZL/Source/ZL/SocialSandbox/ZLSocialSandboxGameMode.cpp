@@ -17,6 +17,7 @@
 #include "Misc/Parse.h"
 #include "SocialSandbox/ZLSocialSandboxNpc.h"
 #include "SocialSandbox/ZLSocialSandboxDecisionContext.h"
+#include "SocialSandbox/ZLSocialSandboxCombat.h"
 #include "SocialSandbox/ZLSocialSandboxPawn.h"
 #include "SocialSandbox/ZLSocialSandboxPlayerController.h"
 #include "TimerManager.h"
@@ -77,6 +78,7 @@ void AZLSocialSandboxGameMode::ResetSocialSandbox()
 	GuardPublicHistory.Reset();
 	GuardDistanceBand = INDEX_NONE;
 	LastGuardDistance = TNumericLimits<float>::Max();
+	LastPlayerAttackSeconds = -DBL_MAX;
 	GuardExecutionTimes.Reset();
 	ToolRegistry = FZLSocialToolRegistry();
 	ToolRegistry.RegisterMilestone8Defaults();
@@ -204,7 +206,7 @@ FText AZLSocialSandboxGameMode::SubmitAction(const FName TargetId, const FString
 	const FZLSocialActionParseResult Parsed = FZLSocialActionParser::Parse(Text);
 	if (!Parsed.bMatched)
 	{
-		return FText::FromString(TEXT("拒绝：仅支持 Face、Approach、MoveAway 和 Stop 的受控别名"));
+		return FText::FromString(TEXT("拒绝：仅支持 Face、Approach、MoveAway、Attack 和 Stop 的受控别名"));
 	}
 	const bool bNeedsTarget = Parsed.Action != EZLSocialActionType::Stop;
 	AZLSocialSandboxNpc* Target = TargetId.IsNone() ? nullptr : FindSandboxNpc(TargetId);
@@ -220,6 +222,41 @@ FText AZLSocialSandboxGameMode::SubmitAction(const FName TargetId, const FString
 	if (Target != nullptr && FVector::Dist2D(Player->GetActorLocation(), Target->GetActorLocation()) > 3000.0f)
 	{
 		return FText::FromString(TEXT("拒绝：目标超出行为执行范围"));
+	}
+	if (Parsed.Action == EZLSocialActionType::Attack)
+	{
+		const float AttackDistance = FVector::Dist2D(Player->GetActorLocation(), Target->GetActorLocation());
+		const double NowSeconds = GetWorld()->GetTimeSeconds();
+		FZLSocialSandboxAttackValidationContext AttackContext;
+		AttackContext.Distance = AttackDistance;
+		AttackContext.NowSeconds = NowSeconds;
+		AttackContext.LastAttackSeconds = LastPlayerAttackSeconds;
+		AttackContext.bTargetValid = IsValid(Target);
+		AttackContext.bPlayerExecutable = !Player->IsScriptedActionActive();
+		AttackContext.bTargetIncapacitated = Target->IsIncapacitated();
+		const FZLSocialSandboxAttackValidationResult Validation = FZLSocialSandboxCombat::ValidatePlayerAttack(AttackContext);
+		if (!Validation.bAccepted)
+		{
+			return FText::FromString(FString::Printf(TEXT("拒绝：%s"), *Validation.ReasonCode.ToString()));
+		}
+		FZLSocialSandboxDamageResult DamageResult;
+		if (!Target->ApplySandboxDamage(FZLSocialSandboxCombat::AttackDamage, NowSeconds, DamageResult))
+		{
+			Target->ShowDamageResult(DamageResult);
+			return FText::FromString(FString::Printf(TEXT("拒绝：%s"), *DamageResult.ReasonCode.ToString()));
+		}
+		LastPlayerAttackSeconds = NowSeconds;
+		FVector Direction = Target->GetActorLocation() - Player->GetActorLocation();
+		Direction.Z = 0.0f;
+		if (!Direction.IsNearlyZero())
+		{
+			Player->SetActorRotation(Direction.Rotation());
+			if (Player->GetController() != nullptr) { Player->GetController()->SetControlRotation(Direction.Rotation()); }
+		}
+		DispatchActionObservation(EZLSocialActionType::Attack, EZLSocialActionPhase::Started, TargetId);
+		DispatchActionObservation(EZLSocialActionType::Attack, EZLSocialActionPhase::Completed, TargetId);
+		Target->ShowDamageResult(DamageResult);
+		return FText::GetEmpty();
 	}
 
 	if (Parsed.Action == EZLSocialActionType::Face)
@@ -300,8 +337,10 @@ void AZLSocialSandboxGameMode::DispatchActionObservation(const EZLSocialActionTy
 				Npc,
 				Observation,
 				FString(),
-				EZLSocialSandboxDecisionTriggerReason::PlayerAction,
-				true);
+				Action == EZLSocialActionType::Attack
+					? EZLSocialSandboxDecisionTriggerReason::Hit
+					: EZLSocialSandboxDecisionTriggerReason::PlayerAction,
+				Action != EZLSocialActionType::Attack);
 		}
 	}
 	const AZLSocialSandboxNpc* Target = TargetId.IsNone() ? nullptr : FindSandboxNpc(TargetId);
@@ -677,6 +716,7 @@ void AZLSocialSandboxGameMode::RecordGuardActionFact(
 	case EZLSocialActionType::Face: ActionText = TEXT("Face"); break;
 	case EZLSocialActionType::Approach: ActionText = TEXT("Approach"); break;
 	case EZLSocialActionType::MoveAway: ActionText = TEXT("MoveAway"); break;
+	case EZLSocialActionType::Attack: ActionText = TEXT("Attack"); break;
 	default: break;
 	}
 	FZLSocialSandboxPublicHistoryFact Fact;
@@ -836,14 +876,18 @@ FText AZLSocialSandboxGameMode::BuildInspectorText(const FName NpcId) const
 	const FString Source = Observation->Source == EZLSocialObservationSource::Speech ? TEXT("Speech") : TEXT("Action");
 	auto ActionText = [](const EZLSocialActionType Value)
 	{
-		switch (Value) { case EZLSocialActionType::Face: return TEXT("Face"); case EZLSocialActionType::Approach: return TEXT("Approach"); case EZLSocialActionType::MoveAway: return TEXT("MoveAway"); default: return TEXT("Stop"); }
+		switch (Value) { case EZLSocialActionType::Face: return TEXT("Face"); case EZLSocialActionType::Approach: return TEXT("Approach"); case EZLSocialActionType::MoveAway: return TEXT("MoveAway"); case EZLSocialActionType::Attack: return TEXT("Attack"); default: return TEXT("Stop"); }
 	};
 	const FString SourceDetails = Observation->Source == EZLSocialObservationSource::Speech
 		? FString::Printf(TEXT("SpeechMode: %s · ExplicitTarget: %s\nTargetJudgment: %s · AuditoryFilter: %s"), SpeechModeText(Observation->SpeechMode), Observation->ExplicitTargetId.IsNone() ? TEXT("None") : *Observation->ExplicitTargetId.ToString(), TargetText(Observation->TargetJudgment), FilterText(Observation->AuditoryFilter))
 		: FString::Printf(TEXT("Action: %s · Phase: %s · Target: %s\nTargetJudgment: %s · InputTextAvailable: No"), ActionText(Observation->Action), Observation->ActionPhase == EZLSocialActionPhase::Started ? TEXT("Started") : TEXT("Completed"), Observation->ExplicitTargetId.IsNone() ? TEXT("None") : *Observation->ExplicitTargetId.ToString(), TargetText(Observation->TargetJudgment));
 	const FString DecisionLine = NpcId == TEXT("npc_guard")
 		? FString::Printf(
-			TEXT("\nDecision: %s · Pending: %s · Trigger: %s\nRequest: %s · State: %lld · Coalesced: %d · Auto: %d\nProvider: %s · Intent: %s · Speech: %s\nTool: %s · Result: %s · Latency: %d ms"),
+			TEXT("\nConflict: HP %.0f/%.0f · Defending: %s · Incapacitated: %s\nDecision: %s · Pending: %s · Trigger: %s\nRequest: %s · State: %lld · Coalesced: %d · Auto: %d\nProvider: %s · Intent: %s · Speech: %s\nTool: %s · Result: %s · Latency: %d ms"),
+			Npc->GetHealth(),
+			Npc->GetMaxHealth(),
+			Npc->IsDefending() ? TEXT("Yes") : TEXT("No"),
+			Npc->IsIncapacitated() ? TEXT("Yes") : TEXT("No"),
 			DecisionDebug.bInFlight ? TEXT("InFlight") : TEXT("Idle"),
 			DecisionDebug.bPending ? TEXT("Yes") : TEXT("No"),
 			DecisionDebug.TriggerReason.IsNone() ? TEXT("None") : *DecisionDebug.TriggerReason.ToString(),

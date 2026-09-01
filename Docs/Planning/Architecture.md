@@ -110,6 +110,13 @@ Milestone 9 当前已增加连续判断基础：
 - Observation 现在保留已感知来源稳定 ID。Decision Context 将该 NPC 的已感知历史与 Guard 已公开 Speech/真实 Action Result 合并、按时间排序并裁剪为协议允许的最近 8 条；未执行建议和隐藏推理不进入历史。
 - 显著玩家动作或距离变化推进 Guard Authority State Version；旧响应继续沿 Milestone 8 的 Speech/Tool 独立语义处理，过期 Tool 不执行，最新待处理事实在请求完成和冷却后重新判断。
 
+Milestone 9 当前已增加最小冲突 Gameplay 基础：
+
+- `ZLASocialRuntime` 的受控玩家行为解析增加 Attack 别名；该 Action 只代表 UE 已接受的玩家行为，不是 Decision Tool，也不能由 Python 建议或执行。
+- `ZL` 的纯数据攻击校验先检查目标、玩家可执行状态、目标失能、220 cm 距离与 1 秒冷却。只有通过校验后，GameMode 才产生 Attack Observation 并调用 NPC 权威伤害入口。
+- `AZLSocialSandboxNpc` 保存有界生命、防卫、0.35 秒受击无敌窗口与失能状态；命中、减伤、状态版本、停止当前动作和生命显示均在 UE 内完成。拒绝攻击和拒绝伤害不改变生命或状态版本。
+- 攻击、受击和失能通过动作气泡、命中气泡、名称生命标识和 Inspector 显化；后续工作包才决定冲突等级、自动防卫/后退/求助和升级—缓和策略。
+
 ### Python AI Service
 
 Python Service 负责 AI 推理编排，不直接访问或修改 UE 世界。

@@ -9,8 +9,8 @@
 | 最后更新 | 2026-09-01 |
 | 当前里程碑 | Milestone 9：连续互动、冲突升级与缓和 |
 | 里程碑状态 | `进行中` |
-| 当前活动任务 | `M9-T03` 玩家基础攻击与权威冲突状态 |
-| 下一候选任务 | `M9-T05` Python 连续 Planner 行为 |
+| 当前活动任务 | `M9-T05` Python 连续 Planner 行为 |
+| 下一候选任务 | `M9-T04` 升级、缓和与本地安全行为 |
 | 已知阻塞 | 无 |
 | 最近验收 | Milestone 8：10/10 项已验证 |
 
@@ -23,7 +23,8 @@
 - Milestone 7 已交付专用可操作平面场景、文本说话/行为 UI、Speech/Action 分离事件、定向视觉、分级听觉、逐 NPC Observation、受控玩家行为、气泡和开发视图。
 - Milestone 8 已交付 UE `/v1/decision` 异步 Client、个人上下文、单 Guard Decision、四个固定 Tool 的 Registry/Handler、真实移动、过期拒绝和可见本地降级。
 - 当前单 Guard Decision 已支持新 Speech、玩家已完成 Action、距离跨阈值和计划完成触发；调度固定一个在途、一个最新 Pending、0.75 秒冷却和最多 3 次连续自动重规划，并将 Guard 自己的公开 Speech/真实 Action Result 合并进有界个人历史。
-- 尚未实现基础攻击、生命、受击、防卫、失能或冲突缓和状态。
+- 当前已实现玩家 Attack 白名单、目标/距离/冷却校验、Guard 生命、受击无敌、防卫减伤、失能、状态版本推进和可见生命/受击反馈；这些即时结果由 UE 权威处理并反馈为个人 Action Observation。
+- 尚未实现冲突等级、规则安全应对、升级—缓和策略与 Planner 的连续行为。
 - 最终 Milestone 8 证据：Python 194/194、UE Social 24/24、UE AI Runtime 13/13、ZLEditor Win64 Development 编译均通过；Stub、状态失效、服务离线和真实 Kimi 默认地图纵向链路通过。
 
 ## 当前执行边界

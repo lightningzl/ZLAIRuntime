@@ -9,6 +9,7 @@ namespace
 		case EZLSocialActionType::Face: return TEXT("Face");
 		case EZLSocialActionType::Approach: return TEXT("Approach");
 		case EZLSocialActionType::MoveAway: return TEXT("MoveAway");
+		case EZLSocialActionType::Attack: return TEXT("Attack");
 		default: return TEXT("Stop");
 		}
 	}
