@@ -46,6 +46,9 @@ public:
 	UFUNCTION(Exec)
 	void RunSocialSandboxDemo();
 
+	UFUNCTION(Exec)
+	void RunMultiNpcSandboxDemo();
+
 	const TArray<TObjectPtr<AZLSocialSandboxNpc>>& GetSandboxNpcs() const { return SandboxNpcs; }
 	AZLSocialSandboxNpc* FindSandboxNpc(FName StableId) const;
 	FText SubmitSpeech(FName SpeechMode, FName TargetId, const FString& Text);
@@ -82,6 +85,7 @@ private:
 	void UpdateNpcDistanceBands();
 	void ApplyGuardConflict(AZLSocialSandboxNpc* Guard, EZLSocialSandboxConflictEvent Event, bool bLocalFallback = false);
 	void FinishDecisionSmokeTest();
+	void FinishMultiNpcSmokeTest();
 	void RefreshInspector() const;
 
 	UPROPERTY()
@@ -105,6 +109,7 @@ private:
 	int32 GuardRequestGeneration = 0;
 	FTimerHandle DemoTimer;
 	FTimerHandle DecisionSmokeTimer;
+	FTimerHandle MultiNpcSmokeTimer;
 	FTimerHandle GuardDecisionCooldownTimer;
 	FTimerHandle NpcDecisionCooldownTimer;
 	FString ExpectedSmokeProvider;

@@ -46,9 +46,15 @@ void AZLSocialSandboxGameMode::BeginPlay()
 	const bool bStubSmoke = FParse::Param(FCommandLine::Get(), TEXT("ZLSandboxDecisionSmoke"));
 	const bool bFallbackSmoke = FParse::Param(FCommandLine::Get(), TEXT("ZLSandboxDecisionFallbackSmoke"));
 	const bool bKimiSmoke = FParse::Param(FCommandLine::Get(), TEXT("ZLSandboxDecisionKimiSmoke"));
+	const bool bMultiNpcSmoke = FParse::Param(FCommandLine::Get(), TEXT("ZLSandboxMultiNpcSmoke"));
 	bExpectStaleSmoke = FParse::Param(FCommandLine::Get(), TEXT("ZLSandboxDecisionStaleSmoke"));
 	bSmokeSawAcceptedTool = false;
-	if (bStubSmoke || bFallbackSmoke || bKimiSmoke || bExpectStaleSmoke)
+	if (bMultiNpcSmoke)
+	{
+		GetWorldTimerManager().SetTimer(DemoTimer, this, &AZLSocialSandboxGameMode::RunMultiNpcSandboxDemo, 0.5f, false);
+		GetWorldTimerManager().SetTimer(MultiNpcSmokeTimer, this, &AZLSocialSandboxGameMode::FinishMultiNpcSmokeTest, 8.0f, false);
+	}
+	else if (bStubSmoke || bFallbackSmoke || bKimiSmoke || bExpectStaleSmoke)
 	{
 		ExpectedSmokeProvider = bFallbackSmoke ? TEXT("local") : (bKimiSmoke ? TEXT("kimi") : TEXT("stub"));
 		if (const AZLSocialSandboxNpc* Guard = FindSandboxNpc(TEXT("npc_guard")))
@@ -195,7 +201,9 @@ FText AZLSocialSandboxGameMode::SubmitSpeech(const FName SpeechMode, const FName
 		Observer.Forward = Npc->GetPlanarForwardVector();
 		const FZLSocialObservation Observation = Evaluator.ObserveSpeech(Event, Observer, Event.TimestampSeconds);
 		Npc->RecordObservation(Observation);
-		if (Observation.bHeardClearly)
+		if (Observation.bHeard
+			&& (Observation.bHeardClearly
+				|| Observation.TargetJudgment == EZLSocialTargetJudgment::ExplicitSelf))
 		{
 			QueueNpcDecision(
 				Npc,
@@ -357,6 +365,15 @@ void AZLSocialSandboxGameMode::DispatchActionObservation(const EZLSocialActionTy
 	const AZLSocialSandboxNpc* Target = TargetId.IsNone() ? nullptr : FindSandboxNpc(TargetId);
 	Player->ShowActionBubble(Action, Phase, Target == nullptr ? FText::GetEmpty() : Target->GetDisplayName());
 	RefreshInspector();
+}
+
+void AZLSocialSandboxGameMode::RunMultiNpcSandboxDemo()
+{
+	if (AZLSocialSandboxPlayerController* Controller = Cast<AZLSocialSandboxPlayerController>(UGameplayStatics::GetPlayerController(this, 0)))
+	{
+		Controller->SelectInspectorTarget(TEXT("npc_rival"));
+	}
+	SubmitSpeech(TEXT("Shout"), NAME_None, TEXT("Everyone, tell me where you stand."));
 }
 
 void AZLSocialSandboxGameMode::QueueNpcDecision(
@@ -1318,6 +1335,45 @@ void AZLSocialSandboxGameMode::FinishDecisionSmokeTest()
 		bLocationChanged ? TEXT("Yes") : TEXT("No"),
 		bWorldUnchanged ? TEXT("Yes") : TEXT("No"),
 		DecisionDebug.LatencyMs);
+	FPlatformMisc::RequestExitWithStatus(true, bPassed ? 0 : 1);
+}
+
+void AZLSocialSandboxGameMode::FinishMultiNpcSmokeTest()
+{
+	const FName NpcIds[] = {TEXT("npc_guard"), TEXT("npc_merchant"), TEXT("npc_rival"), TEXT("npc_civilian")};
+	int32 ValidNpcCount = 0;
+	int32 StubSpeechCount = 0;
+	for (const FName NpcId : NpcIds)
+	{
+		if (FindSandboxNpc(NpcId) != nullptr)
+		{
+			++ValidNpcCount;
+		}
+		const FZLSocialSandboxDecisionDebug* Debug = NpcId == TEXT("npc_guard")
+			? &DecisionDebug
+			: NpcDecisionDebug.Find(NpcId);
+		if (Debug != nullptr
+			&& Debug->Provider.Equals(TEXT("stub"), ESearchCase::IgnoreCase)
+			&& Debug->bSpeechAccepted)
+		{
+			++StubSpeechCount;
+		}
+	}
+	const bool bBounded = MultiNpcDecision.GetInFlightCount()
+		+ (GuardDecisionScheduler.IsInFlight() ? 1 : 0)
+		<= FZLSocialSandboxMultiNpcDecision::MaxInFlight;
+	const bool bPassed = ValidNpcCount == UE_ARRAY_COUNT(NpcIds)
+		&& StubSpeechCount == UE_ARRAY_COUNT(NpcIds)
+		&& bBounded;
+	UE_LOG(
+		LogZL,
+		Display,
+		TEXT("ZL_SANDBOX_MULTI_SMOKE result=%s npc_count=%d stub_speech=%d in_flight=%d bounded=%s"),
+		bPassed ? TEXT("Success") : TEXT("Fail"),
+		ValidNpcCount,
+		StubSpeechCount,
+		MultiNpcDecision.GetInFlightCount() + (GuardDecisionScheduler.IsInFlight() ? 1 : 0),
+		bBounded ? TEXT("Yes") : TEXT("No"));
 	FPlatformMisc::RequestExitWithStatus(true, bPassed ? 0 : 1);
 }
 

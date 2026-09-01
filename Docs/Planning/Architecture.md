@@ -136,6 +136,7 @@ Milestone 9 当前还增加公开冲突立场与本地安全规则：
 - 非 Guard NPC 现在复用同一 `FZLSocialToolRegistry` 硬校验和各自的执行速率窗口；合法 Face/MoveToward/MoveAway/Stop 只改变响应关联 NPC，开始/完成结果写入其个人公开历史并由其他 NPC 重新感知。
 - GameMode 为每个非 Guard NPC 独立跟踪 250/800 cm 距离带；只有跨带且该 NPC 实际看见玩家移动时才推进状态版本并重新判断，不在 Tick 中逐帧请求。
 - 个人 Inspector 对任意 NPC 显示最近感知、生命、防卫/失能、冲突等级、调度、Provider、Intent、Tool 结果和延迟；没有该 NPC Decision 时继续标明规则占位来源。
+- `-ZLSandboxMultiNpcSmoke` 在默认地图经无目标 Shout 和正常感知/调度入口验证 4 个 Stub Speech 与全局并发上限；既有离线烟测继续验证明确目标即使只满足 Direct 听见也能进入有界本地降级。
 
 ### Python AI Service
 
