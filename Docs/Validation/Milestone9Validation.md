@@ -6,7 +6,7 @@
 
 ## 当前状态
 
-- 验证状态：`尚未开始`
+- 验证状态：`进行中`
 - 验收进度：0/10
 - 当前范围整理不包含代码验证；实现与验证结果将在对应工作包完成后追加。
 
@@ -27,4 +27,14 @@
 
 ## 验证记录
 
-尚无已执行验证。
+### `M9-T02` 连续 Decision 调度与个人历史
+
+| 验证项 | 实际结果 |
+| --- | --- |
+| UE Target 编译 | `ZLEditor Win64 Development` 编译成功；新增调度器、Observation 来源、Context 合并与 GameMode 接入均通过编译链接 |
+| 社会沙盒自动化 | NullRHI 执行 `ZL.Social.Sandbox`，收集 6 项并全部 `Success`，退出码 0 |
+| 连续调度边界 | `ContinuousDecisionScheduler` 覆盖单在途、最新 Pending 合并、冷却、3 次自动重规划硬上限和外部输入预算重置 |
+| 个人上下文 | `PersonalDecisionContext` 覆盖玩家 Observation 来源、Guard 已公开 Speech 来源、其他 Observer 过滤和协议校验 |
+| 既有沙盒回归 | Stage、Motion、Per-NPC Observation 和 NPC Decision Action 同批通过 |
+
+本工作包尚未完成 `M9-A02`、`M9-A06`、`M9-A07` 的最终场景验收；以上结果作为对应实现基础证据，最终状态在集成验证后更新。

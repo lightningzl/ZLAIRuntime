@@ -65,6 +65,7 @@ bool FZLSocialSandboxPerNpcSliceTest::RunTest(const FString&)
 	BehindBuffer.Add(Evaluator.ObserveSpeech(Speech, Behind, 1.1));
 	DistantBuffer.Add(Evaluator.ObserveSpeech(Speech, Distant, 1.1));
 	TestTrue(TEXT("Front NPC sees and hears"), FrontBuffer.Latest()->bSaw && FrontBuffer.Latest()->bHeard);
+	TestEqual(TEXT("Observation preserves the perceived source"), FrontBuffer.Latest()->SourceId, FName(TEXT("player")));
 	TestTrue(TEXT("Behind NPC hears without seeing"), !BehindBuffer.Latest()->bSaw && BehindBuffer.Latest()->bHeard);
 	TestTrue(TEXT("Distant NPC neither sees nor hears"), !DistantBuffer.Latest()->bSaw && !DistantBuffer.Latest()->bHeard);
 	TestEqual(TEXT("Each NPC stores only its own observation"), BehindBuffer.Latest()->ObserverId, FName(TEXT("npc_behind")));

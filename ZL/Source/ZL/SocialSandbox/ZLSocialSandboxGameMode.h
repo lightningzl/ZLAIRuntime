@@ -5,6 +5,8 @@
 #include "ZLAIServiceTypes.h"
 #include "ZLSocialObservation.h"
 #include "ZLSocialToolRegistry.h"
+#include "SocialSandbox/ZLSocialSandboxDecisionContext.h"
+#include "SocialSandbox/ZLSocialSandboxDecisionScheduler.h"
 #include "ZLSocialSandboxGameMode.generated.h"
 
 class AZLSocialSandboxNpc;
@@ -20,6 +22,10 @@ struct FZLSocialSandboxDecisionDebug
 	int32 LatencyMs = 0;
 	bool bSpeechAccepted = false;
 	bool bInFlight = false;
+	bool bPending = false;
+	FName TriggerReason;
+	int32 CoalescedTriggers = 0;
+	int32 AutomaticReplans = 0;
 };
 
 UCLASS()
@@ -46,16 +52,23 @@ public:
 
 protected:
 	virtual void BeginPlay() override;
+	virtual void Tick(float DeltaSeconds) override;
 
 private:
 	void SpawnEnvironment();
 	void SpawnNpc(FName StableId, const TCHAR* DisplayName, const FVector& Location, const FRotator& Rotation);
 	void DispatchActionObservation(EZLSocialActionType Action, EZLSocialActionPhase Phase, FName TargetId);
-	void DispatchNpcActionObservation(AZLSocialSandboxNpc* Actor, EZLSocialActionType Action, EZLSocialActionPhase Phase, FName TargetId);
-	void RequestGuardDecision(AZLSocialSandboxNpc* Guard, const FZLSocialObservation& Trigger, const FString& SpeechContent);
+	FZLSocialObservation DispatchNpcActionObservation(AZLSocialSandboxNpc* Actor, EZLSocialActionType Action, EZLSocialActionPhase Phase, FName TargetId);
+	void QueueGuardDecision(AZLSocialSandboxNpc* Guard, const FZLSocialObservation& Trigger, const FString& SpeechContent, EZLSocialSandboxDecisionTriggerReason Reason, bool bAdvanceStateVersion = false);
+	void TryDispatchGuardDecision();
+	void SchedulePendingGuardDecision(double DelaySeconds);
+	void RequestGuardDecision(AZLSocialSandboxNpc* Guard, const FZLSocialObservation& Trigger, const FString& SpeechContent, EZLSocialSandboxDecisionTriggerReason Reason);
 	void HandleGuardDecision(AZLSocialSandboxNpc* Guard, const FZLDecisionResponse& Response, double SentAtSeconds);
 	void HandleGuardDecisionFailure(AZLSocialSandboxNpc* Guard, const FZLServiceError& Error, double SentAtSeconds);
 	void ExecuteGuardTool(AZLSocialSandboxNpc* Guard, const FZLDecisionResponse& Response);
+	void RecordGuardSpeechFact(const FString& Text, double OccurredAtSeconds);
+	void RecordGuardActionFact(EZLSocialActionType Action, EZLSocialActionPhase Phase, double OccurredAtSeconds);
+	void UpdateGuardDistanceBand();
 	void FinishDecisionSmokeTest();
 	void RefreshInspector() const;
 
@@ -65,13 +78,18 @@ private:
 	UPROPERTY(EditDefaultsOnly, Category="Sandbox|Perception")
 	FZLSocialObservationSettings ObservationSettings;
 	FZLSocialToolRegistry ToolRegistry;
+	FZLSocialSandboxDecisionScheduler GuardDecisionScheduler;
 	FZLSocialSandboxDecisionDebug DecisionDebug;
+	TArray<FZLSocialSandboxPublicHistoryFact> GuardPublicHistory;
 	TArray<double> GuardExecutionTimes;
 	int32 GuardRequestGeneration = 0;
 	FTimerHandle DemoTimer;
 	FTimerHandle DecisionSmokeTimer;
+	FTimerHandle GuardDecisionCooldownTimer;
 	FString ExpectedSmokeProvider;
 	bool bExpectStaleSmoke = false;
 	FVector SmokeInitialGuardLocation = FVector::ZeroVector;
 	int64 SmokeInitialGuardVersion = 0;
+	int32 GuardDistanceBand = INDEX_NONE;
+	float LastGuardDistance = TNumericLimits<float>::Max();
 };

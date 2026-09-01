@@ -4,6 +4,15 @@
 #include "ZLAIServiceTypes.h"
 #include "ZLSocialObservation.h"
 
+struct FZLSocialSandboxPublicHistoryFact
+{
+	FString Kind;
+	FName SourceId;
+	FName TargetId;
+	FString Summary;
+	double OccurredAtSeconds = 0.0;
+};
+
 struct FZLSocialSandboxDecisionContextInput
 {
 	FName NpcId;
@@ -12,6 +21,7 @@ struct FZLSocialSandboxDecisionContextInput
 	FZLSocialObservation TriggerObservation;
 	FString TriggerSpeechContent;
 	TArray<FZLSocialObservation> PersonalHistory;
+	TArray<FZLSocialSandboxPublicHistoryFact> PublicHistory;
 	int64 StateVersion = 0;
 };
 
