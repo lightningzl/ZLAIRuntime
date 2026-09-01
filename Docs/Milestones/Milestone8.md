@@ -11,13 +11,15 @@
 
 历史里程碑：
 
-- [Milestone 1：UE 到 Python Service 最小闭环](../Milestones/Milestone1.md)
-- [Milestone 2：真实 LLM 自由对话](../Milestones/Milestone2.md)
-- [Milestone 3：NPC 上下文与人格](../Milestones/Milestone3.md)
-- [Milestone 4：持久化对话 Memory](../Milestones/Milestone4.md)
-- [Milestone 5：确定性社会模拟基础](../Milestones/Milestone5.md)
-- [Milestone 6：关系、长期记忆与重要 NPC](../Milestones/Milestone6.md)
-- [Milestone 7：可操作交互舞台与定向感知](../Milestones/Milestone7.md)
+- [Milestone 1：UE 到 Python Service 最小闭环](./Milestone1.md)
+- [Milestone 2：真实 LLM 自由对话](./Milestone2.md)
+- [Milestone 3：NPC 上下文与人格](./Milestone3.md)
+- [Milestone 4：持久化对话 Memory](./Milestone4.md)
+- [Milestone 5：确定性社会模拟基础](./Milestone5.md)
+- [Milestone 6：关系、长期记忆与重要 NPC](./Milestone6.md)
+- [Milestone 7：可操作交互舞台与定向感知](./Milestone7.md)
+
+本文档是 Milestone 8 完成时的范围定稿，只用于历史追溯，不定义当前允许实施的范围。
 
 长期路线见 [SocialSimulationPlan.md](../Planning/SocialSimulationPlan.md)，目标系统设计见 [SocialSimulationDesign.md](../Planning/SocialSimulationDesign.md)，当前已实现边界见 [Architecture.md](../Planning/Architecture.md)。
 
@@ -138,7 +140,7 @@
 
 ## 完成定义
 
-1. [TaskBoard.md](./TaskBoard.md) 中 Milestone 8 工作包全部完成。
+1. [TaskBoard.md](../Current/TaskBoard.md) 中 Milestone 8 工作包全部完成。
 2. `M8-A01` 至 `M8-A10` 均有可复查验证证据。
 3. Stub 与真实模型都完成一次“个人视角输入 -> 结构化 Decision -> UE 校验 -> 气泡与真实动作”的可操作闭环。
 4. 非法或过期动作零 Gameplay 副作用且拒绝原因可见；Python 不可用时场景保持可操作。
