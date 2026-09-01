@@ -11,6 +11,17 @@ class UStaticMeshComponent;
 class UTextRenderComponent;
 class UWidgetComponent;
 
+struct FZLSocialSandboxDamageResult
+{
+	FName ReasonCode;
+	float HealthBefore = 0.0f;
+	float HealthAfter = 0.0f;
+	float AppliedDamage = 0.0f;
+	bool bAccepted = false;
+	bool bDefended = false;
+	bool bIncapacitated = false;
+};
+
 UCLASS()
 class ZL_API AZLSocialSandboxNpc final : public AActor
 {
@@ -32,6 +43,12 @@ public:
 	int64 GetStateVersion() const { return StateVersion; }
 	void AdvanceAuthorityStateVersion() { ++StateVersion; }
 	bool IsDecisionActionActive() const { return bDecisionActionActive; }
+	float GetHealth() const { return Health; }
+	float GetMaxHealth() const { return MaxHealth; }
+	bool IsDefending() const { return bDefending; }
+	bool IsIncapacitated() const { return bIncapacitated; }
+	bool ApplySandboxDamage(float RawDamage, double NowSeconds, FZLSocialSandboxDamageResult& OutResult);
+	void SetDefending(bool bValue);
 	bool StartDecisionAction(EZLSocialActionType Action, AActor* Target, TFunction<void()> OnCompleted);
 	void StopDecisionAction();
 	void ShowRuleSpeech(const FZLSocialObservation& Observation);
@@ -41,6 +58,7 @@ public:
 	void ShowDecisionAction(EZLSocialActionType Action, EZLSocialActionPhase Phase);
 	void ShowDecisionRejection(FName ReasonCode);
 	void ShowDecisionFallback();
+	void ShowDamageResult(const FZLSocialSandboxDamageResult& Result);
 
 protected:
 	virtual void Tick(float DeltaSeconds) override;
@@ -76,12 +94,18 @@ private:
 	bool bDecisionActionActive = false;
 	float DecisionSpeed = 240.0f;
 	FString LastDecisionSpeech;
+	float MaxHealth = 100.0f;
+	float Health = 100.0f;
+	double LastDamageSeconds = -DBL_MAX;
+	bool bDefending = false;
+	bool bIncapacitated = false;
 	FTimerHandle BubbleTimer;
 
 	void ShowBubble(const FText& Text, const FColor& Color, float DurationSeconds = 4.0f);
 	void ClearBubble();
 	void FaceLabelsToCamera() const;
 	void AdvanceDecisionAction(float DeltaSeconds);
+	void RefreshNameLabel();
 
 	friend class FZLSocialSandboxNpcDecisionActionTest;
 };

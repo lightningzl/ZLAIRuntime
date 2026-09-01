@@ -38,3 +38,15 @@
 | 既有沙盒回归 | Stage、Motion、Per-NPC Observation 和 NPC Decision Action 同批通过 |
 
 本工作包尚未完成 `M9-A02`、`M9-A06`、`M9-A07` 的最终场景验收；以上结果作为对应实现基础证据，最终状态在集成验证后更新。
+
+### `M9-T03` 玩家基础攻击与权威冲突状态
+
+| 验证项 | 实际结果 |
+| --- | --- |
+| UE Target 编译 | `ZLEditor Win64 Development` 编译成功；新增 Attack 行为、纯数据攻击校验、NPC 生命/防卫/失能和场景反馈均通过编译链接 |
+| UE 社会回归 | NullRHI 执行 `ZL.Social`，收集 26 项并全部 `Success`，退出码 0 |
+| Attack 边界 | `AttackValidation` 覆盖合法命中、超距、冷却、玩家忙碌和目标失能拒绝 |
+| 伤害权威与零副作用 | `NpcDecisionAction` 覆盖防卫减伤、合法伤害状态版本推进、受击无敌拒绝的生命/版本不变、失能和失能后拒绝 |
+| 既有回归 | Action Parser、Observation、Tool Registry、连续调度、个人上下文和其余社会模拟测试同批通过 |
+
+本工作包尚未完成 `M9-A03`、`M9-A04` 的最终场景操作验收；以上结果作为对应实现基础证据，最终状态在集成验证后更新。

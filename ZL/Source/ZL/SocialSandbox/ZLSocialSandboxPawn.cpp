@@ -105,6 +105,10 @@ void AZLSocialSandboxPawn::ResetToSandboxStart()
 
 bool AZLSocialSandboxPawn::StartScriptedAction(const EZLSocialActionType Action, AActor* Target, TFunction<void()> OnCompleted)
 {
+	if (Action == EZLSocialActionType::Attack)
+	{
+		return false;
+	}
 	if ((Action == EZLSocialActionType::Approach || Action == EZLSocialActionType::MoveAway) && !IsValid(Target))
 	{
 		return false;
@@ -163,6 +167,7 @@ void AZLSocialSandboxPawn::ShowActionBubble(const EZLSocialActionType Action, co
 	case EZLSocialActionType::Face: ActionText = TEXT("面向 Face"); break;
 	case EZLSocialActionType::Approach: ActionText = TEXT("靠近 Approach"); break;
 	case EZLSocialActionType::MoveAway: ActionText = TEXT("远离 MoveAway"); break;
+	case EZLSocialActionType::Attack: ActionText = TEXT("攻击 Attack"); break;
 	default: break;
 	}
 	const TCHAR* PhaseText = Phase == EZLSocialActionPhase::Started ? TEXT("开始") : TEXT("完成");

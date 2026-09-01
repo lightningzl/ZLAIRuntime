@@ -18,6 +18,7 @@ enum class EZLSocialActionType : uint8
 	Face,
 	Approach,
 	MoveAway,
+	Attack,
 	Stop
 };
 

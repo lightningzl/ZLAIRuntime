@@ -92,4 +92,5 @@ private:
 	int64 SmokeInitialGuardVersion = 0;
 	int32 GuardDistanceBand = INDEX_NONE;
 	float LastGuardDistance = TNumericLimits<float>::Max();
+	double LastPlayerAttackSeconds = -DBL_MAX;
 };
