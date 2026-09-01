@@ -13,16 +13,24 @@ namespace
 		}
 	}
 
-	FString ObservationSummary(const FZLSocialObservation& Observation)
+	FString SubjectLabel(const FName SourceId, const FName NpcId)
 	{
+		if (SourceId == NpcId) { return TEXT("This NPC"); }
+		if (SourceId == TEXT("player")) { return TEXT("The player"); }
+		return TEXT("An observed actor");
+	}
+
+	FString ObservationSummary(const FZLSocialObservation& Observation, const FName NpcId)
+	{
+		const FString Subject = SubjectLabel(Observation.SourceId, NpcId);
 		if (Observation.Source == EZLSocialObservationSource::Speech)
 		{
-			return TEXT("The player spoke within this NPC's hearing.");
+			return Subject + TEXT(" spoke within this NPC's hearing.");
 		}
 		const TCHAR* Phase = Observation.ActionPhase == EZLSocialActionPhase::Started
 			? TEXT("started")
 			: TEXT("completed");
-		return FString::Printf(TEXT("The player %s action %s."), Phase, *ActionName(Observation.Action));
+		return FString::Printf(TEXT("%s %s action %s."), *Subject, Phase, *ActionName(Observation.Action));
 	}
 
 	bool WasPerceived(const FZLSocialObservation& Observation)
@@ -70,9 +78,12 @@ bool FZLSocialSandboxDecisionContextBuilder::Build(
 	Request.Trigger.Kind = Input.TriggerObservation.Source == EZLSocialObservationSource::Speech
 		? TEXT("speech")
 		: TEXT("action_result");
-	Request.Trigger.SourceId = Input.TriggerSourceId.ToString();
+	const FName TriggerSourceId = Input.TriggerObservation.SourceId.IsNone()
+		? Input.TriggerSourceId
+		: Input.TriggerObservation.SourceId;
+	Request.Trigger.SourceId = TriggerSourceId.ToString();
 	Request.Trigger.TargetId = Input.TriggerObservation.ExplicitTargetId.ToString();
-	Request.Trigger.Summary = ObservationSummary(Input.TriggerObservation);
+	Request.Trigger.Summary = ObservationSummary(Input.TriggerObservation, Input.NpcId);
 	Request.Trigger.OccurredAtMs = FMath::Max<int64>(0, FMath::RoundToInt64(Input.TriggerObservation.ObservedAtSeconds * 1000.0));
 	if (Input.TriggerObservation.Source == EZLSocialObservationSource::Speech)
 	{
@@ -92,10 +103,10 @@ bool FZLSocialSandboxDecisionContextBuilder::Build(
 	Request.Context.Npc.Goals = {TEXT("maintain safe distance"), TEXT("keep order")};
 	Request.Context.InstantState.Alert = Input.TriggerObservation.bHeardClearly || Input.TriggerObservation.bSaw ? 0.7f : 0.3f;
 
-	const int32 StartIndex = FMath::Max(0, Input.PersonalHistory.Num() - 8);
-	for (int32 Index = StartIndex; Index < Input.PersonalHistory.Num(); ++Index)
+	TArray<FZLDecisionHistoryItem> CombinedHistory;
+	CombinedHistory.Reserve(Input.PersonalHistory.Num() + Input.PublicHistory.Num());
+	for (const FZLSocialObservation& Observation : Input.PersonalHistory)
 	{
-		const FZLSocialObservation& Observation = Input.PersonalHistory[Index];
 		if (Observation.ObserverId != Input.NpcId || !WasPerceived(Observation)
 			|| Observation.EventId == Input.TriggerObservation.EventId)
 		{
@@ -103,11 +114,36 @@ bool FZLSocialSandboxDecisionContextBuilder::Build(
 		}
 		FZLDecisionHistoryItem Item;
 		Item.Kind = Observation.Source == EZLSocialObservationSource::Speech ? TEXT("speech") : TEXT("action_result");
-		Item.SourceId = TEXT("player");
+		Item.SourceId = Observation.SourceId.IsNone() ? TEXT("player") : Observation.SourceId.ToString();
 		Item.TargetId = Observation.ExplicitTargetId.ToString();
-		Item.Summary = ObservationSummary(Observation);
+		Item.Summary = ObservationSummary(Observation, Input.NpcId);
 		Item.OccurredAtMs = FMath::Max<int64>(0, FMath::RoundToInt64(Observation.ObservedAtSeconds * 1000.0));
-		Request.Context.RecentHistory.Add(MoveTemp(Item));
+		CombinedHistory.Add(MoveTemp(Item));
+	}
+	for (const FZLSocialSandboxPublicHistoryFact& Fact : Input.PublicHistory)
+	{
+		const FString TrimmedSummary = Fact.Summary.TrimStartAndEnd();
+		if ((Fact.Kind != TEXT("speech") && Fact.Kind != TEXT("action_result"))
+			|| Fact.SourceId.IsNone() || TrimmedSummary.IsEmpty())
+		{
+			continue;
+		}
+		FZLDecisionHistoryItem Item;
+		Item.Kind = Fact.Kind;
+		Item.SourceId = Fact.SourceId.ToString();
+		Item.TargetId = Fact.TargetId.ToString();
+		Item.Summary = TrimmedSummary.Left(256);
+		Item.OccurredAtMs = FMath::Max<int64>(0, FMath::RoundToInt64(Fact.OccurredAtSeconds * 1000.0));
+		CombinedHistory.Add(MoveTemp(Item));
+	}
+	CombinedHistory.Sort([](const FZLDecisionHistoryItem& Left, const FZLDecisionHistoryItem& Right)
+	{
+		return Left.OccurredAtMs < Right.OccurredAtMs;
+	});
+	const int32 CombinedStart = FMath::Max(0, CombinedHistory.Num() - 8);
+	for (int32 Index = CombinedStart; Index < CombinedHistory.Num(); ++Index)
+	{
+		Request.Context.RecentHistory.Add(MoveTemp(CombinedHistory[Index]));
 	}
 
 	Request.AllowedTools = {

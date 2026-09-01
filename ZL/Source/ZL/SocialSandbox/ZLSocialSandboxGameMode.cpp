@@ -23,6 +23,7 @@
 
 AZLSocialSandboxGameMode::AZLSocialSandboxGameMode()
 {
+	PrimaryActorTick.bCanEverTick = true;
 	DefaultPawnClass = AZLSocialSandboxPawn::StaticClass();
 	PlayerControllerClass = AZLSocialSandboxPlayerController::StaticClass();
 	ToolRegistry.RegisterMilestone8Defaults();
@@ -36,6 +37,7 @@ void AZLSocialSandboxGameMode::BeginPlay()
 	SpawnNpc(TEXT("npc_merchant"), TEXT("商人 Merchant"), FVector(500.0f, 350.0f, 96.0f), FRotator(0.0f, 215.0f, 0.0f));
 	SpawnNpc(TEXT("npc_scout"), TEXT("斥候 Scout"), FVector(950.0f, -350.0f, 96.0f), FRotator(0.0f, 160.0f, 0.0f));
 	SpawnNpc(TEXT("npc_civilian"), TEXT("居民 Civilian"), FVector(950.0f, 350.0f, 96.0f), FRotator(0.0f, 200.0f, 0.0f));
+	UpdateGuardDistanceBand();
 	if (AZLSocialSandboxPlayerController* Controller = Cast<AZLSocialSandboxPlayerController>(UGameplayStatics::GetPlayerController(this, 0)))
 	{
 		Controller->RefreshSandboxTargets();
@@ -69,7 +71,12 @@ void AZLSocialSandboxGameMode::BeginPlay()
 void AZLSocialSandboxGameMode::ResetSocialSandbox()
 {
 	++GuardRequestGeneration;
+	GetWorldTimerManager().ClearTimer(GuardDecisionCooldownTimer);
+	GuardDecisionScheduler.Reset();
 	DecisionDebug = FZLSocialSandboxDecisionDebug();
+	GuardPublicHistory.Reset();
+	GuardDistanceBand = INDEX_NONE;
+	LastGuardDistance = TNumericLimits<float>::Max();
 	GuardExecutionTimes.Reset();
 	ToolRegistry = FZLSocialToolRegistry();
 	ToolRegistry.RegisterMilestone8Defaults();
@@ -84,7 +91,14 @@ void AZLSocialSandboxGameMode::ResetSocialSandbox()
 	{
 		Pawn->ResetToSandboxStart();
 	}
+	UpdateGuardDistanceBand();
 	RefreshInspector();
+}
+
+void AZLSocialSandboxGameMode::Tick(const float DeltaSeconds)
+{
+	Super::Tick(DeltaSeconds);
+	UpdateGuardDistanceBand();
 }
 
 void AZLSocialSandboxGameMode::RunSocialSandboxDemo()
@@ -169,7 +183,11 @@ FText AZLSocialSandboxGameMode::SubmitSpeech(const FName SpeechMode, const FName
 		Npc->RecordObservation(Observation);
 		if (Npc == Target && Npc->GetStableId() == TEXT("npc_guard") && Observation.bHeard)
 		{
-			RequestGuardDecision(Npc, Observation, Event.Text);
+			QueueGuardDecision(
+				Npc,
+				Observation,
+				Event.Text,
+				EZLSocialSandboxDecisionTriggerReason::Speech);
 		}
 		else
 		{
@@ -278,7 +296,12 @@ void AZLSocialSandboxGameMode::DispatchActionObservation(const EZLSocialActionTy
 			&& TargetId == Npc->GetStableId()
 			&& Observation.bSaw)
 		{
-			RequestGuardDecision(Npc, Observation, FString());
+			QueueGuardDecision(
+				Npc,
+				Observation,
+				FString(),
+				EZLSocialSandboxDecisionTriggerReason::PlayerAction,
+				true);
 		}
 	}
 	const AZLSocialSandboxNpc* Target = TargetId.IsNone() ? nullptr : FindSandboxNpc(TargetId);
@@ -286,19 +309,89 @@ void AZLSocialSandboxGameMode::DispatchActionObservation(const EZLSocialActionTy
 	RefreshInspector();
 }
 
-void AZLSocialSandboxGameMode::RequestGuardDecision(
+void AZLSocialSandboxGameMode::QueueGuardDecision(
 	AZLSocialSandboxNpc* Guard,
 	const FZLSocialObservation& Trigger,
-	const FString& SpeechContent)
+	const FString& SpeechContent,
+	const EZLSocialSandboxDecisionTriggerReason Reason,
+	const bool bAdvanceStateVersion)
 {
 	if (!IsValid(Guard) || Guard->GetStableId() != TEXT("npc_guard"))
 	{
 		return;
 	}
-	if (DecisionDebug.bInFlight)
+	if (bAdvanceStateVersion)
 	{
-		DecisionDebug.ToolResult = TEXT("InFlightLimit");
+		Guard->AdvanceAuthorityStateVersion();
+	}
+	FZLSocialSandboxScheduledDecision Scheduled;
+	Scheduled.Observation = Trigger;
+	Scheduled.SpeechContent = SpeechContent.Left(512);
+	Scheduled.Reason = Reason;
+	const EZLSocialSandboxQueueResult Result = GuardDecisionScheduler.Queue(Scheduled);
+	DecisionDebug.TriggerReason = FName(FZLSocialSandboxDecisionScheduler::ReasonName(Reason));
+	DecisionDebug.bPending = GuardDecisionScheduler.HasPending();
+	DecisionDebug.CoalescedTriggers = GuardDecisionScheduler.GetCoalescedCount();
+	DecisionDebug.AutomaticReplans = GuardDecisionScheduler.GetAutomaticReplanCount();
+	if (Result == EZLSocialSandboxQueueResult::AutomaticLimit)
+	{
+		DecisionDebug.ToolResult = TEXT("AutomaticReplanLimit");
 		RefreshInspector();
+		return;
+	}
+	TryDispatchGuardDecision();
+}
+
+void AZLSocialSandboxGameMode::TryDispatchGuardDecision()
+{
+	if (GetWorld() == nullptr)
+	{
+		return;
+	}
+	FZLSocialSandboxScheduledDecision Scheduled;
+	double DelaySeconds = 0.0;
+	if (!GuardDecisionScheduler.TakeReady(GetWorld()->GetTimeSeconds(), Scheduled, DelaySeconds))
+	{
+		DecisionDebug.bPending = GuardDecisionScheduler.HasPending();
+		if (!GuardDecisionScheduler.IsInFlight() && GuardDecisionScheduler.HasPending() && DelaySeconds > 0.0)
+		{
+			SchedulePendingGuardDecision(DelaySeconds);
+		}
+		RefreshInspector();
+		return;
+	}
+	GetWorldTimerManager().ClearTimer(GuardDecisionCooldownTimer);
+	GuardDecisionScheduler.MarkDispatched(GetWorld()->GetTimeSeconds(), Scheduled);
+	DecisionDebug.bPending = GuardDecisionScheduler.HasPending();
+	DecisionDebug.AutomaticReplans = GuardDecisionScheduler.GetAutomaticReplanCount();
+	AZLSocialSandboxNpc* Guard = FindSandboxNpc(TEXT("npc_guard"));
+	if (!IsValid(Guard))
+	{
+		GuardDecisionScheduler.MarkCompleted();
+		return;
+	}
+	RequestGuardDecision(Guard, Scheduled.Observation, Scheduled.SpeechContent, Scheduled.Reason);
+}
+
+void AZLSocialSandboxGameMode::SchedulePendingGuardDecision(const double DelaySeconds)
+{
+	GetWorldTimerManager().SetTimer(
+		GuardDecisionCooldownTimer,
+		this,
+		&AZLSocialSandboxGameMode::TryDispatchGuardDecision,
+		FMath::Clamp(static_cast<float>(DelaySeconds), 0.01f, 10.0f),
+		false);
+}
+
+void AZLSocialSandboxGameMode::RequestGuardDecision(
+	AZLSocialSandboxNpc* Guard,
+	const FZLSocialObservation& Trigger,
+	const FString& SpeechContent,
+	const EZLSocialSandboxDecisionTriggerReason Reason)
+{
+	if (!IsValid(Guard) || Guard->GetStableId() != TEXT("npc_guard"))
+	{
+		GuardDecisionScheduler.MarkCompleted();
 		return;
 	}
 
@@ -308,6 +401,7 @@ void AZLSocialSandboxGameMode::RequestGuardDecision(
 	Input.TriggerObservation = Trigger;
 	Input.TriggerSpeechContent = SpeechContent;
 	Input.PersonalHistory = Guard->GetObservationItems();
+	Input.PublicHistory = GuardPublicHistory;
 	Input.StateVersion = Guard->GetStateVersion();
 	FZLDecisionRequest Request;
 	FString BuildError;
@@ -315,6 +409,8 @@ void AZLSocialSandboxGameMode::RequestGuardDecision(
 	{
 		DecisionDebug.ToolResult = TEXT("ContextRejected");
 		Guard->ShowDecisionFallback();
+		GuardDecisionScheduler.MarkCompleted();
+		TryDispatchGuardDecision();
 		RefreshInspector();
 		return;
 	}
@@ -327,6 +423,8 @@ void AZLSocialSandboxGameMode::RequestGuardDecision(
 		DecisionDebug.ToolResult = TEXT("ServiceUnavailable");
 		DecisionDebug.Provider = TEXT("local");
 		Guard->ShowDecisionFallback();
+		GuardDecisionScheduler.MarkCompleted();
+		TryDispatchGuardDecision();
 		RefreshInspector();
 		return;
 	}
@@ -335,6 +433,10 @@ void AZLSocialSandboxGameMode::RequestGuardDecision(
 	DecisionDebug.RequestId = Request.RequestId;
 	DecisionDebug.StateVersion = Request.StateVersion;
 	DecisionDebug.bInFlight = true;
+	DecisionDebug.TriggerReason = FName(FZLSocialSandboxDecisionScheduler::ReasonName(Reason));
+	DecisionDebug.bPending = GuardDecisionScheduler.HasPending();
+	DecisionDebug.CoalescedTriggers = GuardDecisionScheduler.GetCoalescedCount();
+	DecisionDebug.AutomaticReplans = GuardDecisionScheduler.GetAutomaticReplanCount();
 	const int32 RequestGeneration = GuardRequestGeneration;
 	const double SentAtSeconds = FPlatformTime::Seconds();
 	TWeakObjectPtr<AZLSocialSandboxNpc> WeakGuard(Guard);
@@ -369,6 +471,7 @@ void AZLSocialSandboxGameMode::HandleGuardDecision(
 	const FZLDecisionResponse& Response,
 	const double SentAtSeconds)
 {
+	GuardDecisionScheduler.MarkCompleted();
 	DecisionDebug.bInFlight = false;
 	DecisionDebug.Provider = Response.Provider.Left(32);
 	DecisionDebug.Intent = Response.Intent.Left(32);
@@ -382,6 +485,7 @@ void AZLSocialSandboxGameMode::HandleGuardDecision(
 	if (Response.bHasSpeech)
 	{
 		Guard->ShowDecisionSpeech(Response.Speech.Text, Response.Provider);
+		RecordGuardSpeechFact(Response.Speech.Text, GetWorld()->GetTimeSeconds());
 	}
 	if (Response.bHasToolCall)
 	{
@@ -391,7 +495,10 @@ void AZLSocialSandboxGameMode::HandleGuardDecision(
 	{
 		DecisionDebug.ToolResult = TEXT("NoTool");
 	}
+	DecisionDebug.bPending = GuardDecisionScheduler.HasPending();
+	DecisionDebug.AutomaticReplans = GuardDecisionScheduler.GetAutomaticReplanCount();
 	RefreshInspector();
+	TryDispatchGuardDecision();
 }
 
 void AZLSocialSandboxGameMode::HandleGuardDecisionFailure(
@@ -399,6 +506,7 @@ void AZLSocialSandboxGameMode::HandleGuardDecisionFailure(
 	const FZLServiceError& Error,
 	const double SentAtSeconds)
 {
+	GuardDecisionScheduler.MarkCompleted();
 	DecisionDebug.bInFlight = false;
 	DecisionDebug.Provider = TEXT("local");
 	DecisionDebug.Intent = TEXT("hold");
@@ -409,7 +517,9 @@ void AZLSocialSandboxGameMode::HandleGuardDecisionFailure(
 		0,
 		60000);
 	Guard->ShowDecisionFallback();
+	DecisionDebug.bPending = GuardDecisionScheduler.HasPending();
 	RefreshInspector();
+	TryDispatchGuardDecision();
 }
 
 void AZLSocialSandboxGameMode::ExecuteGuardTool(AZLSocialSandboxNpc* Guard, const FZLDecisionResponse& Response)
@@ -453,8 +563,20 @@ void AZLSocialSandboxGameMode::ExecuteGuardTool(AZLSocialSandboxNpc* Guard, cons
 	{
 		if (WeakThis.IsValid() && WeakGuard.IsValid())
 		{
-			WeakThis->DispatchNpcActionObservation(WeakGuard.Get(), Action, EZLSocialActionPhase::Completed, TargetId);
+			const FZLSocialObservation Completed = WeakThis->DispatchNpcActionObservation(
+				WeakGuard.Get(),
+				Action,
+				EZLSocialActionPhase::Completed,
+				TargetId);
 			WeakGuard->ShowDecisionAction(Action, EZLSocialActionPhase::Completed);
+			if (Completed.EventId.IsValid())
+			{
+				WeakThis->QueueGuardDecision(
+					WeakGuard.Get(),
+					Completed,
+					FString(),
+					EZLSocialSandboxDecisionTriggerReason::PlanCompleted);
+			}
 			WeakThis->RefreshInspector();
 		}
 	}))
@@ -475,13 +597,14 @@ void AZLSocialSandboxGameMode::ExecuteGuardTool(AZLSocialSandboxNpc* Guard, cons
 	}
 }
 
-void AZLSocialSandboxGameMode::DispatchNpcActionObservation(
+FZLSocialObservation AZLSocialSandboxGameMode::DispatchNpcActionObservation(
 	AZLSocialSandboxNpc* Actor,
 	const EZLSocialActionType Action,
 	const EZLSocialActionPhase Phase,
 	const FName TargetId)
 {
-	if (!IsValid(Actor) || GetWorld() == nullptr) { return; }
+	FZLSocialObservation SelfObservation;
+	if (!IsValid(Actor) || GetWorld() == nullptr) { return SelfObservation; }
 	const double NowSeconds = GetWorld()->GetTimeSeconds();
 	FZLSocialActionEvent Event;
 	Event.EventId = FGuid::NewGuid();
@@ -492,7 +615,24 @@ void AZLSocialSandboxGameMode::DispatchNpcActionObservation(
 	Event.Position = Actor->GetActorLocation();
 	Event.Forward = Actor->GetActorForwardVector();
 	Event.TimestampSeconds = NowSeconds;
-	if (!Event.IsValid(NowSeconds)) { return; }
+	if (!Event.IsValid(NowSeconds)) { return SelfObservation; }
+	SelfObservation.EventId = Event.EventId;
+	SelfObservation.ObserverId = Actor->GetStableId();
+	SelfObservation.SourceId = Actor->GetStableId();
+	SelfObservation.Source = EZLSocialObservationSource::Action;
+	SelfObservation.Action = Action;
+	SelfObservation.ActionPhase = Phase;
+	SelfObservation.ExplicitTargetId = TargetId;
+	SelfObservation.TargetJudgment = TargetId.IsNone()
+		? EZLSocialTargetJudgment::Unresolved
+		: EZLSocialTargetJudgment::ExplicitOther;
+	SelfObservation.bSaw = true;
+	SelfObservation.ObservedAtSeconds = NowSeconds;
+	Actor->RecordObservation(SelfObservation);
+	if (Actor->GetStableId() == TEXT("npc_guard"))
+	{
+		RecordGuardActionFact(Action, Phase, NowSeconds);
+	}
 	const FZLSocialObservationEvaluator Evaluator(ObservationSettings);
 	for (AZLSocialSandboxNpc* Npc : SandboxNpcs)
 	{
@@ -503,6 +643,114 @@ void AZLSocialSandboxGameMode::DispatchNpcActionObservation(
 		Observer.Forward = Npc->GetPlanarForwardVector();
 		Npc->RecordObservation(Evaluator.ObserveAction(Event, Observer, NowSeconds));
 	}
+	return SelfObservation;
+}
+
+void AZLSocialSandboxGameMode::RecordGuardSpeechFact(const FString& Text, const double OccurredAtSeconds)
+{
+	const FString Bounded = Text.TrimStartAndEnd().Left(192);
+	if (Bounded.IsEmpty())
+	{
+		return;
+	}
+	FZLSocialSandboxPublicHistoryFact Fact;
+	Fact.Kind = TEXT("speech");
+	Fact.SourceId = TEXT("npc_guard");
+	Fact.TargetId = TEXT("player");
+	Fact.Summary = FString::Printf(TEXT("The guard publicly said: %s"), *Bounded).Left(256);
+	Fact.OccurredAtSeconds = OccurredAtSeconds;
+	GuardPublicHistory.Add(MoveTemp(Fact));
+	while (GuardPublicHistory.Num() > 16)
+	{
+		GuardPublicHistory.RemoveAt(0, 1, EAllowShrinking::No);
+	}
+}
+
+void AZLSocialSandboxGameMode::RecordGuardActionFact(
+	const EZLSocialActionType Action,
+	const EZLSocialActionPhase Phase,
+	const double OccurredAtSeconds)
+{
+	const TCHAR* ActionText = TEXT("Stop");
+	switch (Action)
+	{
+	case EZLSocialActionType::Face: ActionText = TEXT("Face"); break;
+	case EZLSocialActionType::Approach: ActionText = TEXT("Approach"); break;
+	case EZLSocialActionType::MoveAway: ActionText = TEXT("MoveAway"); break;
+	default: break;
+	}
+	FZLSocialSandboxPublicHistoryFact Fact;
+	Fact.Kind = TEXT("action_result");
+	Fact.SourceId = TEXT("npc_guard");
+	Fact.TargetId = Action == EZLSocialActionType::Stop ? NAME_None : FName(TEXT("player"));
+	Fact.Summary = FString::Printf(
+		TEXT("The guard %s action %s."),
+		Phase == EZLSocialActionPhase::Started ? TEXT("started") : TEXT("completed"),
+		ActionText);
+	Fact.OccurredAtSeconds = OccurredAtSeconds;
+	GuardPublicHistory.Add(MoveTemp(Fact));
+	while (GuardPublicHistory.Num() > 16)
+	{
+		GuardPublicHistory.RemoveAt(0, 1, EAllowShrinking::No);
+	}
+}
+
+void AZLSocialSandboxGameMode::UpdateGuardDistanceBand()
+{
+	AZLSocialSandboxNpc* Guard = FindSandboxNpc(TEXT("npc_guard"));
+	AZLSocialSandboxPawn* Player = Cast<AZLSocialSandboxPawn>(UGameplayStatics::GetPlayerPawn(this, 0));
+	if (!IsValid(Guard) || !IsValid(Player) || GetWorld() == nullptr)
+	{
+		return;
+	}
+	const float Distance = FVector::Dist2D(Guard->GetActorLocation(), Player->GetActorLocation());
+	const int32 NewBand = Distance < 250.0f ? 0 : (Distance < 800.0f ? 1 : 2);
+	if (GuardDistanceBand == INDEX_NONE)
+	{
+		GuardDistanceBand = NewBand;
+		LastGuardDistance = Distance;
+		return;
+	}
+	if (NewBand == GuardDistanceBand)
+	{
+		LastGuardDistance = Distance;
+		return;
+	}
+
+	const bool bMovedNearer = Distance < LastGuardDistance;
+	GuardDistanceBand = NewBand;
+	LastGuardDistance = Distance;
+	const double NowSeconds = GetWorld()->GetTimeSeconds();
+	FZLSocialActionEvent Event;
+	Event.EventId = FGuid::NewGuid();
+	Event.Action = bMovedNearer ? EZLSocialActionType::Approach : EZLSocialActionType::MoveAway;
+	Event.Phase = EZLSocialActionPhase::Completed;
+	Event.ActorId = TEXT("player");
+	Event.TargetId = TEXT("npc_guard");
+	Event.Position = Player->GetActorLocation();
+	Event.Forward = Player->GetActorForwardVector();
+	Event.TimestampSeconds = NowSeconds;
+	FZLSocialObserver Observer;
+	Observer.AgentId = Guard->GetStableId();
+	Observer.Position = Guard->GetActorLocation();
+	Observer.Forward = Guard->GetPlanarForwardVector();
+	const FZLSocialObservation Observation = FZLSocialObservationEvaluator(ObservationSettings).ObserveAction(
+		Event,
+		Observer,
+		NowSeconds);
+	Guard->RecordObservation(Observation);
+	if (!Observation.bSaw)
+	{
+		return;
+	}
+	QueueGuardDecision(
+		Guard,
+		Observation,
+		FString(),
+		bMovedNearer
+			? EZLSocialSandboxDecisionTriggerReason::DistanceNear
+			: EZLSocialSandboxDecisionTriggerReason::DistanceFar,
+		true);
 }
 
 void AZLSocialSandboxGameMode::FinishDecisionSmokeTest()
@@ -595,10 +843,14 @@ FText AZLSocialSandboxGameMode::BuildInspectorText(const FName NpcId) const
 		: FString::Printf(TEXT("Action: %s · Phase: %s · Target: %s\nTargetJudgment: %s · InputTextAvailable: No"), ActionText(Observation->Action), Observation->ActionPhase == EZLSocialActionPhase::Started ? TEXT("Started") : TEXT("Completed"), Observation->ExplicitTargetId.IsNone() ? TEXT("None") : *Observation->ExplicitTargetId.ToString(), TargetText(Observation->TargetJudgment));
 	const FString DecisionLine = NpcId == TEXT("npc_guard")
 		? FString::Printf(
-			TEXT("\nDecision: %s · Request: %s · State: %lld\nProvider: %s · Intent: %s · Speech: %s\nTool: %s · Result: %s · Latency: %d ms"),
+			TEXT("\nDecision: %s · Pending: %s · Trigger: %s\nRequest: %s · State: %lld · Coalesced: %d · Auto: %d\nProvider: %s · Intent: %s · Speech: %s\nTool: %s · Result: %s · Latency: %d ms"),
 			DecisionDebug.bInFlight ? TEXT("InFlight") : TEXT("Idle"),
+			DecisionDebug.bPending ? TEXT("Yes") : TEXT("No"),
+			DecisionDebug.TriggerReason.IsNone() ? TEXT("None") : *DecisionDebug.TriggerReason.ToString(),
 			DecisionDebug.RequestId.IsEmpty() ? TEXT("None") : *DecisionDebug.RequestId,
 			DecisionDebug.StateVersion,
+			DecisionDebug.CoalescedTriggers,
+			DecisionDebug.AutomaticReplans,
 			DecisionDebug.Provider.IsEmpty() ? TEXT("None") : *DecisionDebug.Provider,
 			DecisionDebug.Intent.IsEmpty() ? TEXT("None") : *DecisionDebug.Intent,
 			DecisionDebug.bSpeechAccepted ? TEXT("Accepted") : TEXT("None"),

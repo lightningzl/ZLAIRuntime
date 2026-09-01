@@ -57,7 +57,7 @@
 | `ZLSocialDebug` | 格式化安全快照，运行确定性 120 Level 1 基线与 120 Level 1 + 5 Important NPC 的传播/关系/Memory 聚合基准 |
 | `FZLSocialSpeechEvent` / `FZLSocialActionEvent` | 分别表示有界玩家说话和已经接受的 Gameplay 行为状态；Action 类型不保存输入原文 |
 | `FZLSocialObserver` / `FZLSocialObservationSettings` | 表示单个稳定 ID 观察者快照，以及可配置视野、听觉范围和清晰阈值 |
-| `FZLSocialObservationEvaluator` | 按距离、朝向、模式和显式目标为一个 NPC 生成独立视觉/听觉 Observation |
+| `FZLSocialObservationEvaluator` | 按距离、朝向、模式和显式目标为一个 NPC 生成含已感知来源稳定 ID 的独立视觉/听觉 Observation |
 | `FZLSocialObservationBuffer` | 保存固定容量的单 NPC Observation，并提供确定性重置和最近项读取 |
 | `FZLSocialActionParser` | 只把 Face、Approach、MoveAway、Stop 的中英文受控别名解析为行为枚举 |
 | `FZLSocialInputValidation` | 按 Unicode 码点校验 1 至 512 字符，并拒绝缺少显式目标的 InEar 输入 |
@@ -87,10 +87,11 @@ Runtime 固定上限为 10000 个注册 Agent、1024 个活动 Root、4096 条 P
 | `UZLSocialBubbleWidget` | 使用屏幕空间 UMG 显示有界时长的中英文说话、动作和 `RulePlaceholder` 反馈 | 产生事件或改变 Gameplay 状态 |
 | `FZLSocialSandboxMotion` | 计算 Approach/MoveAway 的单步平面位移、完成边界与面向 | 导航、避障、动画或复杂路径规划 |
 | `FZLSocialSandboxDecisionContextBuilder` | 从一个选定 NPC 已感知的 Trigger 和个人 Observation 历史构造有界 Decision 请求，过滤其他 Observer | 自动读取 World、其他 NPC 知识、执行 Tool 或保存 Prompt |
+| `FZLSocialSandboxDecisionScheduler` | 合并单 Guard 的最新显著 Trigger，执行单在途、冷却和最多 3 次连续自动重规划硬上限 | Tick 逐帧请求、无限队列、HTTP、Tool 校验或 Gameplay 执行 |
 
 专用地图为 `/Game/SocialSandbox/Lvl_SocialSandbox`，默认使用上述 GameMode、Pawn 和 PlayerController。GameMode 保持世界状态权威；Widget 只提交请求并展示结果。
 
-Guard Decision 调试快照固定只保留最新一项，包含 Request ID、请求状态版本、逻辑 Provider、公开 Intent、Speech 是否接受、Tool 名、稳定结果码和有界耗时。在途并发硬上限为 1，Tool 执行窗口硬上限为 4，幂等 Call ID 历史硬上限为 128。
+Guard Decision 调试快照固定只保留最新一项，包含 Trigger 原因、Pending/合并/自动重规划状态、Request ID、请求状态版本、逻辑 Provider、公开 Intent、Speech 是否接受、Tool 名、稳定结果码和有界耗时。在途并发硬上限为 1，Pending 固定为最新 1 项，自动重规划硬上限为 3，Tool 执行窗口硬上限为 4，幂等 Call ID 历史硬上限为 128。
 
 ## Context 类型
 

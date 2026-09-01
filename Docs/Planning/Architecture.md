@@ -103,6 +103,13 @@ Milestone 8 当前已增加协议确认后的客户端与个人上下文基础�
 - Response Speech 先作为独立合法表达保存；可选 Tool 使用响应状态版本和收到回复时的当前 Guard/玩家位置、目标、平面可达性、执行状态、10 秒执行窗口再次校验。接受后由 `AZLSocialSandboxNpc` 执行受碰撞约束的真实 Transform 变化并产生 Started/Completed Action Observation；拒绝只更新公开 Reason Code。
 - Guard Authority State Version 在重置、动作开始/停止/完成时推进。服务离线、超时、解析或 Provider 失败统一进入不执行 Tool 的可见本地降级；Inspector 只显示有界关联元数据、Provider、公开 Intent、Tool/结果和耗时，不显示 Prompt、输入全文、凭据或原始 Provider 异常。
 
+Milestone 9 当前已增加连续判断基础：
+
+- `ZL` 使用纯数据 `FZLSocialSandboxDecisionScheduler` 维护单 Guard 的一个在途请求、一个最新待处理触发、0.75 秒冷却和最多 3 次连续自动重规划；玩家新输入会重置自动预算，重复变化只覆盖固定待处理槽位。
+- 新 Speech、玩家已完成 Action、距离跨 250/800 cm 阈值和 Guard 计划完成可以进入同一调度入口。距离只在 Band 变化时从 Tick 产生事实 Observation，不逐帧创建请求。
+- Observation 现在保留已感知来源稳定 ID。Decision Context 将该 NPC 的已感知历史与 Guard 已公开 Speech/真实 Action Result 合并、按时间排序并裁剪为协议允许的最近 8 条；未执行建议和隐藏推理不进入历史。
+- 显著玩家动作或距离变化推进 Guard Authority State Version；旧响应继续沿 Milestone 8 的 Speech/Tool 独立语义处理，过期 Tool 不执行，最新待处理事实在请求完成和冷却后重新判断。
+
 ### Python AI Service
 
 Python Service 负责 AI 推理编排，不直接访问或修改 UE 世界。

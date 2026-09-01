@@ -30,6 +30,7 @@ public:
 	const TArray<FZLSocialObservation>& GetObservationItems() const { return ObservationBuffer.GetItems(); }
 	void ClearObservations() { ObservationBuffer.Reset(); }
 	int64 GetStateVersion() const { return StateVersion; }
+	void AdvanceAuthorityStateVersion() { ++StateVersion; }
 	bool IsDecisionActionActive() const { return bDecisionActionActive; }
 	bool StartDecisionAction(EZLSocialActionType Action, AActor* Target, TFunction<void()> OnCompleted);
 	void StopDecisionAction();
