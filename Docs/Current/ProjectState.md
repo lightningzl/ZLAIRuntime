@@ -8,11 +8,11 @@
 | --- | --- |
 | 最后更新 | 2026-09-01 |
 | 当前里程碑 | Milestone 10：最终场景 1 多 NPC 交付 |
-| 里程碑状态 | `进行中` |
-| 当前活动任务 | `M10-T08`：Kimi 验收、演示与里程碑收口 |
+| 里程碑状态 | `已完成` |
+| 当前活动任务 | 无 |
 | 下一候选任务 | 无 |
 | 已知阻塞 | 无 |
-| 最近验收 | Milestone 9：10/10 项已验证 |
+| 最近验收 | Milestone 10：11/11 项及 FS1 11/11 属性已验证 |
 
 ## 当前能力基线
 
@@ -27,11 +27,12 @@
 - 当前 Stub 已按 Guard、Merchant、Rival、Civilian Profile 与关系生成 4 种可复现表达；Kimi 固定约束要求保持当前 NPC 身份、人物和个人视角，并禁止推断其他 NPC 的感知与决定。
 - 当前任意 NPC 已可独立接收和执行通过 UE 校验的四个 Tool，并产生可见移动/动作与个人公开历史；每个 NPC 的距离跨带、生命、防卫、冲突状态和 Inspector 结果彼此隔离。
 - 当前完整验证基线为 Python 198/198、UE `ZL.Social` 28/28、UE `ZLAIRuntime` 13/13、最终 Target 编译、4 NPC Stub 默认地图烟测和服务离线降级烟测通过。
+- 真实 Kimi 已对 Guard、Merchant、Rival、Civilian 的同一威胁输入分别返回 `provider=kimi`；Intent 分为 engage/disengage，动作建议分为 face_target/move_away，Speech 长度各异且结构合法。默认 UE 地图 Kimi 烟测也已接受 Speech，未建议 Tool 时保持位置不变。
 - Milestone 9 最终基线为 Python 197/197、UE `ZL.Social` 27/27、受影响 UE Target 编译、Stub/离线烟测和默认地图真实 Kimi 验收通过。
 
 ## 当前执行边界
 
-- 当前只实施 [CurrentMilestone.md](./CurrentMilestone.md) 定义的 4 NPC 最终场景交付与 `FS1-01` 至 `FS1-11` 验收。
+- Milestone 10 已完成并归档为 [Milestone10.md](../Milestones/Milestone10.md)；当前没有活动功能任务。
 - 沿用 2026-08-31 已确认的 Decision v1；不修改 `Protocol.md`，不新增 Tool、Intent、字段或批量请求。
 - UE 继续权威维护逐 NPC 感知、关系输入、生命、冲突、状态版本、调度和动作执行；Python 每次只返回一个 NPC 的现有结构化建议。
-- 按 `M10-T01` 至 `M10-T08` 的依赖顺序实施、验证和同步状态；每个工作包分步提交，完成后合并到 `main` 并统一推送。
+- `M10-T01` 至 `M10-T08` 已按依赖顺序完成并形成独立逻辑提交；交付不包含未验证的未来能力。
