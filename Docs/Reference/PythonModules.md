@@ -50,7 +50,7 @@ PythonService/
 | `app.services.decision_context_builder` | 将单 NPC Trigger、人物、关系、即时状态、个人历史和允许 Tool 确定性组装为不可信 JSON 数据 |
 | `app.services.decision_service` | 校验非空业务语义、调用一次 Planner、复核允许 Tool/目标并生成 Decision/Tool ID |
 | `app.planners.base` | 定义与 FastAPI、协议模型、UE 和 SDK 解耦的 Decision Planner 接口与内部结果 |
-| `app.planners.stub_planner` | 提供确定性离线 Speech/Intent/单 Tool 建议 |
+| `app.planners.stub_planner` | 提供确定性离线连续 Speech/Intent/单 Tool 建议；只依据最新 Trigger 与有限个人历史产生攻击升级、保持距离或道歉后的受限缓和 |
 | `app.planners.kimi_planner` | 使用 Kimi JSON Object 输出并校验 Intent、Speech、单 Tool 与 Confidence，分类 SDK 异常 |
 | `app.planners.factory` | 使用显式 Provider 配置创建 Stub 或 Kimi Planner，不静默回退 |
 | `app.services.context_builder` | 将固定约束、Context、合并历史和当前输入组装为供应商无关生成上下文 |
@@ -142,6 +142,7 @@ OpenAI 兼容 SDK 运行依赖为 `openai>=2.46,<3.0`。Kimi Client 禁用 SDK �
 - 只有 Provider 成功产生合法回复后才保存完整轮次。
 - 当前不保存 NPC 人格、World Context、Prompt、Token、ToolCall、模型推理或 Gameplay 状态。
 - Decision 路径只生成固定单 Tool 建议，不执行 Tool；Dialogue 路径继续不生成或解析 Gameplay 指令。
+- Decision Planner 必须把最新 Trigger 与有限个人历史视为唯一的连续互动事实来源；攻击、道歉和距离等事件只能在它们已出现在该个人上下文时影响建议，生命、命中和伤害始终由 UE 权威维护。
 
 ## 错误与日志
 
