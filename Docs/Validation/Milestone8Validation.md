@@ -3,9 +3,9 @@
 ## 状态
 
 - 里程碑：Milestone 8——单 NPC LLM 具身反馈与受控动作
-- 当前阶段：Gameplay Handler 与降级链路完成，执行最终收口
+- 当前阶段：本地实现与回归完成；真实 Kimi 外发验收待明确授权
 - 最后更新：2026-09-01
-- 结论：未完成；当前只记录已实际执行的基线检查，不声明 `M8-A01` 至 `M8-A10` 通过
+- 结论：本地实现、Stub 纵向闭环和全量回归完成；`M8-A05` 的真实 Kimi 场景调用因外部数据发送未获专项授权而未执行，其余验收均有实际证据
 
 验收标准正文见 [CurrentMilestone.md](../Current/CurrentMilestone.md)。本文只记录实际执行过的验证，不保存完整玩家输入、Prompt、Memory scope、回复正文、凭据或原始 Provider 异常。
 
@@ -38,11 +38,15 @@
 | 请求期间状态变化 | Stub Service + 默认沙盒地图 + `-ZLSandboxDecisionStaleSmoke` | 通过 | Speech 接受；Tool 以 `StateVersionMismatch` 拒绝；版本按测试推进但位置不变，证明表达与 Tool 拒绝独立且零 Tool Transform 副作用 |
 | 服务离线降级 | 端口 8000 无监听时运行默认沙盒地图 + `-ZLSandboxDecisionFallbackSmoke` | 通过 | 连接失败映射为 `provider=local` / `network_error`，Guard 版本与位置均不变，耗时 2042 ms |
 | 真实 Kimi 场景闭环 | 检测本机配置后尝试启动 Kimi Service 并运行默认沙盒地图 | 未执行 | 外部数据发送安全门禁拒绝执行；未发出请求、未泄露凭据或 Decision 内容。需要用户另行明确授权该外发后才能补充人工证据 |
+| Python 最终全量回归 | 在 `PythonService` 执行 `.venv/Scripts/python -m pytest -c pyproject.toml` | 通过 | 收集 193 项，193 项通过，耗时 1.58 秒 |
+| UE 最终 Target 编译 | 执行 `Build.bat ZLEditor Win64 Development` | 通过 | UHT、ZLAIRuntime、ZLASocialRuntime、ZL 全部编译链接成功，UnrealBuildTool `Result: Succeeded` |
+| UE Social 最终全量回归 | NullRHI + 内存 DDC 执行 `Automation RunTests ZL.Social` | 通过 | 收集 24 项，24 项全部 `Success`，包含 Tool Registry、个人上下文和 NPC Decision Action，退出码 0 |
+| UE AI Runtime 最终全量回归 | Stub Service 在线时，NullRHI + 内存 DDC 执行 `Automation RunTests ZLAIRuntime` | 通过 | 收集 13 项，13 项全部 `Success`，包含 Dialogue/Decision 协议、Client、失败分类和真实 HTTP 回调，退出码 0 |
 
 ## 基线结论
 
-- Python 现有回归可作为后续 `M8-A01` 的对照基线，但尚未覆盖 Decision Schema、Planner 或错误映射。
-- `UZLAIServiceSubsystem` 已提供 HTTP 超时、Game Thread 回调、请求/响应 ID 对照和一次完成语义；Decision 应复用行为模式而不改变既有 Dialogue API。
+- Python 最终回归已覆盖 Dialogue、Memory、Decision Schema、Context Builder、Service、Stub/Kimi Planner 映射与错误分类；真实 Kimi 网络调用不属于离线测试证据。
+- `UZLAIServiceSubsystem` 的 Dialogue/Decision 路径均已验证 HTTP 回调、超时分类、Game Thread 交付、请求关联和一次完成语义；既有 Dialogue API 保持不变。
 - `AZLSocialSandboxGameMode::SubmitSpeech` 已逐 NPC 生成独立 Observation；里程碑 8 只能从选定 NPC 的 Observation 构造请求，不得把全体接收结果作为其个人知识。
 - `AZLSocialSandboxPawn` 当前实现 Face、Approach、MoveAway 和 Stop，但它只代表玩家。NPC Tool Handler 必须在 `AZLSocialSandboxNpc` 或 `ZL` 的独立适配器中执行，并由通用 Registry 校验后调用。
 - Decision 协议已在用户明确确认后同步；现有 Dialogue 字段和纯文本语义未改变，也没有从 Dialogue 文本推断 Gameplay 动作。
@@ -52,7 +56,7 @@
 
 | ID | 当前证据 | 状态 |
 | --- | --- | --- |
-| `M8-A01` | Python 全量 180 项通过；当前 UE Target 编译与 6 项 Dialogue Protocol 回归通过；后续 Social/Service 完整回归仍待执行 | `部分` |
+| `M8-A01` | Python 193/193、UE Social 24/24、UE AI Runtime 13/13 全部通过；ZLEditor Win64 Development 最终编译成功 | `通过` |
 | `M8-A02` | 用户已明确确认；`Protocol.md`、Python Schema、UE 类型及两端契约测试一致，Python 14 项与 UE 3 项 Decision 契约测试通过 | `通过` |
 | `M8-A03` | Python Context Builder 与 UE Gameplay Builder 只包含 Guard 已感知 Trigger、人物/关系/即时状态/个人历史和允许 Tool；Stub 场景实际发送通过 | `通过` |
 | `M8-A04` | Stub 经默认 Demo/UI 提交路径返回 Speech 与 `move_away`；Guard 真实移动、状态版本推进并产生动作结果 Observation | `通过` |
@@ -61,6 +65,6 @@
 | `M8-A07` | UE Client 覆盖 TTL/响应关联；场景状态变化证明 Speech 保留、Tool 以 `StateVersionMismatch` 拒绝且位置不变 | `通过` |
 | `M8-A06` | Registry 全规则测试和场景执行共同证明合法动作才改变 Transform；拒绝有稳定 Reason Code，Inspector 可见 | `通过` |
 | `M8-A09` | Context/协议/历史/字符串/Tool/Call ID 均有硬上限；场景固定单在途请求、4 次执行窗口和单项安全调试快照 | `通过` |
-| `M8-A10` | 尚无完整场景实现或验证证据 | `未开始` |
+| `M8-A10` | 模块依赖保持 `ZL -> ZLAIRuntime/ZLASocialRuntime`；命名、边界、公开 Reason Code、文档与最终编译回归一致 | `通过` |
 
 后续每次工作包验证只追加实际命令、环境、结果和与验收 ID 的对应关系；未执行项目不得写成通过。

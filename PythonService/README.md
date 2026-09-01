@@ -1,6 +1,6 @@
 # Python AI Service
 
-Milestone 4 的本地 FastAPI AI Service。当前已完成集中配置、Dialogue Provider 边界、受限瞬时上下文、显式可选的持久化对话 Memory、SQLite Repository、确定性历史合并，以及通过 OpenAI 兼容 Python SDK 调用 Kimi Chat Completions API 的非流式适配器。
+本地 FastAPI AI Service。当前同时提供纯文本 Dialogue 与结构化个人 Decision：已完成集中配置、Provider/Planner 边界、受限瞬时上下文、显式可选的持久化对话 Memory、SQLite Repository、确定性历史合并，以及通过 OpenAI 兼容 Python SDK 调用 Kimi Chat Completions API 的非流式适配器。Decision 只生成 Intent、可选 Speech 和最多一个允许 Tool 建议；最终世界校验与执行始终在 UE。
 
 ## 环境要求
 
@@ -59,7 +59,7 @@ PythonService/.venv/Scripts/python -m uvicorn app.main:app --app-dir PythonServi
 
 Kimi 模式使用 `openai>=2.46,<3.0` 调用国内开放平台 `https://api.moonshot.cn/v1`，从集中配置读取模型、超时和输出上限，并显式禁用 SDK 自动重试。请求只有显式提供 `memory.scope_id` 时才读取并在合法 Provider 成功后写入 Memory；省略 `memory` 时保持无状态。Context Builder 将固定系统约束、NPC/世界 JSON 数据、合并后的有限历史和当前输入组装为供应商无关输入；Provider 只负责映射到 Kimi 消息。单次请求不会启用流式输出、工具或托管会话状态，也不会在失败时回退到 Stub。
 
-启动后，FastAPI 文档页面位于 `http://127.0.0.1:8000/docs`，对话接口为 `POST http://127.0.0.1:8000/v1/dialogue`。请求和响应格式见 [`Docs/Reference/Protocol.md`](../Docs/Reference/Protocol.md)。
+启动后，FastAPI 文档页面位于 `http://127.0.0.1:8000/docs`；接口为 `POST http://127.0.0.1:8000/v1/dialogue` 与 `POST http://127.0.0.1:8000/v1/decision`。请求和响应格式见 [`Docs/Reference/Protocol.md`](../Docs/Reference/Protocol.md)。
 
 ## Memory 本地维护
 
