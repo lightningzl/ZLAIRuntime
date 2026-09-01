@@ -96,6 +96,7 @@ private:
 	TArray<double> GuardExecutionTimes;
 	TMap<FName, FZLSocialSandboxDecisionDebug> NpcDecisionDebug;
 	TMap<FName, TArray<FZLSocialSandboxPublicHistoryFact>> NpcPublicHistory;
+	TMap<FName, FZLSocialSandboxConflictState> NpcConflictStates;
 	int32 GuardRequestGeneration = 0;
 	FTimerHandle DemoTimer;
 	FTimerHandle DecisionSmokeTimer;

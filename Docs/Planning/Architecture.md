@@ -130,6 +130,8 @@ Milestone 9 当前还增加公开冲突立场与本地安全规则：
 - `FZLSocialSandboxMultiNpcDecision` 为非 Guard NPC 维护逐 NPC 单在途/最新 Pending、冷却、自动重规划上限和稳定轮转；GameMode 将它与原 Guard Scheduler 组合为全局最多 2 个请求在途。
 - 新 Speech 和已完成 Action 只在对应 NPC 实际听清或看见后进入它自己的 Scheduler；回调同时捕获 NPC、请求代次和本地发送时间，重置后的旧回调不能改变新场景。
 - Guard 与其他 NPC 的请求仍分别调用单 NPC `/v1/decision`，多 NPC 队列、并发和调试状态不会进入 Python 或协议字段。
+- Speech 只有在该 NPC `bHeardClearly` 时才进入它的 Decision 队列；已完成玩家动作和其他 NPC 动作只有在该观察者 `bSaw` 时才触发旁观判断。未通过个人感知的 Event 仍可保留过滤结果用于 Inspector，但不会进入 Planner。
+- 每个 NPC 的公开 Speech/已执行 Action History 和 `Calm`/`Alert`/`Escalated`/`Recovering` 冲突状态均按稳定 ID 隔离；攻击、Planner Intent 或本地失败只改变对应 NPC。
 
 ### Python AI Service
 

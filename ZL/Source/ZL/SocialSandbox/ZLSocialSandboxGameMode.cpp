@@ -80,6 +80,7 @@ void AZLSocialSandboxGameMode::ResetSocialSandbox()
 	DecisionDebug = FZLSocialSandboxDecisionDebug();
 	NpcDecisionDebug.Reset();
 	NpcPublicHistory.Reset();
+	NpcConflictStates.Reset();
 	GuardPublicHistory.Reset();
 	GuardDistanceBand = INDEX_NONE;
 	LastGuardDistance = TNumericLimits<float>::Max();
@@ -519,6 +520,15 @@ void AZLSocialSandboxGameMode::HandleNpcDecision(
 	Debug.StateVersion = Response.StateVersion;
 	Debug.LatencyMs = FMath::Clamp(FMath::RoundToInt((FPlatformTime::Seconds() - SentAtSeconds) * 1000.0), 0, 60000);
 	Debug.bSpeechAccepted = Response.bHasSpeech;
+	if (Response.Intent.Equals(TEXT("engage"), ESearchCase::IgnoreCase))
+	{
+		ApplyGuardConflict(Npc, EZLSocialSandboxConflictEvent::PlannerEngage);
+	}
+	else if (Response.Intent.Equals(TEXT("disengage"), ESearchCase::IgnoreCase)
+		|| Response.Intent.Equals(TEXT("respond"), ESearchCase::IgnoreCase))
+	{
+		ApplyGuardConflict(Npc, EZLSocialSandboxConflictEvent::PlannerDisengage);
+	}
 	Npc->ResetDecisionPresentation();
 	if (Response.bHasSpeech)
 	{
@@ -558,6 +568,7 @@ void AZLSocialSandboxGameMode::HandleNpcDecisionFailure(
 	Debug.ToolResult = Error.Code.IsEmpty() ? TEXT("DecisionUnavailable") : FName(*Error.Code.Left(64));
 	Debug.LatencyMs = FMath::Clamp(FMath::RoundToInt((FPlatformTime::Seconds() - SentAtSeconds) * 1000.0), 0, 60000);
 	Debug.bLocalFallback = true;
+	ApplyGuardConflict(Npc, EZLSocialSandboxConflictEvent::LocalFallback, true);
 	Npc->StopDecisionAction();
 	Npc->ShowDecisionFallback();
 	TryDispatchGuardDecision();
@@ -805,14 +816,20 @@ void AZLSocialSandboxGameMode::ApplyGuardConflict(
 	{
 		return;
 	}
-	const FZLSocialSandboxConflictTransition Transition = GuardConflictState.Apply(Event);
+	FZLSocialSandboxConflictState& ConflictState = Guard->GetStableId() == TEXT("npc_guard")
+		? GuardConflictState
+		: NpcConflictStates.FindOrAdd(Guard->GetStableId());
+	FZLSocialSandboxDecisionDebug& Debug = Guard->GetStableId() == TEXT("npc_guard")
+		? DecisionDebug
+		: NpcDecisionDebug.FindOrAdd(Guard->GetStableId());
+	const FZLSocialSandboxConflictTransition Transition = ConflictState.Apply(Event);
 	Guard->SetDefending(Transition.bShouldDefend);
 	if (Transition.bChanged)
 	{
 		Guard->AdvanceAuthorityStateVersion();
 	}
-	DecisionDebug.ConflictLevel = FZLSocialSandboxConflictState::LevelName(Transition.Current);
-	DecisionDebug.bLocalFallback = bLocalFallback;
+	Debug.ConflictLevel = FZLSocialSandboxConflictState::LevelName(Transition.Current);
+	Debug.bLocalFallback = bLocalFallback;
 }
 
 void AZLSocialSandboxGameMode::ExecuteGuardTool(AZLSocialSandboxNpc* Guard, const FZLDecisionResponse& Response)
@@ -930,6 +947,24 @@ FZLSocialObservation AZLSocialSandboxGameMode::DispatchNpcActionObservation(
 	{
 		RecordGuardActionFact(Action, Phase, NowSeconds);
 	}
+	else
+	{
+		FZLSocialSandboxPublicHistoryFact Fact;
+		Fact.Kind = TEXT("action_result");
+		Fact.SourceId = Actor->GetStableId();
+		Fact.TargetId = TargetId;
+		Fact.Summary = FString::Printf(
+			TEXT("This NPC %s a visible %s action."),
+			Phase == EZLSocialActionPhase::Started ? TEXT("started") : TEXT("completed"),
+			Action == EZLSocialActionType::Face ? TEXT("Face")
+				: Action == EZLSocialActionType::Approach ? TEXT("Approach")
+				: Action == EZLSocialActionType::MoveAway ? TEXT("MoveAway")
+				: TEXT("Stop"));
+		Fact.OccurredAtSeconds = NowSeconds;
+		TArray<FZLSocialSandboxPublicHistoryFact>& History = NpcPublicHistory.FindOrAdd(Actor->GetStableId());
+		History.Add(MoveTemp(Fact));
+		if (History.Num() > 16) { History.RemoveAt(0, History.Num() - 16, EAllowShrinking::No); }
+	}
 	const FZLSocialObservationEvaluator Evaluator(ObservationSettings);
 	for (AZLSocialSandboxNpc* Npc : SandboxNpcs)
 	{
@@ -938,7 +973,17 @@ FZLSocialObservation AZLSocialSandboxGameMode::DispatchNpcActionObservation(
 		Observer.AgentId = Npc->GetStableId();
 		Observer.Position = Npc->GetActorLocation();
 		Observer.Forward = Npc->GetPlanarForwardVector();
-		Npc->RecordObservation(Evaluator.ObserveAction(Event, Observer, NowSeconds));
+		const FZLSocialObservation Observation = Evaluator.ObserveAction(Event, Observer, NowSeconds);
+		Npc->RecordObservation(Observation);
+		Npc->ShowActionObservation(Observation);
+		if (Phase == EZLSocialActionPhase::Completed && Observation.bSaw)
+		{
+			QueueNpcDecision(
+				Npc,
+				Observation,
+				FString(),
+				EZLSocialSandboxDecisionTriggerReason::PlayerAction);
+		}
 	}
 	return SelfObservation;
 }
