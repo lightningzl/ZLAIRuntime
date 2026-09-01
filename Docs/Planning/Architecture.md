@@ -132,6 +132,7 @@ Milestone 9 当前还增加公开冲突立场与本地安全规则：
 - Guard 与其他 NPC 的请求仍分别调用单 NPC `/v1/decision`，多 NPC 队列、并发和调试状态不会进入 Python 或协议字段。
 - Speech 只有在该 NPC `bHeardClearly` 时才进入它的 Decision 队列；已完成玩家动作和其他 NPC 动作只有在该观察者 `bSaw` 时才触发旁观判断。未通过个人感知的 Event 仍可保留过滤结果用于 Inspector，但不会进入 Planner。
 - 每个 NPC 的公开 Speech/已执行 Action History 和 `Calm`/`Alert`/`Escalated`/`Recovering` 冲突状态均按稳定 ID 隔离；攻击、Planner Intent 或本地失败只改变对应 NPC。
+- Python Stub 现在按当前请求中的 Guard、Merchant、Rival、Civilian Profile 和 Relationship 选择稳定的差异化表达；Kimi 固定约束要求只扮演当前 NPC，并禁止从一个 NPC 请求推断其他 NPC 的感知或决定。
 
 ### Python AI Service
 

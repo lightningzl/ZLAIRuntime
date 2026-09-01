@@ -58,3 +58,27 @@ def test_stub_planner_keeps_distance_after_recent_attack() -> None:
 
     assert result.intent == "disengage"
     assert result.tool_name == "move_away"
+
+
+def test_stub_planner_produces_bounded_persona_differences() -> None:
+    payloads = []
+    profiles = [
+        ("npc_guard", "order-focused town guard", ["cautious"], -0.1),
+        ("npc_merchant", "pragmatic market merchant", ["sociable"], 0.15),
+        ("npc_rival", "proud rival with a prior grievance", ["resentful"], -0.65),
+        ("npc_civilian", "uninvolved local civilian", ["conflict-averse"], 0.0),
+    ]
+    for npc_id, role, personality, trust in profiles:
+        payload = valid_decision_payload()
+        payload["npc_id"] = npc_id
+        payload["trigger"]["target_id"] = npc_id
+        payload["context"]["npc"]["role"] = role
+        payload["context"]["npc"]["personality"] = personality
+        payload["context"]["relationship"]["trust"] = trust
+        payloads.append(payload)
+
+    results = [_plan(payload) for payload in payloads]
+
+    assert len({result.speech_text for result in results}) == 4
+    assert all(result.tool_name in {"move_away", "stop"} for result in results)
+    assert results[2].confidence > results[3].confidence
