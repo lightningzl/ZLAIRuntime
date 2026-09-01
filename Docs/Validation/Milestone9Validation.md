@@ -72,3 +72,13 @@
 | 本地安全行为 | 请求失败会进入 `Escalated`、停止当前 Guard Decision 动作、开启防卫并显示 `LocalFallback`；不调用新 Tool 或改变协议 |
 
 本工作包尚未完成 Stub 场景纵向路径与离线端到端验收；其自动化和可见反馈基础将在后续集成工作包完成。
+
+### `M9-T06` 场景反馈与连续集成
+
+| 验证项 | 实际结果 |
+| --- | --- |
+| Stub 默认地图烟测 | 显式 Stub Service + `/Game/SocialSandbox/Lvl_SocialSandbox` + `-ZLSandboxDecisionSmoke` 通过；Speech 接受，至少一次 `move_away` 被接受并造成 Guard 位置/版本变化。后续自动重规划被 `AutomaticReplanLimit` 截断，未形成请求风暴。 |
+| 离线默认地图烟测 | 停止 Service 后以 `-ZLSandboxDecisionFallbackSmoke` 通过；来源为 `local`、结果为 `network_error`，Guard 版本推进进入防卫，但位置未变且未执行 Tool。 |
+| 烟测语义 | Stub 烟测记录首次合法 Tool，避免把后续的正常自动重规划上限误判为首次行为失败；离线烟测明确允许本地防卫导致的权威状态变化。 |
+
+以上场景证据覆盖 `M9-A07` 至 `M9-A09` 的端到端基础；升级—缓和的完整 Stub 场景和最终全量回归仍在 `M9-T07` 记录。

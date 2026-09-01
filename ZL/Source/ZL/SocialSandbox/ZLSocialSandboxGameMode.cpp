@@ -47,6 +47,7 @@ void AZLSocialSandboxGameMode::BeginPlay()
 	const bool bFallbackSmoke = FParse::Param(FCommandLine::Get(), TEXT("ZLSandboxDecisionFallbackSmoke"));
 	const bool bKimiSmoke = FParse::Param(FCommandLine::Get(), TEXT("ZLSandboxDecisionKimiSmoke"));
 	bExpectStaleSmoke = FParse::Param(FCommandLine::Get(), TEXT("ZLSandboxDecisionStaleSmoke"));
+	bSmokeSawAcceptedTool = false;
 	if (bStubSmoke || bFallbackSmoke || bKimiSmoke || bExpectStaleSmoke)
 	{
 		ExpectedSmokeProvider = bFallbackSmoke ? TEXT("local") : (bKimiSmoke ? TEXT("kimi") : TEXT("stub"));
@@ -663,6 +664,10 @@ void AZLSocialSandboxGameMode::ExecuteGuardTool(AZLSocialSandboxNpc* Guard, cons
 		GuardExecutionTimes.RemoveAt(0, 1, EAllowShrinking::No);
 	}
 	DecisionDebug.ToolResult = ZLSocialToolReason::Accepted;
+	if (!ExpectedSmokeProvider.IsEmpty())
+	{
+		bSmokeSawAcceptedTool = true;
+	}
 	if (Guard->IsDecisionActionActive())
 	{
 		Guard->ShowDecisionAction(Action, EZLSocialActionPhase::Started);
@@ -844,7 +849,7 @@ void AZLSocialSandboxGameMode::FinishDecisionSmokeTest()
 				? (bHasTool
 					? DecisionDebug.ToolResult == ZLSocialToolReason::Accepted
 					: DecisionDebug.ToolResult == TEXT("NoTool"))
-				: DecisionDebug.ToolResult == ZLSocialToolReason::Accepted));
+				: bSmokeSawAcceptedTool));
 	const bool bVersionChanged = Guard != nullptr && Guard->GetStateVersion() > SmokeInitialGuardVersion;
 	const bool bLocationChanged = Guard != nullptr && !Guard->GetActorLocation().Equals(SmokeInitialGuardLocation, 0.1f);
 	const bool bWorldChanged = Guard != nullptr
@@ -857,7 +862,7 @@ void AZLSocialSandboxGameMode::FinishDecisionSmokeTest()
 	const bool bWorldOutcomeMatches = bExpectStaleSmoke
 		? bStaleToolHadNoLocationSideEffect
 		: (bFallback
-			? bWorldUnchanged
+			? (bVersionChanged && !bLocationChanged)
 			: (bKimi ? (!bHasTool || bVersionChanged) : bWorldChanged));
 	const bool bOutputPresent = bKimi
 		? (DecisionDebug.bSpeechAccepted || bHasTool)

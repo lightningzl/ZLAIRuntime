@@ -93,6 +93,7 @@ private:
 	FTimerHandle GuardDecisionCooldownTimer;
 	FString ExpectedSmokeProvider;
 	bool bExpectStaleSmoke = false;
+	bool bSmokeSawAcceptedTool = false;
 	FVector SmokeInitialGuardLocation = FVector::ZeroVector;
 	int64 SmokeInitialGuardVersion = 0;
 	int32 GuardDistanceBand = INDEX_NONE;
