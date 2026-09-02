@@ -18,6 +18,7 @@
 #include "SocialSandbox/Actors/ZLSocialSandboxNpc.h"
 #include "SocialSandbox/Decision/ZLSocialSandboxDecisionContext.h"
 #include "SocialSandbox/Domain/ZLSocialSandboxCombat.h"
+#include "SocialSandbox/Domain/ZLSocialSandboxCombatPresentation.h"
 #include "SocialSandbox/Domain/ZLSocialSandboxPreset.h"
 #include "SocialSandbox/Actors/ZLSocialSandboxPawn.h"
 #include "SocialSandbox/Actors/ZLSocialSandboxPlayerController.h"
@@ -286,6 +287,7 @@ FText AZLSocialSandboxGameMode::SubmitAction(const FName TargetId, const FString
 			return FText::FromString(TEXT("拒绝：目标当前无法受到攻击"));
 		}
 		LastPlayerAttackSeconds = NowSeconds;
+		NotifyAcceptedAttackPresentation(Player, Target, DamageResult);
 		ApplyGuardConflict(Target, EZLSocialSandboxConflictEvent::Attack);
 		DispatchActionObservation(EZLSocialActionType::Attack, EZLSocialActionPhase::Started, TargetId);
 		DispatchActionObservation(EZLSocialActionType::Attack, EZLSocialActionPhase::Completed, TargetId);
@@ -329,6 +331,25 @@ FText AZLSocialSandboxGameMode::SubmitAction(const FName TargetId, const FString
 	}
 	DispatchActionObservation(Parsed.Action, EZLSocialActionPhase::Started, TargetId);
 	return FText::GetEmpty();
+}
+
+void AZLSocialSandboxGameMode::NotifyAcceptedAttackPresentation(
+	AActor* Player,
+	AZLSocialSandboxNpc* Target,
+	const FZLSocialSandboxDamageResult& DamageResult) const
+{
+	if (!DamageResult.bAccepted || !IsValid(Player) || !IsValid(Target))
+	{
+		return;
+	}
+	if (Player->GetClass()->ImplementsInterface(UZLSocialSandboxCombatPresentation::StaticClass()))
+	{
+		IZLSocialSandboxCombatPresentation::Execute_PlaySandboxAttackPresentation(Player, Target);
+	}
+	if (Target->GetClass()->ImplementsInterface(UZLSocialSandboxCombatPresentation::StaticClass()))
+	{
+		IZLSocialSandboxCombatPresentation::Execute_PlaySandboxHitPresentation(Target, Player, DamageResult.AppliedDamage, DamageResult.bIncapacitated);
+	}
 }
 
 void AZLSocialSandboxGameMode::DispatchActionObservation(const EZLSocialActionType Action, const EZLSocialActionPhase Phase, const FName TargetId)
