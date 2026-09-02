@@ -1,4 +1,4 @@
-#include "SocialSandbox/ZLSocialSandboxMultiNpcDecision.h"
+#include "SocialSandbox/Decision/ZLSocialSandboxMultiNpcDecision.h"
 
 bool FZLSocialSandboxMultiNpcDecision::RegisterNpc(const FName NpcId)
 {

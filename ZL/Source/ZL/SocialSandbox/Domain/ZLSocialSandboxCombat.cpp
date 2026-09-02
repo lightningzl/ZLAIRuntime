@@ -1,4 +1,4 @@
-#include "SocialSandbox/ZLSocialSandboxCombat.h"
+#include "SocialSandbox/Domain/ZLSocialSandboxCombat.h"
 
 FZLSocialSandboxAttackValidationResult FZLSocialSandboxCombat::ValidatePlayerAttack(
 	const FZLSocialSandboxAttackValidationContext& Context)

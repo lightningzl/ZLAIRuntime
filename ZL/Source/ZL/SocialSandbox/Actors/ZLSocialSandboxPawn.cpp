@@ -1,8 +1,8 @@
-#include "SocialSandbox/ZLSocialSandboxPawn.h"
+#include "SocialSandbox/Actors/ZLSocialSandboxPawn.h"
 
-#include "SocialSandbox/ZLSocialSandboxMotion.h"
-#include "SocialSandbox/ZLSocialBubbleWidget.h"
-#include "SocialSandbox/ZLSocialNameWidget.h"
+#include "SocialSandbox/Domain/ZLSocialSandboxMotion.h"
+#include "SocialSandbox/UI/ZLSocialBubbleWidget.h"
+#include "SocialSandbox/UI/ZLSocialNameWidget.h"
 
 #include "Camera/CameraComponent.h"
 #include "Components/ArrowComponent.h"

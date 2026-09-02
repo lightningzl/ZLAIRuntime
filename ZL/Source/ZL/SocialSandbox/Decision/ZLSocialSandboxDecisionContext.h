@@ -3,7 +3,7 @@
 #include "CoreMinimal.h"
 #include "ZLAIServiceTypes.h"
 #include "ZLSocialObservation.h"
-#include "SocialSandbox/ZLSocialSandboxNpcProfile.h"
+#include "SocialSandbox/Domain/ZLSocialSandboxNpcProfile.h"
 
 struct FZLSocialSandboxPublicHistoryFact
 {

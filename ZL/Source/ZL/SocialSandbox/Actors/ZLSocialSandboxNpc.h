@@ -3,7 +3,7 @@
 #include "CoreMinimal.h"
 #include "GameFramework/Actor.h"
 #include "ZLSocialObservation.h"
-#include "SocialSandbox/ZLSocialSandboxNpcProfile.h"
+#include "SocialSandbox/Domain/ZLSocialSandboxNpcProfile.h"
 #include "ZLSocialSandboxNpc.generated.h"
 
 class UArrowComponent;

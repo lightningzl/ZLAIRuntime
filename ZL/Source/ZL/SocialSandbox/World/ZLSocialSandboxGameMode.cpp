@@ -1,4 +1,4 @@
-#include "SocialSandbox/ZLSocialSandboxGameMode.h"
+#include "SocialSandbox/World/ZLSocialSandboxGameMode.h"
 
 #include "ZL.h"
 #include "ZLSocialActionParser.h"
@@ -15,11 +15,11 @@
 #include "Materials/MaterialInstanceDynamic.h"
 #include "Misc/CommandLine.h"
 #include "Misc/Parse.h"
-#include "SocialSandbox/ZLSocialSandboxNpc.h"
-#include "SocialSandbox/ZLSocialSandboxDecisionContext.h"
-#include "SocialSandbox/ZLSocialSandboxCombat.h"
-#include "SocialSandbox/ZLSocialSandboxPawn.h"
-#include "SocialSandbox/ZLSocialSandboxPlayerController.h"
+#include "SocialSandbox/Actors/ZLSocialSandboxNpc.h"
+#include "SocialSandbox/Decision/ZLSocialSandboxDecisionContext.h"
+#include "SocialSandbox/Domain/ZLSocialSandboxCombat.h"
+#include "SocialSandbox/Actors/ZLSocialSandboxPawn.h"
+#include "SocialSandbox/Actors/ZLSocialSandboxPlayerController.h"
 #include "TimerManager.h"
 
 AZLSocialSandboxGameMode::AZLSocialSandboxGameMode()

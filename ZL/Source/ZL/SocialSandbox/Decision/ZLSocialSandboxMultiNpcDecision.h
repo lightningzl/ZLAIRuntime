@@ -1,7 +1,7 @@
 #pragma once
 
 #include "CoreMinimal.h"
-#include "SocialSandbox/ZLSocialSandboxDecisionScheduler.h"
+#include "SocialSandbox/Decision/ZLSocialSandboxDecisionScheduler.h"
 
 struct FZLSocialSandboxNpcDispatch
 {

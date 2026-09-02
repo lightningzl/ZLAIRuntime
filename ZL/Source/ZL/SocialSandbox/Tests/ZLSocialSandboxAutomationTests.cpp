@@ -3,11 +3,11 @@
 #include "Engine/Engine.h"
 #include "Engine/StaticMeshActor.h"
 #include "Engine/World.h"
-#include "SocialSandbox/ZLSocialSandboxGameMode.h"
-#include "SocialSandbox/ZLSocialSandboxMotion.h"
-#include "SocialSandbox/ZLSocialSandboxNpc.h"
-#include "SocialSandbox/ZLSocialSandboxPawn.h"
-#include "SocialSandbox/ZLSocialSandboxPlayerController.h"
+#include "SocialSandbox/World/ZLSocialSandboxGameMode.h"
+#include "SocialSandbox/Domain/ZLSocialSandboxMotion.h"
+#include "SocialSandbox/Actors/ZLSocialSandboxNpc.h"
+#include "SocialSandbox/Actors/ZLSocialSandboxPawn.h"
+#include "SocialSandbox/Actors/ZLSocialSandboxPlayerController.h"
 #include "ZLSocialObservation.h"
 
 #if WITH_DEV_AUTOMATION_TESTS

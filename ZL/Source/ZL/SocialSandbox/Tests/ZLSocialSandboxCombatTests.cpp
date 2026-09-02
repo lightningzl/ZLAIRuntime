@@ -1,7 +1,7 @@
 #if WITH_DEV_AUTOMATION_TESTS
 
 #include "Misc/AutomationTest.h"
-#include "SocialSandbox/ZLSocialSandboxCombat.h"
+#include "SocialSandbox/Domain/ZLSocialSandboxCombat.h"
 
 IMPLEMENT_SIMPLE_AUTOMATION_TEST(
 	FZLSocialSandboxCombatValidationTest,

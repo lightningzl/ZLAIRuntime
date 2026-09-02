@@ -1,4 +1,4 @@
-#include "SocialSandbox/ZLSocialSandboxNpcProfile.h"
+#include "SocialSandbox/Domain/ZLSocialSandboxNpcProfile.h"
 
 bool FZLSocialSandboxNpcProfile::IsValid() const
 {

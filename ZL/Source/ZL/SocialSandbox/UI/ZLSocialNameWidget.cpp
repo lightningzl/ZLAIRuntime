@@ -1,4 +1,4 @@
-#include "SocialSandbox/ZLSocialNameWidget.h"
+#include "SocialSandbox/UI/ZLSocialNameWidget.h"
 
 #include "Blueprint/WidgetTree.h"
 #include "Components/TextBlock.h"

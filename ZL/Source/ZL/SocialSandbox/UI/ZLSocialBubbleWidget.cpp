@@ -1,4 +1,4 @@
-#include "SocialSandbox/ZLSocialBubbleWidget.h"
+#include "SocialSandbox/UI/ZLSocialBubbleWidget.h"
 
 #include "Blueprint/WidgetTree.h"
 #include "Components/Border.h"
