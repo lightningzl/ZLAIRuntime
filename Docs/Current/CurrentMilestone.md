@@ -1,135 +1,90 @@
-# Milestone 10：最终场景 1 多 NPC 交付
+# Milestone 11：可配置角色与 NPC 技术验证
 
 ## 状态
 
-- 状态：`已完成`
-- 开始日期：2026-09-01
-- 前置里程碑：Milestone 1 至 9 已完成
-- 验收证据：[Milestone10Validation.md](../Validation/Milestone10Validation.md)
-- 场景来源：[最终场景 1：开放式社会交互沙盒](../Planning/FinalScenarios/Scenario1OpenSocialSandbox.md)
+- 状态：`进行中`
+- 开始日期：2026-09-02
+- 前置里程碑：Milestone 1 至 10 已完成
+- 历史范围：[Milestone10.md](../Milestones/Milestone10.md)
+- 验收证据：[Milestone11Validation.md](../Validation/Milestone11Validation.md)
 
-历史范围已归档至 [Milestone 1 至 9](../Milestones/)。长期路线见 [SocialSimulationPlan.md](../Planning/SocialSimulationPlan.md)，目标系统设计见 [SocialSimulationDesign.md](../Planning/SocialSimulationDesign.md)，当前已实现边界见 [Architecture.md](../Planning/Architecture.md)。
+长期路线见 [SocialSimulationPlan.md](../Planning/SocialSimulationPlan.md)，当前模块边界见 [Architecture.md](../Planning/Architecture.md)。
 
 ## 目标
 
-把 Milestone 9 的单 Guard 连续互动扩展为最终场景 1 的 4 NPC 可操作交付。Guard、Merchant、Rival 和 Civilian 使用稳定但不同的身份、人物、关系与经历；每个 NPC 只依据自己的 Speech/Action Observation、公开表达和真实动作结果判断。同一玩家输入可以形成不同但可解释的语言、移动、冲突立场或确定性旁观反馈：
+在既有社会沙盒上验证受控本地 JSON 预设能可靠改变角色/NPC 的生成、可见表现与个人 Decision Context。预设只替换当前写死的初始数据；UE 继续作为世界、校验和执行权威，Python、协议和现有 Tool 均不改变。
 
 ```text
-玩家选择目标或不选目标并说话、移动或攻击
-  -> UE 为 4 个 NPC 分别计算视觉、听觉、清晰度和目标判断
-  -> 每个 NPC 只保存自己的 Observation 与公开历史
-  -> 有资格的 Important NPC 进入逐 NPC 有界 Decision 调度
-  -> Stub 或 Kimi 使用该 NPC 的人物、关系、状态和个人历史
-  -> UE 独立校验并执行该 NPC 的 Speech 与现有四个 Tool
-  -> 旁观者只对自己实际感知的内容产生规则或 Decision 反馈
-  -> Inspector、气泡、移动和冲突状态显示各自结果
+选择受控预设
+  -> UE 读取本地 JSON 并先完成 Schema/字段/范围/稳定 ID 校验
+  -> 校验成功时替换下一次场景生成快照；失败时保留当前有效场景
+  -> GameMode 生成一个玩家与至少两个 NPC
+  -> 名称、颜色、出生 Transform、生命和 NPC 人物/关系进入既有表现与个人 Context
+  -> 原有说话、行为、攻击、Stub 与离线降级路径继续工作
 ```
-
-## 交付后修正：玩家可见中文化
-
-- 将社会交互舞台的操作说明、下拉选项、状态反馈、角色名称/生命标识、气泡、Inspector 与本地 Stub 台词统一为简体中文。
-- Kimi Decision 固定要求以简体中文输出公开 Speech；角色身份、个人上下文和结构化字段保持不变。
-- 协议字段、Tool 名称、稳定 Reason Code、命令行参数和内部日志标识仍使用既有机器可读值，不作为玩家可见文本。
-- 本修正只改变呈现与公开 Speech 语言，不新增能力、不修改 `Protocol.md`、不改变感知、调度或 Tool 执行语义。
-- 玩家可点击场景中的任意 NPC；左侧目标栏与个人 Inspector 自动切换到被点选的角色。
-- 受控行为改为下拉选择：面向、靠近、远离、攻击和停止直接映射既有白名单；所有下拉项使用浅色文字，确保深色菜单背景中清晰可读。
-- 屏幕右侧新增独立的行动记录按钮；点击后展开行动与对话记录，保留最近 12 条玩家成功提交、NPC 对话与 NPC 已接受行动；重置舞台时清空记录，不保存隐藏上下文。
-- 玩家攻击有效目标时不再强制旋转玩家或控制器；镜头保持玩家当前朝向。
-
-本里程碑正式验收 `FS1-01` 至 `FS1-11`。真实模型验收比较感知一致、人物差异、连续性和动作合法性，不比较固定台词或固定 Tool。
 
 ## 协议边界
 
-- 沿用已确认的 [Decision v1](../Reference/Protocol.md)，不新增 Endpoint、字段、Intent、Tool、状态码或兼容规则。
-- 每个请求仍只对应一个 NPC；多 NPC 编排由 UE 在协议外完成，Python 不读取完整 World 或其他 NPC 的 Observation。
-- 继续只允许 FaceTarget、MoveToward、MoveAway、Stop。求助、防卫、攻击、命中和伤害仍由 UE Gameplay 规则表达和执行。
-- 全局最多 2 个 Decision 请求在途；每个 NPC 最多 1 个在途和 1 个最新 Pending，保持固定冷却和自动重规划上限。
-- 如果实现证明必须改变协议，停止依赖该变更的部分并记录原因；本里程碑其他工作继续推进。
+- 不修改 [Protocol.md](../Reference/Protocol.md)、两端协议类型、Endpoint、Intent、Tool 或错误码。
+- JSON 仅由 UE 本地读取，绝不发送给 Python；Decision 请求仍由既有个人 Context Builder 产生。
+- AI 可以在未来生成候选文本，但本里程碑不实现 AI 写文件或自动应用；所有加载都必须通过 UE 校验。
 
 ## 玩家可操作成果
 
-- 玩家可以在 Guard、Merchant、Rival 和 Civilian 之间自由选择目标，也可以不指定目标，连续输入开放语言。
-- 玩家可以使用 Whisper、Talk、Shout、InEar，执行 Face、Approach、MoveAway、Stop 和基础 Attack；非法或无法识别的行为明确反馈且不伪造世界变化。
-- 玩家可以改变距离、朝向和冲突程度，并在不同 NPC 之间切换互动，不需要遵循固定剧情。
-- Reset 和 Stub 演示提供确定、可重复的多 NPC 起点；真实 Kimi 使用相同场景入口。
+- 进入测试场景时可在少量受控玩家角色预设中选择；下一次重置/进入场景后使用该角色的名称、颜色和出生位置。
+- 每套预设生成一个玩家和至少两个 NPC；玩家仍可使用既有说话、行为和攻击入口。
+- 修改公开 JSON 预设后重新加载场景，可观察名称、颜色、出生位置、生命、NPC 人物或初始关系变化。
+- 导出当前有效预设的公开字段；导出不含 Prompt、服务响应、密钥、运行时 Observation、历史、请求或调试状态。
 
 ## 屏幕可见成果
 
-- 4 个 NPC 具有不同名称、人物身份、颜色/标识、初始关系与位置，并分别显示 Speech、Action、生命、立场和 Decision 来源。
-- 同一说话事件对每个 NPC 分别显示看见、听见、听清和是否认为自己是目标；未感知 NPC 不产生引用该内容的反馈。
-- 选中任意 NPC 时，个人视角 Inspector 显示其最近 Trigger、历史来源、调度状态、Provider、Intent、Tool 校验、公开 Reason Code 和延迟。
-- Kimi 离线、超时或输出无效时，各 NPC 继续使用有界本地反馈；失败不会形成请求风暴或破坏其他 NPC 状态。
+- 玩家和每个 NPC 显示预设中的名称与颜色，并从预设出生 Transform 生成。
+- Inspector 显示选中 NPC 的个人感知与既有 Decision 信息；预设改变 NPC 人物/关系时，Stub/Decision Context 同步使用新值。
+- JSON 校验失败时，以简体中文明确显示原因，且当前有效场景不被半更新或清空。
 
 ## 本阶段范围
 
-### 多 NPC 身份、状态与个人上下文
+### 受控 JSON 预设
 
-- 固定交付 4 个 NPC：Guard、Merchant、Rival 和 Civilian；身份、人格、表达风格、目标、初始关系和公开经历使用受控配置。
-- 每个 NPC 独立维护 Observation Buffer、Authority State Version、公开历史、生命、防卫、冲突状态、Decision 调试快照和 Tool 幂等状态。
-- Decision Context Builder 从目标 NPC 配置和个人历史构造请求，不使用 Guard 常量或其他 NPC 数据。
+- 定义版本化 JSON Schema 和字段白名单：稳定 ID、角色类型、显示名、颜色、出生 Transform、初始生命，以及 NPC 的角色、人格、表达风格、目标、初始 Relationship/Instant State。
+- 提供至少两套仓库内的安全示例预设；稳定 ID 在单份文件内唯一，角色数固定为 1 个玩家与 2 至 4 个 NPC。
+- UE 在解析后、应用前校验版本、对象层级、未知字段、字符串边界、颜色、数值范围、生命、Transform、唯一 ID、角色数量和必需玩家；任一失败都不得替换当前有效快照。
+- 导入、选择、导出和重置只使用有效的内存快照；路径限定在项目受控预设目录，不接收玩家任意文件路径。
 
-### 多 NPC 调度与动作执行
+### 场景接入
 
-- 每个 NPC 使用独立单在途/单 Pending 调度状态；GameMode 使用固定全局并发上限和稳定顺序分派请求。
-- 新 Speech、已感知动作、距离跨阈值、受击、计划完成和计划失效只触发实际感知该变化的 NPC。
-- Response 与 Tool 按 NPC、Request、Generation、State Version、TTL 和当前权威快照关联；一个 NPC 的回调不得改变另一个 NPC。
-- 现有四个 Tool 复用于任意注册 NPC，仍只面向玩家或 Stop；移动、Transform、冷却和结果 Observation 由 UE 权威执行。
+- 用有效预设驱动 `AZLSocialSandboxGameMode` 的玩家和 NPC 生成，移除本阶段触及的固定出生位置和固定 Profile 初始数据依赖。
+- 将玩家公开显示名、颜色、出生 Transform、初始生命接入既有 Pawn；将 NPC 配置接入既有 Profile、生命、名称、颜色和个人 Context 路径。
+- 保留当前 Pawn、NPC 类、占位网格、UI 和四个受控 Tool；不要求新增蓝图或资产来完成代码验证。
 
-### 人物差异与旁观反应
+### 攻击表现边界
 
-- Stub 依据 NPC 身份、关系、当前状态和个人事实生成可重复但不同的公开反应，用于自动化验证人物差异和旁观边界。
-- Kimi 固定约束要求以当前 NPC 身份说话，只使用个人 Context，不假装知道未感知事实或动作已执行。
-- 未被话语指向但实际听见/看见事件的 NPC 可以产生有界旁观反馈；未听见或未看见时不得由广播式共享触发。
-- 公开表达、实际移动、生命和冲突状态保持一致；内部数值和模型隐式推理不向玩家公开。
-
-### 场景交付、调试与验收
-
-- UI 支持目标切换、4 NPC 概览、个人 Inspector、重置和 Stub/Kimi 共用操作路径。
-- 增加可重复的多 NPC Stub 场景烟测，覆盖有目标、无目标、旁观、人物差异、冲突升级—缓和、Tool 拒绝和离线降级。
-- UE 自动化覆盖逐 NPC 隔离、调度公平与并发上限、回调关联、状态版本、攻击零副作用和 Inspector 数据。
-- Python 覆盖多种人物 Context 的结构化处理、Stub 差异、Kimi 约束、错误映射和脱敏。
-- Validation 保存 `FS1-01` 至 `FS1-11`、性能、真实 Kimi 和演示路径的可复查证据。
-
-## 数据与权威边界
-
-- UE 是 NPC 注册、位置、朝向、感知、关系输入、生命、命中、伤害、防卫、冲突状态、状态版本、调度、动作执行和结果 Event 的唯一事实来源。
-- Python 每次只消费一个 NPC 的受控人物和个人事实，返回现有结构化表达与单个高层建议；不保存社会世界副本、不跨 NPC 共享 Context、不执行 Tool。
-- NPC 公开 Speech 和真实 Action Result 只进入该 NPC 自己的历史；旁观者必须通过自己的感知重新获得事件。
-- NPC 数、Observation、历史、调试记录、请求并发、Pending、自动重规划、Tool Call 和失败反馈均有硬上限。
+- 只有现有攻击目标、距离、冷却、伤害和受击校验成功后，才允许由可选展示适配器请求一次攻击/受击表现；拒绝攻击不得请求命中表现，且不改变玩家镜头朝向。
+- `Variant_Combat` 的动画蒙太奇、AnimNotify、蓝图引用和资源绑定由用户配置；本里程碑的 C++ 只提供无资源依赖的可选接口与安全回退。
 
 ## 明确不做
 
-- 不修改 Dialogue/Decision 协议，不新增 Tool、Intent、多 Tool、批量 Decision 或服务端会话。
-- 不实现 NPC 间自由对话、无限自主循环、群体计划、长期目标持久化或跨 NPC 隐式知识共享。
-- 不建设完整战斗、武器、GAS、复杂导航、正式动画、犯罪、任务、经济或高质量美术系统。
-- 不让 LLM 决定感知、目标是否合法、命中、伤害、状态版本、Transform、调度优先级或逐帧动作。
-- 不实现 MassEntity 正式场景集成、语音、唇形、Embedding、向量数据库、多人同步或 Server Authority。
+- 不做角色编辑器、运行时自由创建、持久化、背包、装备、职业树、资产导入、动画重定向、完整 `Variant_Combat` 接入、连招、蓄力、敌人刷新、复杂战斗、多人同步或任何协议/Tool 扩展。
+- 不由 AI 自动写入、自动应用或绕过校验加载 JSON；不读取用户任意路径、网络路径或隐藏运行时数据。
+- 不创建、修改或提交蓝图、动画、蒙太奇、材质、地图或其他二进制资源；此类资源配置由用户完成。
+- 不改变现有感知、调度、Tool、伤害、镜头或 Python Provider 语义。
 
 ## 验收标准
 
 | ID | 标准 |
 | --- | --- |
-| `M10-A01` | Milestone 1 至 9 的适用回归保持通过；`Protocol.md` 和两端协议类型无变更。 |
-| `M10-A02` | 场景稳定生成 4 个差异化 NPC，并为每个 NPC 独立维护人物、关系、状态、Observation、历史、调度和调试数据。 |
-| `M10-A03` | 有目标、无目标、Whisper、Talk、Shout 和 InEar 均按逐 NPC 视觉/听觉/目标规则传播；未感知事实不进入请求或反馈。 |
-| `M10-A04` | 多 NPC Decision 每个请求只含对应 NPC 个人 Context；全局并发不超过 2，每 NPC 不超过 1 个在途和 1 个 Pending，回调严格关联。 |
-| `M10-A05` | Guard、Merchant、Rival 和 Civilian 对相同已感知输入在 Stub 中产生可复现差异，Kimi 验收体现身份、关系或历史造成的合理差异。 |
-| `M10-A06` | 每个 NPC 的合法 Speech 与 Tool 独立处理；Tool 只有经 UE 当前目标、版本、TTL、距离、状态、冷却和幂等校验后才改变该 NPC 的世界状态。 |
-| `M10-A07` | 玩家可在不同 NPC 间连续说话、接近、离开、停止和基础攻击；冲突可升级并因停止、退让或道歉缓和，且生命与动作仍由 UE 权威维护。 |
-| `M10-A08` | 气泡、角色移动、生命/立场标识与个人 Inspector 能现场展示每个 NPC 的感知、公开表达、动作、Decision 来源和校验结果。 |
-| `M10-A09` | Stub、离线、超时和无效响应路径均保持场景可操作、反馈有界、状态隔离且无请求风暴。 |
-| `M10-A10` | `FS1-01` 至 `FS1-11` 均有自动化或人工证据；真实模型验收只比较行为属性并确认 `provider=kimi`。 |
-| `M10-A11` | 受影响 UE Target 编译、Python/UE 全量回归、Stub 多 NPC 烟测、失败路径、性能采样和演示指南均完成并脱敏记录。 |
-| `M10-A12` | 社会交互舞台所有玩家可见的固定提示和 Stub Speech 均为简体中文；Kimi 指令明确约束中文 Speech，且协议/稳定机器标识不变。 |
-| `M10-A13` | 点击场景中的有效 NPC 后，左侧目标选择和个人 Inspector 同步切换到该 NPC；点击非 NPC 不改变当前选择。 |
-| `M10-A14` | 行为模式通过下拉菜单选择五项既有受控行为；深色下拉菜单中的选项和当前选择均清晰可读。 |
-| `M10-A15` | 屏幕右侧按钮可展开独立行动与对话记录，显示有界的玩家成功提交、NPC 对话和 NPC 已接受行动，并在重置时清空。 |
+| `M11-A01` | `Protocol.md`、两端协议 Schema、Tool 与 Intent 均无变更；现有社会沙盒说话、行为、攻击、Stub 与离线降级路径保持可用。 |
+| `M11-A02` | 至少两套受控 JSON 预设可由同一受限入口加载，每套恰有 1 个玩家与 2 至 4 个唯一稳定 ID NPC。 |
+| `M11-A03` | 预设的公开名称、颜色、出生 Transform 与初始生命可靠驱动玩家/NPC 生成和可见表现。 |
+| `M11-A04` | NPC 的角色、人格、表达风格、目标、初始 Relationship/Instant State 从预设进入既有 Profile 与个人 Decision Context，不混入其他 NPC 数据。 |
+| `M11-A05` | Schema 版本、字段白名单、类型、稳定 ID、角色数量、数值和路径均被校验；无效文件不会改变当前有效场景。 |
+| `M11-A06` | 导出仅包含允许公开配置字段；不包含 Prompt、服务响应、密钥、运行时历史、Observation 或调试信息。 |
+| `M11-A07` | 合法攻击才触发一次可选攻击/受击展示请求；拒绝攻击不触发命中表现，镜头朝向保持不变；未配置资源时稳定回退。 |
+| `M11-A08` | 受影响 UE Target 编译、配置解析自动化、预设切换场景烟测、Stub 与离线降级烟测完成；需要用户在蓝图/资源编辑器完成的步骤单列且不伪称已验证。 |
 
 ## 完成定义
 
-1. [TaskBoard.md](./TaskBoard.md) 中 Milestone 10 工作包全部完成。
-2. `M10-A01` 至 `M10-A11` 和 `FS1-01` 至 `FS1-11` 均有可复查证据。
-3. 4 个 NPC 可以从同一正常 UI 路径接受开放互动，个人感知与请求 Context 隔离成立。
-4. Stub 可重复证明人物差异、旁观边界、动作落地和升级—缓和；真实 Kimi 完成多 NPC 行为属性验收。
-5. 非法/过期 Tool 和攻击保持零 Gameplay 副作用；服务失败不破坏场景或形成请求风暴。
-6. Architecture、Reference、Decision Log、Validation、演示指南、Task Board、Project State 与最终场景状态按职责同步并归档。
+1. [TaskBoard.md](./TaskBoard.md) 的 M11 工作包全部完成，且 `M11-A01` 至 `M11-A08` 有可复查证据。
+2. 两套预设在同一地图切换时，玩家/NPC 可见属性及每个 NPC 的个人 Context 均随配置变化。
+3. 无效 JSON、非法字段或越界值不会改变当前有效场景；导出保持脱敏、有限且可再次导入。
+4. 所有必须由用户完成的蓝图或资源绑定均以明确、可执行的清单交付，未配置时 C++ 路径保持可运行。
