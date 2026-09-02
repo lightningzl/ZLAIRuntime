@@ -1,6 +1,7 @@
 #include "SocialSandbox/Actors/ZLSocialSandboxPawn.h"
 
 #include "SocialSandbox/Domain/ZLSocialSandboxMotion.h"
+#include "SocialSandbox/Domain/ZLSocialSandboxPreset.h"
 #include "SocialSandbox/UI/ZLSocialBubbleWidget.h"
 #include "SocialSandbox/UI/ZLSocialNameWidget.h"
 
@@ -70,6 +71,22 @@ AZLSocialSandboxPawn::AZLSocialSandboxPawn()
 	FollowCamera = CreateDefaultSubobject<UCameraComponent>(TEXT("FollowCamera"));
 	FollowCamera->SetupAttachment(CameraBoom, USpringArmComponent::SocketName);
 	FollowCamera->bUsePawnControlRotation = false;
+}
+
+void AZLSocialSandboxPawn::InitializeSandboxPlayer(const FZLSocialSandboxPlayerPreset& Preset)
+{
+	if (!Preset.IsValid()) { return; }
+	SandboxStartTransform = Preset.SpawnTransform;
+	SetActorTransform(SandboxStartTransform, false, nullptr, ETeleportType::TeleportPhysics);
+	if (UMaterialInstanceDynamic* Material = BodyMesh->CreateDynamicMaterialInstance(0))
+	{
+		Material->SetVectorParameterValue(TEXT("Color"), Preset.BodyColor);
+	}
+	NameWidget->InitWidget();
+	if (UZLSocialNameWidget* Widget = Cast<UZLSocialNameWidget>(NameWidget->GetUserWidgetObject()))
+	{
+		Widget->SetName(Preset.DisplayName, Preset.BodyColor);
+	}
 }
 
 void AZLSocialSandboxPawn::BeginPlay()

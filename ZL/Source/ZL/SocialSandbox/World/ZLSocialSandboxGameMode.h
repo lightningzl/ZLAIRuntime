@@ -12,6 +12,8 @@
 #include "ZLSocialSandboxGameMode.generated.h"
 
 class AZLSocialSandboxNpc;
+struct FZLSocialSandboxNpcPreset;
+struct FZLSocialSandboxPreset;
 
 struct FZLSocialSandboxDecisionDebug
 {
@@ -64,6 +66,8 @@ protected:
 private:
 	void SpawnEnvironment();
 	void SpawnNpc(FName StableId, const FVector& Location, const FRotator& Rotation);
+	void SpawnNpc(const FZLSocialSandboxNpcPreset& Preset);
+	bool TryApplyNamedPreset();
 	void DispatchActionObservation(EZLSocialActionType Action, EZLSocialActionPhase Phase, FName TargetId);
 	FZLSocialObservation DispatchNpcActionObservation(AZLSocialSandboxNpc* Actor, EZLSocialActionType Action, EZLSocialActionPhase Phase, FName TargetId);
 	void QueueGuardDecision(AZLSocialSandboxNpc* Guard, const FZLSocialObservation& Trigger, const FString& SpeechContent, EZLSocialSandboxDecisionTriggerReason Reason, bool bAdvanceStateVersion = false);

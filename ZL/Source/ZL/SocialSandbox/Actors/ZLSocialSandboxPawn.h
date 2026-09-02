@@ -10,6 +10,7 @@ class UCameraComponent;
 class USpringArmComponent;
 class UStaticMeshComponent;
 class UWidgetComponent;
+struct FZLSocialSandboxPlayerPreset;
 
 UCLASS()
 class ZL_API AZLSocialSandboxPawn final : public ACharacter
@@ -18,6 +19,7 @@ class ZL_API AZLSocialSandboxPawn final : public ACharacter
 
 public:
 	AZLSocialSandboxPawn();
+	void InitializeSandboxPlayer(const FZLSocialSandboxPlayerPreset& Preset);
 
 	void ResetToSandboxStart();
 	bool StartScriptedAction(EZLSocialActionType Action, AActor* Target, TFunction<void()> OnCompleted);

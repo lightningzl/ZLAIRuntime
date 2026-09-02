@@ -80,7 +80,7 @@ void AZLSocialSandboxNpc::InitializeSandboxNpc(const FName InStableId, const FTe
 	InitializeSandboxNpc(InProfile, InStartTransform);
 }
 
-void AZLSocialSandboxNpc::InitializeSandboxNpc(const FZLSocialSandboxNpcProfile& InProfile, const FTransform& InStartTransform)
+void AZLSocialSandboxNpc::InitializeSandboxNpc(const FZLSocialSandboxNpcProfile& InProfile, const FTransform& InStartTransform, const float InInitialHealth)
 {
 	check(InProfile.IsValid());
 	Profile = InProfile;
@@ -88,6 +88,7 @@ void AZLSocialSandboxNpc::InitializeSandboxNpc(const FZLSocialSandboxNpcProfile&
 	DisplayName = Profile.DisplayName;
 	SandboxStartTransform = InStartTransform;
 	StateVersion = 1;
+	MaxHealth = FMath::Clamp(InInitialHealth, 1.0f, 1000.0f);
 	Health = MaxHealth;
 	LastDamageSeconds = -DBL_MAX;
 	bDefending = false;
