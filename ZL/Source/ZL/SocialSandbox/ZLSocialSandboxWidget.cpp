@@ -16,13 +16,13 @@
 
 namespace
 {
-const FString SpeechOption = TEXT("说话 Speech");
-const FString ActionOption = TEXT("行为 Action");
-const FString NoTargetOption = TEXT("无目标 None");
-const FString WhisperOption = TEXT("小声 Whisper");
-const FString TalkOption = TEXT("正常 Talk");
-const FString ShoutOption = TEXT("大喊 Shout");
-const FString InEarOption = TEXT("耳边 InEar");
+const FString SpeechOption = TEXT("说话");
+const FString ActionOption = TEXT("行为");
+const FString NoTargetOption = TEXT("无目标");
+const FString WhisperOption = TEXT("小声说话");
+const FString TalkOption = TEXT("正常说话");
+const FString ShoutOption = TEXT("大声呼喊");
+const FString InEarOption = TEXT("耳边说话");
 
 UTextBlock* AddLabel(UWidgetTree* WidgetTree, UVerticalBox* Parent, const FString& Text, const float Size = 18.0f)
 {
@@ -51,8 +51,8 @@ void UZLSocialSandboxWidget::NativeOnInitialized()
 
 	UVerticalBox* Layout = WidgetTree->ConstructWidget<UVerticalBox>();
 	Panel->SetContent(Layout);
-	AddLabel(WidgetTree, Layout, TEXT("Social Sandbox / 社会交互舞台"), 24.0f);
-	AddLabel(WidgetTree, Layout, TEXT("WASD 移动 · 鼠标转向 · 输入不会发送到 Python"), 14.0f);
+	AddLabel(WidgetTree, Layout, TEXT("社会交互舞台"), 24.0f);
+	AddLabel(WidgetTree, Layout, TEXT("WASD 移动 · 鼠标转向 · 输入不会发送到服务端"), 14.0f);
 
 	InputModeCombo = WidgetTree->ConstructWidget<UComboBoxString>();
 	InputModeCombo->AddOption(SpeechOption);
@@ -76,7 +76,7 @@ void UZLSocialSandboxWidget::NativeOnInitialized()
 	Layout->AddChildToVerticalBox(TargetCombo)->SetPadding(FMargin(0.0f, 5.0f));
 
 	InputBox = WidgetTree->ConstructWidget<UEditableTextBox>();
-	InputBox->SetHintText(FText::FromString(TEXT("输入说话内容或受控行为（1–512 字符）")));
+	InputBox->SetHintText(FText::FromString(TEXT("输入说话内容或受控行为（1–512 个字符）")));
 	InputBox->OnTextCommitted.AddDynamic(this, &UZLSocialSandboxWidget::HandleInputCommitted);
 	Layout->AddChildToVerticalBox(InputBox)->SetPadding(FMargin(0.0f, 5.0f));
 
@@ -84,21 +84,21 @@ void UZLSocialSandboxWidget::NativeOnInitialized()
 	Layout->AddChildToVerticalBox(Buttons)->SetPadding(FMargin(0.0f, 5.0f));
 	UButton* SubmitButton = WidgetTree->ConstructWidget<UButton>();
 	UTextBlock* SubmitLabel = WidgetTree->ConstructWidget<UTextBlock>();
-	SubmitLabel->SetText(FText::FromString(TEXT("提交 Submit")));
+	SubmitLabel->SetText(FText::FromString(TEXT("提交")));
 	SubmitButton->SetContent(SubmitLabel);
 	SubmitButton->OnClicked.AddDynamic(this, &UZLSocialSandboxWidget::HandleSubmitClicked);
 	Buttons->AddChildToHorizontalBox(SubmitButton)->SetPadding(FMargin(0.0f, 0.0f, 8.0f, 0.0f));
 
 	UButton* ResetButton = WidgetTree->ConstructWidget<UButton>();
 	UTextBlock* ResetLabel = WidgetTree->ConstructWidget<UTextBlock>();
-	ResetLabel->SetText(FText::FromString(TEXT("重置舞台 Reset")));
+	ResetLabel->SetText(FText::FromString(TEXT("重置舞台")));
 	ResetButton->SetContent(ResetLabel);
 	ResetButton->OnClicked.AddDynamic(this, &UZLSocialSandboxWidget::HandleResetClicked);
 	Buttons->AddChildToHorizontalBox(ResetButton);
 
-	StatusText = AddLabel(WidgetTree, Layout, TEXT("就绪 Ready"), 15.0f);
-	SetStatus(FText::FromString(TEXT("就绪 Ready")), false);
-	AddLabel(WidgetTree, Layout, TEXT("逐 NPC Observation Inspector"), 18.0f);
+	StatusText = AddLabel(WidgetTree, Layout, TEXT("就绪"), 15.0f);
+	SetStatus(FText::FromString(TEXT("就绪")), false);
+	AddLabel(WidgetTree, Layout, TEXT("NPC 个人感知面板"), 18.0f);
 	InspectorText = AddLabel(WidgetTree, Layout, TEXT("选择一个 NPC 查看个人感知。"), 14.0f);
 	InspectorText->SetAutoWrapText(true);
 }
@@ -133,7 +133,7 @@ void UZLSocialSandboxWidget::SetTargets(const TArray<FName>& StableIds, const TA
 	const int32 Count = FMath::Min(StableIds.Num(), DisplayNames.Num());
 	for (int32 Index = 0; Index < Count; ++Index)
 	{
-		const FString Option = FString::Printf(TEXT("%s [%s]"), *DisplayNames[Index].ToString(), *StableIds[Index].ToString());
+		const FString Option = DisplayNames[Index].ToString();
 		TargetCombo->AddOption(Option);
 		TargetIdsByOption.Add(Option, StableIds[Index]);
 	}
@@ -155,7 +155,7 @@ void UZLSocialSandboxWidget::HandleSubmitClicked()
 	const EZLSocialInputValidationResult Validation = FZLSocialInputValidation::ValidateText(Input);
 	if (Validation != EZLSocialInputValidationResult::Valid)
 	{
-		SetStatus(FText::FromString(TEXT("拒绝：输入必须为 1–512 个 Unicode 字符")), true);
+		SetStatus(FText::FromString(TEXT("拒绝：输入必须为 1–512 个字符")), true);
 		return;
 	}
 
@@ -182,7 +182,7 @@ void UZLSocialSandboxWidget::HandleSubmitClicked()
 		return;
 	}
 	InputBox->SetText(FText::GetEmpty());
-	SetStatus(FText::FromString(TEXT("已接受：UE 正在处理输入")), false);
+	SetStatus(FText::FromString(TEXT("已接受：正在处理输入")), false);
 }
 
 void UZLSocialSandboxWidget::HandleResetClicked()

@@ -20,8 +20,10 @@ public:
 
 protected:
 	virtual void BeginPlay() override;
+	virtual void SetupInputComponent() override;
 
 private:
+	void SelectSandboxNpcUnderCursor();
 	FText SubmitSandboxInput(EZLSocialSandboxInputMode InputMode, FName SpeechMode, FName TargetId, const FString& Input);
 	void ResetSandbox();
 

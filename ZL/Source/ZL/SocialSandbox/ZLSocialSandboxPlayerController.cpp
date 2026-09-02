@@ -3,6 +3,7 @@
 #include "Kismet/GameplayStatics.h"
 #include "SocialSandbox/ZLSocialSandboxGameMode.h"
 #include "SocialSandbox/ZLSocialSandboxNpc.h"
+#include "InputCoreTypes.h"
 
 void AZLSocialSandboxPlayerController::BeginPlay()
 {
@@ -29,6 +30,12 @@ void AZLSocialSandboxPlayerController::BeginPlay()
 	FInputModeGameAndUI InputMode;
 	InputMode.SetHideCursorDuringCapture(false);
 	SetInputMode(InputMode);
+}
+
+void AZLSocialSandboxPlayerController::SetupInputComponent()
+{
+	Super::SetupInputComponent();
+	InputComponent->BindKey(EKeys::LeftMouseButton, IE_Pressed, this, &AZLSocialSandboxPlayerController::SelectSandboxNpcUnderCursor);
 }
 
 void AZLSocialSandboxPlayerController::RefreshSandboxTargets()
@@ -69,6 +76,25 @@ void AZLSocialSandboxPlayerController::SelectInspectorTarget(const FName TargetI
 	{
 		SandboxWidget->SelectTarget(TargetId);
 		RefreshObservationInspector();
+	}
+}
+
+void AZLSocialSandboxPlayerController::SelectSandboxNpcUnderCursor()
+{
+	FHitResult Hit;
+	if (!GetHitResultUnderCursor(ECC_Visibility, false, Hit))
+	{
+		return;
+	}
+	const AZLSocialSandboxNpc* Npc = Cast<AZLSocialSandboxNpc>(Hit.GetActor());
+	if (!IsValid(Npc))
+	{
+		return;
+	}
+	SelectInspectorTarget(Npc->GetStableId());
+	if (SandboxWidget != nullptr)
+	{
+		SandboxWidget->SetStatus(FText::FromString(FString::Printf(TEXT("已选择：%s"), *Npc->GetDisplayName().ToString())), false);
 	}
 }
 

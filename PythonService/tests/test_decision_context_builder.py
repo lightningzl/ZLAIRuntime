@@ -50,3 +50,4 @@ def test_decision_context_declares_strict_public_output_shape() -> None:
     assert "Keep one continuous response" in generated.system_instructions
     assert "supplied NPC identity" in generated.system_instructions
     assert "another NPC perceived" in generated.system_instructions
+    assert "Simplified Chinese" in generated.system_instructions

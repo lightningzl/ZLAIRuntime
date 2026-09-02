@@ -76,12 +76,12 @@ const TCHAR* FZLSocialSandboxDecisionScheduler::ReasonName(
 {
 	switch (Reason)
 	{
-	case EZLSocialSandboxDecisionTriggerReason::PlayerAction: return TEXT("PlayerAction");
-	case EZLSocialSandboxDecisionTriggerReason::DistanceNear: return TEXT("DistanceNear");
-	case EZLSocialSandboxDecisionTriggerReason::DistanceFar: return TEXT("DistanceFar");
-	case EZLSocialSandboxDecisionTriggerReason::PlanCompleted: return TEXT("PlanCompleted");
-	case EZLSocialSandboxDecisionTriggerReason::PlanInvalidated: return TEXT("PlanInvalidated");
-	case EZLSocialSandboxDecisionTriggerReason::Hit: return TEXT("Hit");
-	default: return TEXT("Speech");
+	case EZLSocialSandboxDecisionTriggerReason::PlayerAction: return TEXT("玩家行为");
+	case EZLSocialSandboxDecisionTriggerReason::DistanceNear: return TEXT("距离接近");
+	case EZLSocialSandboxDecisionTriggerReason::DistanceFar: return TEXT("距离拉远");
+	case EZLSocialSandboxDecisionTriggerReason::PlanCompleted: return TEXT("计划完成");
+	case EZLSocialSandboxDecisionTriggerReason::PlanInvalidated: return TEXT("计划失效");
+	case EZLSocialSandboxDecisionTriggerReason::Hit: return TEXT("受到攻击");
+	default: return TEXT("说话");
 	}
 }

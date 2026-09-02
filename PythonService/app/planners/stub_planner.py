@@ -39,28 +39,28 @@ class StubDecisionPlanner:
 
         lines = {
             "guard": {
-                "attack": "Stop attacking. Keep your distance.",
-                "apology": "I heard your apology. Keep your distance.",
-                "history": "Do not come any closer.",
-                "default": "I hear you. Keep some distance.",
+                "attack": "立刻停止攻击，和我保持距离。",
+                "apology": "我听到了你的道歉，但请保持距离。",
+                "history": "不要再靠近了。",
+                "default": "我听见了，请保持适当距离。",
             },
             "merchant": {
-                "attack": "Enough. Violence is bad for everyone here.",
-                "apology": "Apology accepted, but keep this peaceful.",
-                "history": "We can talk when the danger has passed.",
-                "default": "Let us keep this civil; trouble is bad for business.",
+                "attack": "够了，暴力对这里所有人都没有好处。",
+                "apology": "我接受你的道歉，但请保持和平。",
+                "history": "等危险过去后，我们再谈。",
+                "default": "我们还是和气些，麻烦会影响生意。",
             },
             "rival": {
-                "attack": "Still settling things with your fists? Back off.",
-                "apology": "One apology does not erase our history.",
-                "history": "I have not forgotten what you just did.",
-                "default": "You know our history. Do not test me again.",
+                "attack": "还想靠拳头解决问题？退后。",
+                "apology": "一句道歉抹不掉我们的旧账。",
+                "history": "我没有忘记你刚才做的事。",
+                "default": "你知道我们的旧账，别再试探我。",
             },
             "civilian": {
-                "attack": "Please stop! I want no part in this.",
-                "apology": "All right, but please leave me out of this.",
-                "history": "Please stay away until things are safe.",
-                "default": "I heard you, but I would rather avoid trouble.",
+                "attack": "请住手！我不想卷入这件事。",
+                "apology": "好吧，但请别把我牵扯进去。",
+                "history": "等安全了再靠近我吧。",
+                "default": "我听见了，但我更想避开麻烦。",
             },
         }
 

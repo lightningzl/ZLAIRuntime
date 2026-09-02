@@ -82,3 +82,4 @@ def test_stub_planner_produces_bounded_persona_differences() -> None:
     assert len({result.speech_text for result in results}) == 4
     assert all(result.tool_name in {"move_away", "stop"} for result in results)
     assert results[2].confidence > results[3].confidence
+    assert all(any("\u4e00" <= char <= "\u9fff" for char in result.speech_text) for result in results)

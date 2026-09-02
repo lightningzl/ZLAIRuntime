@@ -128,7 +128,7 @@ void AZLSocialSandboxGameMode::RunSocialSandboxDemo()
 	{
 		Controller->SelectInspectorTarget(GuardId);
 	}
-	SubmitSpeech(TEXT("Talk"), GuardId, TEXT("Social sandbox demo"));
+	SubmitSpeech(TEXT("Talk"), GuardId, TEXT("社会交互舞台演示"));
 }
 
 AZLSocialSandboxNpc* AZLSocialSandboxGameMode::FindSandboxNpc(const FName StableId) const
@@ -226,7 +226,7 @@ FText AZLSocialSandboxGameMode::SubmitAction(const FName TargetId, const FString
 	const FZLSocialActionParseResult Parsed = FZLSocialActionParser::Parse(Text);
 	if (!Parsed.bMatched)
 	{
-		return FText::FromString(TEXT("拒绝：仅支持 Face、Approach、MoveAway、Attack 和 Stop 的受控别名"));
+		return FText::FromString(TEXT("拒绝：仅支持面向、靠近、远离、攻击和停止等受控行为"));
 	}
 	const bool bNeedsTarget = Parsed.Action != EZLSocialActionType::Stop;
 	AZLSocialSandboxNpc* Target = TargetId.IsNone() ? nullptr : FindSandboxNpc(TargetId);
@@ -257,13 +257,13 @@ FText AZLSocialSandboxGameMode::SubmitAction(const FName TargetId, const FString
 		const FZLSocialSandboxAttackValidationResult Validation = FZLSocialSandboxCombat::ValidatePlayerAttack(AttackContext);
 		if (!Validation.bAccepted)
 		{
-			return FText::FromString(FString::Printf(TEXT("拒绝：%s"), *Validation.ReasonCode.ToString()));
+			return FText::FromString(TEXT("拒绝：攻击条件不满足"));
 		}
 		FZLSocialSandboxDamageResult DamageResult;
 		if (!Target->ApplySandboxDamage(FZLSocialSandboxCombat::AttackDamage, NowSeconds, DamageResult))
 		{
 			Target->ShowDamageResult(DamageResult);
-			return FText::FromString(FString::Printf(TEXT("拒绝：%s"), *DamageResult.ReasonCode.ToString()));
+			return FText::FromString(TEXT("拒绝：目标当前无法受到攻击"));
 		}
 		LastPlayerAttackSeconds = NowSeconds;
 		ApplyGuardConflict(Target, EZLSocialSandboxConflictEvent::Attack);
@@ -373,7 +373,7 @@ void AZLSocialSandboxGameMode::RunMultiNpcSandboxDemo()
 	{
 		Controller->SelectInspectorTarget(TEXT("npc_rival"));
 	}
-	SubmitSpeech(TEXT("Shout"), NAME_None, TEXT("Everyone, tell me where you stand."));
+	SubmitSpeech(TEXT("Shout"), NAME_None, TEXT("大家都说说自己的立场。"));
 }
 
 void AZLSocialSandboxGameMode::QueueNpcDecision(
@@ -1387,61 +1387,85 @@ FText AZLSocialSandboxGameMode::BuildInspectorText(const FName NpcId) const
 	const FZLSocialObservation* Observation = Npc->GetLatestObservation();
 	if (Observation == nullptr)
 	{
-		return FText::FromString(FString::Printf(TEXT("%s [%s]\n尚无 Observation"), *Npc->GetDisplayName().ToString(), *NpcId.ToString()));
+		return FText::FromString(FString::Printf(TEXT("%s\n尚无个人感知记录"), *Npc->GetDisplayName().ToString()));
 	}
-	auto YesNo = [](const bool Value) { return Value ? TEXT("是 Yes") : TEXT("否 No"); };
+	auto YesNo = [](const bool Value) { return Value ? TEXT("是") : TEXT("否"); };
 	auto SpeechModeText = [](const EZLSocialSpeechMode Mode)
 	{
-		switch (Mode) { case EZLSocialSpeechMode::Whisper: return TEXT("Whisper"); case EZLSocialSpeechMode::Shout: return TEXT("Shout"); case EZLSocialSpeechMode::InEar: return TEXT("InEar"); default: return TEXT("Talk"); }
+		switch (Mode) { case EZLSocialSpeechMode::Whisper: return TEXT("小声说话"); case EZLSocialSpeechMode::Shout: return TEXT("大声呼喊"); case EZLSocialSpeechMode::InEar: return TEXT("耳边说话"); default: return TEXT("正常说话"); }
 	};
 	auto TargetText = [](const EZLSocialTargetJudgment Value)
 	{
-		switch (Value) { case EZLSocialTargetJudgment::Candidate: return TEXT("Candidate"); case EZLSocialTargetJudgment::ExplicitSelf: return TEXT("ExplicitSelf"); case EZLSocialTargetJudgment::ExplicitOther: return TEXT("ExplicitOther"); default: return TEXT("Unresolved"); }
+		switch (Value) { case EZLSocialTargetJudgment::Candidate: return TEXT("可能指向自己"); case EZLSocialTargetJudgment::ExplicitSelf: return TEXT("明确指向自己"); case EZLSocialTargetJudgment::ExplicitOther: return TEXT("明确指向他人"); default: return TEXT("未确定"); }
 	};
 	auto FilterText = [](const EZLSocialObservationFilterReason Value)
 	{
-		switch (Value) { case EZLSocialObservationFilterReason::InvalidEvent: return TEXT("InvalidEvent"); case EZLSocialObservationFilterReason::Expired: return TEXT("Expired"); case EZLSocialObservationFilterReason::CannotSee: return TEXT("CannotSee"); case EZLSocialObservationFilterReason::CannotHear: return TEXT("CannotHear"); case EZLSocialObservationFilterReason::OutsideVisualRange: return TEXT("OutsideVisualRange"); case EZLSocialObservationFilterReason::OutsideFieldOfView: return TEXT("OutsideFieldOfView"); case EZLSocialObservationFilterReason::OutsideHearingRange: return TEXT("OutsideHearingRange"); case EZLSocialObservationFilterReason::NotExplicitInEarTarget: return TEXT("NotExplicitInEarTarget"); default: return TEXT("None"); }
+		switch (Value) { case EZLSocialObservationFilterReason::InvalidEvent: return TEXT("事件无效"); case EZLSocialObservationFilterReason::Expired: return TEXT("事件已过期"); case EZLSocialObservationFilterReason::CannotSee: return TEXT("无法看见"); case EZLSocialObservationFilterReason::CannotHear: return TEXT("无法听见"); case EZLSocialObservationFilterReason::OutsideVisualRange: return TEXT("超出视觉范围"); case EZLSocialObservationFilterReason::OutsideFieldOfView: return TEXT("不在视野内"); case EZLSocialObservationFilterReason::OutsideHearingRange: return TEXT("超出听觉范围"); case EZLSocialObservationFilterReason::NotExplicitInEarTarget: return TEXT("不是耳边说话目标"); default: return TEXT("无"); }
 	};
-	const FString Source = Observation->Source == EZLSocialObservationSource::Speech ? TEXT("Speech") : TEXT("Action");
+	const FString Source = Observation->Source == EZLSocialObservationSource::Speech ? TEXT("说话") : TEXT("行为");
 	auto ActionText = [](const EZLSocialActionType Value)
 	{
-		switch (Value) { case EZLSocialActionType::Face: return TEXT("Face"); case EZLSocialActionType::Approach: return TEXT("Approach"); case EZLSocialActionType::MoveAway: return TEXT("MoveAway"); case EZLSocialActionType::Attack: return TEXT("Attack"); default: return TEXT("Stop"); }
+		switch (Value) { case EZLSocialActionType::Face: return TEXT("面向"); case EZLSocialActionType::Approach: return TEXT("靠近"); case EZLSocialActionType::MoveAway: return TEXT("远离"); case EZLSocialActionType::Attack: return TEXT("攻击"); default: return TEXT("停止"); }
+	};
+	auto IntentText = [](const FString& Value)
+	{
+		if (Value == TEXT("respond")) { return TEXT("回应"); }
+		if (Value == TEXT("engage")) { return TEXT("介入"); }
+		if (Value == TEXT("disengage")) { return TEXT("脱离"); }
+		if (Value == TEXT("hold")) { return TEXT("保持"); }
+		return TEXT("无");
+	};
+	auto ToolText = [](const FString& Value)
+	{
+		if (Value == TEXT("face_target")) { return TEXT("面向目标"); }
+		if (Value == TEXT("move_toward")) { return TEXT("靠近目标"); }
+		if (Value == TEXT("move_away")) { return TEXT("远离目标"); }
+		if (Value == TEXT("stop")) { return TEXT("停止"); }
+		return TEXT("无");
+	};
+	auto ToolResultText = [](const FName Value)
+	{
+		if (Value == TEXT("Accepted")) { return TEXT("已接受"); }
+		if (Value == TEXT("NoTool")) { return TEXT("未建议工具"); }
+		if (Value == TEXT("ServiceUnavailable")) { return TEXT("服务不可用"); }
+		if (Value == TEXT("StateVersionMismatch")) { return TEXT("状态已变化"); }
+		return Value.IsNone() ? TEXT("无") : TEXT("未执行");
 	};
 	const FString SourceDetails = Observation->Source == EZLSocialObservationSource::Speech
-		? FString::Printf(TEXT("SpeechMode: %s · ExplicitTarget: %s\nTargetJudgment: %s · AuditoryFilter: %s"), SpeechModeText(Observation->SpeechMode), Observation->ExplicitTargetId.IsNone() ? TEXT("None") : *Observation->ExplicitTargetId.ToString(), TargetText(Observation->TargetJudgment), FilterText(Observation->AuditoryFilter))
-		: FString::Printf(TEXT("Action: %s · Phase: %s · Target: %s\nTargetJudgment: %s · InputTextAvailable: No"), ActionText(Observation->Action), Observation->ActionPhase == EZLSocialActionPhase::Started ? TEXT("Started") : TEXT("Completed"), Observation->ExplicitTargetId.IsNone() ? TEXT("None") : *Observation->ExplicitTargetId.ToString(), TargetText(Observation->TargetJudgment));
+		? FString::Printf(TEXT("说话方式：%s · 明确目标：%s\n目标判断：%s · 听觉过滤：%s"), SpeechModeText(Observation->SpeechMode), Observation->ExplicitTargetId.IsNone() ? TEXT("无") : *Observation->ExplicitTargetId.ToString(), TargetText(Observation->TargetJudgment), FilterText(Observation->AuditoryFilter))
+		: FString::Printf(TEXT("行为：%s · 阶段：%s · 目标：%s\n目标判断：%s · 输入文本：无"), ActionText(Observation->Action), Observation->ActionPhase == EZLSocialActionPhase::Started ? TEXT("开始") : TEXT("完成"), Observation->ExplicitTargetId.IsNone() ? TEXT("无") : *Observation->ExplicitTargetId.ToString(), TargetText(Observation->TargetJudgment));
 	const FZLSocialSandboxDecisionDebug* SelectedDebug = NpcId == TEXT("npc_guard")
 		? &DecisionDebug
 		: NpcDecisionDebug.Find(NpcId);
 	const FString DecisionLine = SelectedDebug != nullptr
 		? FString::Printf(
-			TEXT("\nConflict: %s · HP %.0f/%.0f · Defending: %s · Incapacitated: %s\nDecision: %s · Pending: %s · Trigger: %s · LocalFallback: %s\nRequest: %s · State: %lld · Coalesced: %d · Auto: %d\nProvider: %s · Intent: %s · Speech: %s\nTool: %s · Result: %s · Latency: %d ms"),
-			SelectedDebug->ConflictLevel.IsEmpty() ? TEXT("Calm") : *SelectedDebug->ConflictLevel,
+			TEXT("\n冲突：%s · 生命 %.0f/%.0f · 防御：%s · 失能：%s\n决策：%s · 待处理：%s · 触发：%s · 本地降级：%s\n请求：%s · 状态：%lld · 合并：%d · 自动：%d\n来源：%s · 意图：%s · 台词：%s\n工具：%s · 结果：%s · 延迟：%d 毫秒"),
+			SelectedDebug->ConflictLevel.IsEmpty() ? TEXT("平静") : *SelectedDebug->ConflictLevel,
 			Npc->GetHealth(),
 			Npc->GetMaxHealth(),
-			Npc->IsDefending() ? TEXT("Yes") : TEXT("No"),
-			Npc->IsIncapacitated() ? TEXT("Yes") : TEXT("No"),
-			SelectedDebug->bInFlight ? TEXT("InFlight") : TEXT("Idle"),
-			SelectedDebug->bPending ? TEXT("Yes") : TEXT("No"),
-			SelectedDebug->TriggerReason.IsNone() ? TEXT("None") : *SelectedDebug->TriggerReason.ToString(),
-			SelectedDebug->bLocalFallback ? TEXT("Yes") : TEXT("No"),
-			SelectedDebug->RequestId.IsEmpty() ? TEXT("None") : *SelectedDebug->RequestId,
+			Npc->IsDefending() ? TEXT("是") : TEXT("否"),
+			Npc->IsIncapacitated() ? TEXT("是") : TEXT("否"),
+			SelectedDebug->bInFlight ? TEXT("进行中") : TEXT("空闲"),
+			SelectedDebug->bPending ? TEXT("是") : TEXT("否"),
+			SelectedDebug->TriggerReason.IsNone() ? TEXT("无") : *SelectedDebug->TriggerReason.ToString(),
+			SelectedDebug->bLocalFallback ? TEXT("是") : TEXT("否"),
+			SelectedDebug->RequestId.IsEmpty() ? TEXT("无") : *SelectedDebug->RequestId,
 			SelectedDebug->StateVersion,
 			SelectedDebug->CoalescedTriggers,
 			SelectedDebug->AutomaticReplans,
-			SelectedDebug->Provider.IsEmpty() ? TEXT("None") : *SelectedDebug->Provider,
-			SelectedDebug->Intent.IsEmpty() ? TEXT("None") : *SelectedDebug->Intent,
-			SelectedDebug->bSpeechAccepted ? TEXT("Accepted") : TEXT("None"),
-			SelectedDebug->ToolName.IsEmpty() ? TEXT("None") : *SelectedDebug->ToolName,
-			SelectedDebug->ToolResult.IsNone() ? TEXT("None") : *SelectedDebug->ToolResult.ToString(),
+			SelectedDebug->Provider.IsEmpty() ? TEXT("无") : *SelectedDebug->Provider,
+			IntentText(SelectedDebug->Intent),
+			SelectedDebug->bSpeechAccepted ? TEXT("已接受") : TEXT("无"),
+			ToolText(SelectedDebug->ToolName),
+			ToolResultText(SelectedDebug->ToolResult),
 			SelectedDebug->LatencyMs)
 		: FString();
 	const TCHAR* FeedbackSource = SelectedDebug != nullptr
-		? TEXT("DecisionSource: StructuredDecision")
-		: TEXT("RuleSource: RulePlaceholder");
+		? TEXT("反馈来源：结构化决策")
+		: TEXT("反馈来源：规则占位");
 	return FText::FromString(FString::Printf(
-		TEXT("%s [%s]\nSource: %s · Distance: %.0f cm\nSaw: %s · VisualFilter: %s\nHeard: %s · Clear: %s · Strength: %.2f\n%s\nInputSource: UE Event · %s%s"),
-		*Npc->GetDisplayName().ToString(), *NpcId.ToString(), *Source, Observation->Distance,
+		TEXT("%s\n来源：%s · 距离：%.0f 厘米\n看见：%s · 视觉过滤：%s\n听见：%s · 听清：%s · 强度：%.2f\n%s\n输入来源：UE 事件 · %s%s"),
+		*Npc->GetDisplayName().ToString(), *Source, Observation->Distance,
 		YesNo(Observation->bSaw), FilterText(Observation->VisualFilter), YesNo(Observation->bHeard), YesNo(Observation->bHeardClearly), Observation->HearingStrength,
 		*SourceDetails, FeedbackSource, *DecisionLine));
 }
