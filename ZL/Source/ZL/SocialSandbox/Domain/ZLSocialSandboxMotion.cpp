@@ -1,4 +1,4 @@
-#include "SocialSandbox/ZLSocialSandboxMotion.h"
+#include "SocialSandbox/Domain/ZLSocialSandboxMotion.h"
 
 FZLSocialSandboxMotionStep FZLSocialSandboxMotion::Compute(const EZLSocialActionType Action, const FVector& Current, const FVector& Target, const float DeltaSeconds, const float Speed)
 {

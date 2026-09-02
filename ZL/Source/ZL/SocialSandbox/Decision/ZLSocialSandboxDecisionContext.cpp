@@ -1,4 +1,4 @@
-#include "SocialSandbox/ZLSocialSandboxDecisionContext.h"
+#include "SocialSandbox/Decision/ZLSocialSandboxDecisionContext.h"
 
 namespace
 {

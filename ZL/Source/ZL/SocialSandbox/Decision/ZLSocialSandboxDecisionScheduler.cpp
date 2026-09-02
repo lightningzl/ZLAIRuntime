@@ -1,4 +1,4 @@
-#include "SocialSandbox/ZLSocialSandboxDecisionScheduler.h"
+#include "SocialSandbox/Decision/ZLSocialSandboxDecisionScheduler.h"
 
 FZLSocialSandboxDecisionScheduler::FZLSocialSandboxDecisionScheduler(const double InCooldownSeconds)
 	: CooldownSeconds(FMath::Clamp(InCooldownSeconds, 0.0, 10.0))

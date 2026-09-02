@@ -1,8 +1,8 @@
-#include "SocialSandbox/ZLSocialSandboxPlayerController.h"
+#include "SocialSandbox/Actors/ZLSocialSandboxPlayerController.h"
 
 #include "Kismet/GameplayStatics.h"
-#include "SocialSandbox/ZLSocialSandboxGameMode.h"
-#include "SocialSandbox/ZLSocialSandboxNpc.h"
+#include "SocialSandbox/World/ZLSocialSandboxGameMode.h"
+#include "SocialSandbox/Actors/ZLSocialSandboxNpc.h"
 #include "InputCoreTypes.h"
 
 void AZLSocialSandboxPlayerController::BeginPlay()

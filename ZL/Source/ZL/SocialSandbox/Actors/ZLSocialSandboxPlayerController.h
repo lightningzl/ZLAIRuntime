@@ -2,7 +2,7 @@
 
 #include "CoreMinimal.h"
 #include "GameFramework/PlayerController.h"
-#include "ZLSocialSandboxWidget.h"
+#include "SocialSandbox/UI/ZLSocialSandboxWidget.h"
 #include "ZLSocialSandboxPlayerController.generated.h"
 
 class UZLSocialSandboxWidget;

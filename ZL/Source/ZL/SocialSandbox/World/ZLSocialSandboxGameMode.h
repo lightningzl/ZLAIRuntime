@@ -5,10 +5,10 @@
 #include "ZLAIServiceTypes.h"
 #include "ZLSocialObservation.h"
 #include "ZLSocialToolRegistry.h"
-#include "SocialSandbox/ZLSocialSandboxDecisionContext.h"
-#include "SocialSandbox/ZLSocialSandboxDecisionScheduler.h"
-#include "SocialSandbox/ZLSocialSandboxMultiNpcDecision.h"
-#include "SocialSandbox/ZLSocialSandboxConflictState.h"
+#include "SocialSandbox/Decision/ZLSocialSandboxDecisionContext.h"
+#include "SocialSandbox/Decision/ZLSocialSandboxDecisionScheduler.h"
+#include "SocialSandbox/Decision/ZLSocialSandboxMultiNpcDecision.h"
+#include "SocialSandbox/Domain/ZLSocialSandboxConflictState.h"
 #include "ZLSocialSandboxGameMode.generated.h"
 
 class AZLSocialSandboxNpc;

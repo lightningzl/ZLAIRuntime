@@ -1,4 +1,4 @@
-#include "SocialSandbox/ZLSocialSandboxConflictState.h"
+#include "SocialSandbox/Domain/ZLSocialSandboxConflictState.h"
 
 FZLSocialSandboxConflictTransition FZLSocialSandboxConflictState::Apply(const EZLSocialSandboxConflictEvent Event)
 {
