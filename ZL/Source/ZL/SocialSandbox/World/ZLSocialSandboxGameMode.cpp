@@ -18,6 +18,7 @@
 #include "SocialSandbox/Actors/ZLSocialSandboxNpc.h"
 #include "SocialSandbox/Decision/ZLSocialSandboxDecisionContext.h"
 #include "SocialSandbox/Domain/ZLSocialSandboxCombat.h"
+#include "SocialSandbox/Domain/ZLSocialSandboxPreset.h"
 #include "SocialSandbox/Actors/ZLSocialSandboxPawn.h"
 #include "SocialSandbox/Actors/ZLSocialSandboxPlayerController.h"
 #include "TimerManager.h"
@@ -34,10 +35,13 @@ void AZLSocialSandboxGameMode::BeginPlay()
 {
 	Super::BeginPlay();
 	SpawnEnvironment();
-	SpawnNpc(TEXT("npc_guard"), FVector(500.0f, -350.0f, 96.0f), FRotator(0.0f, 145.0f, 0.0f));
-	SpawnNpc(TEXT("npc_merchant"), FVector(500.0f, 350.0f, 96.0f), FRotator(0.0f, 215.0f, 0.0f));
-	SpawnNpc(TEXT("npc_rival"), FVector(950.0f, -350.0f, 96.0f), FRotator(0.0f, 160.0f, 0.0f));
-	SpawnNpc(TEXT("npc_civilian"), FVector(950.0f, 350.0f, 96.0f), FRotator(0.0f, 200.0f, 0.0f));
+	if (!TryApplyNamedPreset())
+	{
+		SpawnNpc(TEXT("npc_guard"), FVector(500.0f, -350.0f, 96.0f), FRotator(0.0f, 145.0f, 0.0f));
+		SpawnNpc(TEXT("npc_merchant"), FVector(500.0f, 350.0f, 96.0f), FRotator(0.0f, 215.0f, 0.0f));
+		SpawnNpc(TEXT("npc_rival"), FVector(950.0f, -350.0f, 96.0f), FRotator(0.0f, 160.0f, 0.0f));
+		SpawnNpc(TEXT("npc_civilian"), FVector(950.0f, 350.0f, 96.0f), FRotator(0.0f, 200.0f, 0.0f));
+	}
 	UpdateGuardDistanceBand();
 	if (AZLSocialSandboxPlayerController* Controller = Cast<AZLSocialSandboxPlayerController>(UGameplayStatics::GetPlayerController(this, 0)))
 	{
@@ -74,6 +78,22 @@ void AZLSocialSandboxGameMode::BeginPlay()
 	{
 		GetWorldTimerManager().SetTimer(DemoTimer, this, &AZLSocialSandboxGameMode::RunSocialSandboxDemo, 0.5f, false);
 	}
+}
+
+bool AZLSocialSandboxGameMode::TryApplyNamedPreset()
+{
+	FString PresetName;
+	if (!FParse::Value(FCommandLine::Get(), TEXT("ZLSandboxPreset="), PresetName)) { return false; }
+	FZLSocialSandboxPreset Preset;
+	FText Error;
+	if (!FZLSocialSandboxPresetCodec::LoadNamedPreset(PresetName, Preset, Error))
+	{
+		UE_LOG(LogZL, Warning, TEXT("Sandbox preset rejected: %s"), *Error.ToString());
+		return false;
+	}
+	for (const FZLSocialSandboxNpcPreset& NpcPreset : Preset.Npcs) { SpawnNpc(NpcPreset); }
+	if (AZLSocialSandboxPawn* Pawn = Cast<AZLSocialSandboxPawn>(UGameplayStatics::GetPlayerPawn(this, 0))) { Pawn->InitializeSandboxPlayer(Preset.Player); }
+	return true;
 }
 
 void AZLSocialSandboxGameMode::ResetSocialSandbox()
@@ -1558,5 +1578,17 @@ void AZLSocialSandboxGameMode::SpawnNpc(const FName StableId, const FVector& Loc
 	{
 		MultiNpcDecision.RegisterNpc(StableId);
 	}
+	}
+}
+
+void AZLSocialSandboxGameMode::SpawnNpc(const FZLSocialSandboxNpcPreset& Preset)
+{
+	FActorSpawnParameters Params;
+	Params.Name = Preset.Profile.StableId;
+	if (AZLSocialSandboxNpc* Npc = GetWorld()->SpawnActor<AZLSocialSandboxNpc>(AZLSocialSandboxNpc::StaticClass(), Preset.SpawnTransform))
+	{
+		Npc->InitializeSandboxNpc(Preset.Profile, Preset.SpawnTransform, Preset.InitialHealth);
+		SandboxNpcs.Add(Npc);
+		if (Preset.Profile.StableId != TEXT("npc_guard")) { MultiNpcDecision.RegisterNpc(Preset.Profile.StableId); }
 	}
 }

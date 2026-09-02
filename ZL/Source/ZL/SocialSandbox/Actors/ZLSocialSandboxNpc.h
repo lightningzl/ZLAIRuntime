@@ -31,7 +31,7 @@ public:
 	AZLSocialSandboxNpc();
 
 	void InitializeSandboxNpc(FName InStableId, const FText& InDisplayName, const FTransform& InStartTransform);
-	void InitializeSandboxNpc(const FZLSocialSandboxNpcProfile& InProfile, const FTransform& InStartTransform);
+	void InitializeSandboxNpc(const FZLSocialSandboxNpcProfile& InProfile, const FTransform& InStartTransform, float InInitialHealth = 100.0f);
 	void ResetToSandboxStart();
 
 	FName GetStableId() const { return StableId; }
