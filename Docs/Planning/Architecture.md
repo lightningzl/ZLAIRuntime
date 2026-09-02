@@ -88,7 +88,7 @@ Milestone 7 在同一依赖方向上增加可操作社会沙盒：
 - `ZLASocialRuntime` 公开彼此分离的有界 Speech Event、Action Event、Observer、Observation 与 Observation Buffer，以及说话模式、目标判断、行为白名单解析和输入边界校验。纯规则层不保存 Actor、Widget、HTTP 或输入正文到 Observation。
 - `ZL` 游戏模块中的 `AZLSocialSandboxGameMode` 是场景权威入口，生成 1 个玩家和 4 个稳定 ID NPC，构造 Speech/Action Event，并逐 NPC 调用定向视觉和分级听觉规则；每个 NPC 只保存自己的容量 32 Observation Buffer。
 - `AZLSocialSandboxPawn` 与 `AZLSocialSandboxNpc` 负责具体位置、朝向和可见表现；Face、Approach、MoveAway、Stop 只有在玩家 Gameplay 执行器接受后才产生 Started/Completed 观察，Action Observation 不包含输入原文。
-- `UZLSocialSandboxWidget` 提供说话/行为模式、Whisper/Talk/Shout/InEar、目标、文本提交、拒绝状态、最多 12 条可展开成功提交记录和逐 NPC Inspector；`UZLSocialBubbleWidget` 只显化已接受说话、动作状态和明确标记的 `RulePlaceholder` 本地反馈。
+- `UZLSocialSandboxWidget` 提供说话/行为模式、Whisper/Talk/Shout/InEar、目标、文本提交、拒绝状态、右侧按钮展开的最多 12 条玩家/NPC 行动对话记录和逐 NPC Inspector；`UZLSocialBubbleWidget` 只显化已接受说话、动作状态和明确标记的 `RulePlaceholder` 本地反馈。
 - 默认沙盒参数为 120 度水平视野、1500 cm 视觉距离以及 Whisper 200、Talk 800、Shout 2500、InEar 150 cm；这些值保存在场景 Observation Settings，可由场景配置覆盖。
 - 专用地图 `/Game/SocialSandbox/Lvl_SocialSandbox` 使用 `AZLSocialSandboxGameMode`；`ResetSocialSandbox` 恢复确定初始状态，`RunSocialSandboxDemo` 经正常 UI/GameMode 提交路径执行一次不依赖 Python 的受控 Talk。
 - 沙盒不会向现有 Dialogue 请求注入 Observation、Relationship 或 Social Memory，不新增 HTTP、Decision Endpoint、ToolCall 或 Python 行为。

@@ -555,6 +555,9 @@ void AZLSocialSandboxGameMode::HandleNpcDecision(
 	if (Response.bHasSpeech)
 	{
 		Npc->ShowDecisionSpeech(Response.Speech.Text, Response.Provider);
+		AppendInteractionRecord(
+			FText::FromString(FString::Printf(TEXT("[%s · 对话] %s"), *Npc->GetDisplayName().ToString(), *Response.Speech.Text)),
+			FLinearColor(1.0f, 0.84f, 0.45f));
 		FZLSocialSandboxPublicHistoryFact Fact;
 		Fact.Kind = TEXT("speech");
 		Fact.SourceId = Npc->GetStableId();
@@ -881,6 +884,9 @@ void AZLSocialSandboxGameMode::HandleGuardDecision(
 	if (Response.bHasSpeech)
 	{
 		Guard->ShowDecisionSpeech(Response.Speech.Text, Response.Provider);
+		AppendInteractionRecord(
+			FText::FromString(FString::Printf(TEXT("[%s · 对话] %s"), *Guard->GetDisplayName().ToString(), *Response.Speech.Text)),
+			FLinearColor(1.0f, 0.84f, 0.45f));
 		RecordGuardSpeechFact(Response.Speech.Text, GetWorld()->GetTimeSeconds());
 	}
 	if (Response.bHasToolCall)
@@ -1058,6 +1064,20 @@ FZLSocialObservation AZLSocialSandboxGameMode::DispatchNpcActionObservation(
 	SelfObservation.bSaw = true;
 	SelfObservation.ObservedAtSeconds = NowSeconds;
 	Actor->RecordObservation(SelfObservation);
+	if (Phase == EZLSocialActionPhase::Started)
+	{
+		const TCHAR* ActionText = TEXT("停止");
+		switch (Action)
+		{
+		case EZLSocialActionType::Face: ActionText = TEXT("面向"); break;
+		case EZLSocialActionType::Approach: ActionText = TEXT("靠近"); break;
+		case EZLSocialActionType::MoveAway: ActionText = TEXT("远离"); break;
+		default: break;
+		}
+		AppendInteractionRecord(
+			FText::FromString(FString::Printf(TEXT("[%s · 行动] %s玩家"), *Actor->GetDisplayName().ToString(), ActionText)),
+			FLinearColor(0.4f, 0.88f, 1.0f));
+	}
 	if (Actor->GetStableId() == TEXT("npc_guard"))
 	{
 		RecordGuardActionFact(Action, Phase, NowSeconds);
@@ -1475,6 +1495,14 @@ void AZLSocialSandboxGameMode::RefreshInspector() const
 	if (AZLSocialSandboxPlayerController* Controller = Cast<AZLSocialSandboxPlayerController>(UGameplayStatics::GetPlayerController(this, 0)))
 	{
 		Controller->RefreshObservationInspector();
+	}
+}
+
+void AZLSocialSandboxGameMode::AppendInteractionRecord(const FText& Text, const FLinearColor& Color) const
+{
+	if (AZLSocialSandboxPlayerController* Controller = Cast<AZLSocialSandboxPlayerController>(UGameplayStatics::GetPlayerController(this, 0)))
+	{
+		Controller->AppendInteractionRecord(Text, Color);
 	}
 }
 

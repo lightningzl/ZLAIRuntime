@@ -79,6 +79,14 @@ void AZLSocialSandboxPlayerController::SelectInspectorTarget(const FName TargetI
 	}
 }
 
+void AZLSocialSandboxPlayerController::AppendInteractionRecord(const FText& Text, const FLinearColor& Color)
+{
+	if (SandboxWidget != nullptr)
+	{
+		SandboxWidget->AppendInteractionRecord(Text, Color);
+	}
+}
+
 void AZLSocialSandboxPlayerController::SelectSandboxNpcUnderCursor()
 {
 	FHitResult Hit;

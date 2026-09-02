@@ -16,6 +16,7 @@ public:
 	void RefreshSandboxTargets();
 	void RefreshObservationInspector();
 	void SelectInspectorTarget(FName TargetId);
+	void AppendInteractionRecord(const FText& Text, const FLinearColor& Color);
 	UZLSocialSandboxWidget* GetSandboxWidget() const { return SandboxWidget; }
 
 protected:

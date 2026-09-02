@@ -7,7 +7,7 @@
 class UButton;
 class UComboBoxString;
 class UEditableTextBox;
-class UExpandableArea;
+class UBorder;
 class UScrollBox;
 class UTextBlock;
 class UWidget;
@@ -35,6 +35,7 @@ public:
 	void SetTargets(const TArray<FName>& StableIds, const TArray<FText>& DisplayNames);
 	void SetStatus(const FText& Status, bool bIsError);
 	void SetInspectorText(const FText& Text);
+	void AppendInteractionRecord(const FText& Text, const FLinearColor& Color);
 	FName GetSelectedTargetId() const;
 	void SelectTarget(FName TargetId);
 
@@ -59,6 +60,9 @@ private:
 
 	UFUNCTION()
 	UWidget* GenerateComboOption(FString Item);
+
+	UFUNCTION()
+	void HandleInteractionHistoryToggled();
 
 	FName GetSelectedSpeechMode() const;
 	FString GetSelectedActionInput() const;
@@ -87,7 +91,10 @@ private:
 	TObjectPtr<UTextBlock> InspectorText;
 
 	UPROPERTY()
-	TObjectPtr<UExpandableArea> InteractionHistoryArea;
+	TObjectPtr<UBorder> InteractionHistoryPanel;
+
+	UPROPERTY()
+	TObjectPtr<UTextBlock> InteractionHistoryToggleText;
 
 	UPROPERTY()
 	TObjectPtr<UScrollBox> InteractionHistoryList;
