@@ -92,6 +92,7 @@ private:
 	void ApplyGuardConflict(AZLSocialSandboxNpc* Guard, EZLSocialSandboxConflictEvent Event, bool bLocalFallback = false);
 	void FinishDecisionSmokeTest();
 	void FinishMultiNpcSmokeTest();
+	void FinishPresetSmokeTest();
 	void RefreshInspector() const;
 	void AppendInteractionRecord(const FText& Text, const FLinearColor& Color) const;
 
@@ -117,6 +118,7 @@ private:
 	FTimerHandle DemoTimer;
 	FTimerHandle DecisionSmokeTimer;
 	FTimerHandle MultiNpcSmokeTimer;
+	FTimerHandle PresetSmokeTimer;
 	FTimerHandle GuardDecisionCooldownTimer;
 	FTimerHandle NpcDecisionCooldownTimer;
 	FString ExpectedSmokeProvider;
@@ -127,4 +129,6 @@ private:
 	int32 GuardDistanceBand = INDEX_NONE;
 	float LastGuardDistance = TNumericLimits<float>::Max();
 	double LastPlayerAttackSeconds = -DBL_MAX;
+	FName ExpectedPresetPlayerId;
+	int32 ExpectedPresetNpcCount = 0;
 };

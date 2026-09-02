@@ -76,6 +76,7 @@ AZLSocialSandboxPawn::AZLSocialSandboxPawn()
 void AZLSocialSandboxPawn::InitializeSandboxPlayer(const FZLSocialSandboxPlayerPreset& Preset)
 {
 	if (!Preset.IsValid()) { return; }
+	SandboxStableId = Preset.StableId;
 	SandboxStartTransform = Preset.SpawnTransform;
 	SetActorTransform(SandboxStartTransform, false, nullptr, ETeleportType::TeleportPhysics);
 	if (UMaterialInstanceDynamic* Material = BodyMesh->CreateDynamicMaterialInstance(0))
