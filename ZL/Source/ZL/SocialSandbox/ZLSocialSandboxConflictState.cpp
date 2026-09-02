@@ -42,9 +42,9 @@ const TCHAR* FZLSocialSandboxConflictState::LevelName(const EZLSocialSandboxConf
 {
 	switch (Value)
 	{
-	case EZLSocialSandboxConflictLevel::Alert: return TEXT("Alert");
-	case EZLSocialSandboxConflictLevel::Escalated: return TEXT("Escalated");
-	case EZLSocialSandboxConflictLevel::Recovering: return TEXT("Recovering");
-	default: return TEXT("Calm");
+	case EZLSocialSandboxConflictLevel::Alert: return TEXT("警戒");
+	case EZLSocialSandboxConflictLevel::Escalated: return TEXT("冲突升级");
+	case EZLSocialSandboxConflictLevel::Recovering: return TEXT("缓和中");
+	default: return TEXT("平静");
 	}
 }

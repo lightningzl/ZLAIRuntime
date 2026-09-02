@@ -47,10 +47,10 @@ PythonService/
 | `app.core.settings` | 读取并校验 Provider、超时、输出预算、数据库路径和 Memory 检索预算 |
 | `app.schemas.dialogue` | 定义 v1 Dialogue、Context、Memory、成功响应和错误边界 |
 | `app.schemas.decision` | 定义经确认的 v1 Decision、个人上下文、允许 Tool、结构化 Speech/Tool 建议和硬边界 |
-| `app.services.decision_context_builder` | 将单 NPC Trigger、人物、关系、即时状态、个人历史和允许 Tool 确定性组装为不可信 JSON 数据 |
+| `app.services.decision_context_builder` | 将单 NPC Trigger、人物、关系、即时状态、个人历史和允许 Tool 确定性组装为不可信 JSON 数据；固定约束 Kimi 的公开 Speech 使用简体中文 |
 | `app.services.decision_service` | 校验非空业务语义、调用一次 Planner、复核允许 Tool/目标并生成 Decision/Tool ID |
 | `app.planners.base` | 定义与 FastAPI、协议模型、UE 和 SDK 解耦的 Decision Planner 接口与内部结果 |
-| `app.planners.stub_planner` | 提供确定性离线连续 Speech/Intent/单 Tool 建议；只依据最新 Trigger、有限个人历史和当前 NPC Profile，为 Guard、Merchant、Rival、Civilian 产生不同但有界的攻击、道歉、近期冲突和默认表达 |
+| `app.planners.stub_planner` | 提供确定性离线连续 Speech/Intent/单 Tool 建议；只依据最新 Trigger、有限个人历史和当前 NPC Profile，为 Guard、Merchant、Rival、Civilian 产生不同但有界的简体中文攻击、道歉、近期冲突和默认表达 |
 | `app.planners.kimi_planner` | 使用 Kimi JSON Object 输出并校验 Intent、Speech、单 Tool 与 Confidence，分类 SDK 异常；固定约束要求只扮演当前 NPC，不把多 NPC Context 压成通用 Guard 表达 |
 | `app.planners.factory` | 使用显式 Provider 配置创建 Stub 或 Kimi Planner，不静默回退 |
 | `app.services.context_builder` | 将固定约束、Context、合并历史和当前输入组装为供应商无关生成上下文 |

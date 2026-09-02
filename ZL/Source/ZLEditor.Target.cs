@@ -8,8 +8,10 @@ public class ZLEditorTarget : TargetRules
 	public ZLEditorTarget(TargetInfo Target) : base(Target)
 	{
 		Type = TargetType.Editor;
+		bOverrideBuildEnvironment = true;
 		DefaultBuildSettings = BuildSettingsVersion.V7;
 		IncludeOrderVersion = EngineIncludeOrderVersion.Unreal5_8;
+		AdditionalCompilerArguments = "/utf-8";
 		ExtraModuleNames.Add("ZL");
 	}
 }

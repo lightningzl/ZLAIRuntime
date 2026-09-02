@@ -29,10 +29,13 @@
 - 当前完整验证基线为 Python 198/198、UE `ZL.Social` 28/28、UE `ZLAIRuntime` 13/13、最终 Target 编译、4 NPC Stub 默认地图烟测和服务离线降级烟测通过。
 - 真实 Kimi 已对 Guard、Merchant、Rival、Civilian 的同一威胁输入分别返回 `provider=kimi`；Intent 分为 engage/disengage，动作建议分为 face_target/move_away，Speech 长度各异且结构合法。默认 UE 地图 Kimi 烟测也已接受 Speech，未建议 Tool 时保持位置不变。
 - Milestone 9 最终基线为 Python 197/197、UE `ZL.Social` 27/27、受影响 UE Target 编译、Stub/离线烟测和默认地图真实 Kimi 验收通过。
+- 社会交互舞台的固定界面、状态、气泡与 Stub Speech 已统一为简体中文，Kimi Speech 指令同步约束中文；UE Target 已固定使用 UTF-8 编译，避免无 BOM 源码被按本机代码页读取而乱码。
+- 玩家与 NPC 头顶名称改为屏幕空间 UMG 文本组件，使用与气泡相同的中文回退字体路径，避免 `TextRenderComponent` 的有限字形和离线材质限制。
+- 玩家点击场景中的 NPC 时，控制器按 Visibility 命中该角色，并同步左侧目标选择与个人 Inspector；点击非 NPC 保持当前选择不变。
 
 ## 当前执行边界
 
-- Milestone 10 已完成并归档为 [Milestone10.md](../Milestones/Milestone10.md)；当前没有活动功能任务。
+- Milestone 10 已归档为 [Milestone10.md](../Milestones/Milestone10.md)；`M10-T09` 中文化修正已完成代码、Python 与 UE 5.8 场景验证。
 - 沿用 2026-08-31 已确认的 Decision v1；不修改 `Protocol.md`，不新增 Tool、Intent、字段或批量请求。
 - UE 继续权威维护逐 NPC 感知、关系输入、生命、冲突、状态版本、调度和动作执行；Python 每次只返回一个 NPC 的现有结构化建议。
 - `M10-T01` 至 `M10-T08` 已按依赖顺序完成并形成独立逻辑提交；交付不包含未验证的未来能力。

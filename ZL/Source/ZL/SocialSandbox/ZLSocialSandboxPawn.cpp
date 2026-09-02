@@ -2,12 +2,12 @@
 
 #include "SocialSandbox/ZLSocialSandboxMotion.h"
 #include "SocialSandbox/ZLSocialBubbleWidget.h"
+#include "SocialSandbox/ZLSocialNameWidget.h"
 
 #include "Camera/CameraComponent.h"
 #include "Components/ArrowComponent.h"
 #include "Components/CapsuleComponent.h"
 #include "Components/StaticMeshComponent.h"
-#include "Components/TextRenderComponent.h"
 #include "Components/WidgetComponent.h"
 #include "GameFramework/CharacterMovementComponent.h"
 #include "GameFramework/Controller.h"
@@ -44,13 +44,13 @@ AZLSocialSandboxPawn::AZLSocialSandboxPawn()
 	FacingArrow->ArrowSize = 2.0f;
 	FacingArrow->SetHiddenInGame(false);
 
-	NameLabel = CreateDefaultSubobject<UTextRenderComponent>(TEXT("NameLabel"));
-	NameLabel->SetupAttachment(GetCapsuleComponent());
-	NameLabel->SetRelativeLocation(FVector(0.0f, 0.0f, 135.0f));
-	NameLabel->SetHorizontalAlignment(EHTA_Center);
-	NameLabel->SetWorldSize(34.0f);
-	NameLabel->SetTextRenderColor(FColor(40, 220, 255));
-	NameLabel->SetText(FText::FromString(TEXT("Player")));
+	NameWidget = CreateDefaultSubobject<UWidgetComponent>(TEXT("NameWidget"));
+	NameWidget->SetupAttachment(GetCapsuleComponent());
+	NameWidget->SetRelativeLocation(FVector(0.0f, 0.0f, 145.0f));
+	NameWidget->SetWidgetSpace(EWidgetSpace::Screen);
+	NameWidget->SetDrawSize(FVector2D(260.0f, 44.0f));
+	NameWidget->SetPivot(FVector2D(0.5f, 0.5f));
+	NameWidget->SetWidgetClass(UZLSocialNameWidget::StaticClass());
 
 	BubbleWidget = CreateDefaultSubobject<UWidgetComponent>(TEXT("BubbleWidget"));
 	BubbleWidget->SetupAttachment(GetCapsuleComponent());
@@ -79,6 +79,11 @@ void AZLSocialSandboxPawn::BeginPlay()
 	if (UMaterialInstanceDynamic* Material = BodyMesh->CreateDynamicMaterialInstance(0))
 	{
 		Material->SetVectorParameterValue(TEXT("Color"), FLinearColor(0.03f, 0.32f, 0.85f));
+	}
+	NameWidget->InitWidget();
+	if (UZLSocialNameWidget* Widget = Cast<UZLSocialNameWidget>(NameWidget->GetUserWidgetObject()))
+	{
+		Widget->SetName(FText::FromString(TEXT("玩家")), FLinearColor(0.16f, 0.86f, 1.0f));
 	}
 }
 
@@ -132,7 +137,6 @@ void AZLSocialSandboxPawn::StopScriptedAction()
 void AZLSocialSandboxPawn::Tick(const float DeltaSeconds)
 {
 	Super::Tick(DeltaSeconds);
-	FaceLabelsToCamera();
 	if (!bScriptedActionActive || !ScriptedTarget.IsValid())
 	{
 		return;
@@ -161,13 +165,13 @@ void AZLSocialSandboxPawn::ShowSpeechBubble(const FString& SpokenText)
 
 void AZLSocialSandboxPawn::ShowActionBubble(const EZLSocialActionType Action, const EZLSocialActionPhase Phase, const FText& TargetName)
 {
-	const TCHAR* ActionText = TEXT("停止 Stop");
+	const TCHAR* ActionText = TEXT("停止");
 	switch (Action)
 	{
-	case EZLSocialActionType::Face: ActionText = TEXT("面向 Face"); break;
-	case EZLSocialActionType::Approach: ActionText = TEXT("靠近 Approach"); break;
-	case EZLSocialActionType::MoveAway: ActionText = TEXT("远离 MoveAway"); break;
-	case EZLSocialActionType::Attack: ActionText = TEXT("攻击 Attack"); break;
+	case EZLSocialActionType::Face: ActionText = TEXT("面向"); break;
+	case EZLSocialActionType::Approach: ActionText = TEXT("靠近"); break;
+	case EZLSocialActionType::MoveAway: ActionText = TEXT("远离"); break;
+	case EZLSocialActionType::Attack: ActionText = TEXT("攻击"); break;
 	default: break;
 	}
 	const TCHAR* PhaseText = Phase == EZLSocialActionPhase::Started ? TEXT("开始") : TEXT("完成");
@@ -192,16 +196,6 @@ void AZLSocialSandboxPawn::ClearBubble()
 {
 	if (GetWorld() != nullptr) { GetWorld()->GetTimerManager().ClearTimer(BubbleTimer); }
 	if (BubbleWidget != nullptr) { BubbleWidget->SetVisibility(false); }
-}
-
-void AZLSocialSandboxPawn::FaceLabelsToCamera() const
-{
-	const APlayerCameraManager* Camera = UGameplayStatics::GetPlayerCameraManager(this, 0);
-	if (Camera == nullptr) { return; }
-	if (NameLabel != nullptr)
-	{
-		NameLabel->SetWorldRotation((Camera->GetCameraLocation() - NameLabel->GetComponentLocation()).Rotation());
-	}
 }
 
 void AZLSocialSandboxPawn::MoveForward(const float Value)

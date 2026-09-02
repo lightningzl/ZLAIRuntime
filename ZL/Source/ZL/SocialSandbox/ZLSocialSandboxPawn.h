@@ -9,7 +9,6 @@ class UArrowComponent;
 class UCameraComponent;
 class USpringArmComponent;
 class UStaticMeshComponent;
-class UTextRenderComponent;
 class UWidgetComponent;
 
 UCLASS()
@@ -39,7 +38,6 @@ private:
 	void LookUp(float Value);
 	void ShowBubble(const FText& Text, const FColor& Color, float DurationSeconds = 4.0f);
 	void ClearBubble();
-	void FaceLabelsToCamera() const;
 
 	UPROPERTY(VisibleAnywhere, Category="Sandbox")
 	TObjectPtr<USpringArmComponent> CameraBoom;
@@ -54,7 +52,7 @@ private:
 	TObjectPtr<UStaticMeshComponent> BodyMesh;
 
 	UPROPERTY(VisibleAnywhere, Category="Sandbox")
-	TObjectPtr<UTextRenderComponent> NameLabel;
+	TObjectPtr<UWidgetComponent> NameWidget;
 
 	UPROPERTY(VisibleAnywhere, Category="Sandbox")
 	TObjectPtr<UWidgetComponent> BubbleWidget;

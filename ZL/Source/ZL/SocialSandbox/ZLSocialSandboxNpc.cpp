@@ -2,17 +2,32 @@
 
 #include "SocialSandbox/ZLSocialBubbleWidget.h"
 #include "SocialSandbox/ZLSocialSandboxMotion.h"
+#include "SocialSandbox/ZLSocialNameWidget.h"
 
 #include "Components/ArrowComponent.h"
 #include "Components/CapsuleComponent.h"
 #include "Components/StaticMeshComponent.h"
-#include "Components/TextRenderComponent.h"
 #include "Components/WidgetComponent.h"
 #include "Camera/PlayerCameraManager.h"
 #include "Kismet/GameplayStatics.h"
 #include "Materials/MaterialInstanceDynamic.h"
 #include "TimerManager.h"
 #include "UObject/ConstructorHelpers.h"
+
+namespace
+{
+const TCHAR* LocalizedReasonCode(const FName ReasonCode)
+{
+	if (ReasonCode == TEXT("InvalidDamage")) { return TEXT("伤害参数无效"); }
+	if (ReasonCode == TEXT("TargetIncapacitated")) { return TEXT("目标已失能"); }
+	if (ReasonCode == TEXT("DamageInvulnerable")) { return TEXT("目标暂时免伤"); }
+	if (ReasonCode == TEXT("InvalidTarget")) { return TEXT("目标无效"); }
+	if (ReasonCode == TEXT("OutOfRange")) { return TEXT("超出范围"); }
+	if (ReasonCode == TEXT("StateVersionMismatch")) { return TEXT("状态已变化"); }
+	if (ReasonCode == TEXT("Cooldown")) { return TEXT("仍在冷却"); }
+	return TEXT("当前无法执行");
+}
+}
 
 AZLSocialSandboxNpc::AZLSocialSandboxNpc()
 {
@@ -40,12 +55,13 @@ AZLSocialSandboxNpc::AZLSocialSandboxNpc()
 	FacingArrow->ArrowSize = 2.2f;
 	FacingArrow->SetHiddenInGame(false);
 
-	NameLabel = CreateDefaultSubobject<UTextRenderComponent>(TEXT("NameLabel"));
-	NameLabel->SetupAttachment(Capsule);
-	NameLabel->SetRelativeLocation(FVector(0.0f, 0.0f, 135.0f));
-	NameLabel->SetHorizontalAlignment(EHTA_Center);
-	NameLabel->SetWorldSize(34.0f);
-	NameLabel->SetTextRenderColor(FColor::White);
+	NameWidget = CreateDefaultSubobject<UWidgetComponent>(TEXT("NameWidget"));
+	NameWidget->SetupAttachment(Capsule);
+	NameWidget->SetRelativeLocation(FVector(0.0f, 0.0f, 145.0f));
+	NameWidget->SetWidgetSpace(EWidgetSpace::Screen);
+	NameWidget->SetDrawSize(FVector2D(360.0f, 44.0f));
+	NameWidget->SetPivot(FVector2D(0.5f, 0.5f));
+	NameWidget->SetWidgetClass(UZLSocialNameWidget::StaticClass());
 
 	BubbleWidget = CreateDefaultSubobject<UWidgetComponent>(TEXT("BubbleWidget"));
 	BubbleWidget->SetupAttachment(Capsule);
@@ -179,7 +195,6 @@ FVector AZLSocialSandboxNpc::GetPlanarForwardVector() const
 void AZLSocialSandboxNpc::Tick(const float DeltaSeconds)
 {
 	Super::Tick(DeltaSeconds);
-	FaceLabelsToCamera();
 	AdvanceDecisionAction(DeltaSeconds);
 }
 
@@ -276,18 +291,18 @@ void AZLSocialSandboxNpc::StopDecisionAction()
 void AZLSocialSandboxNpc::ShowRuleSpeech(const FZLSocialObservation& Observation)
 {
 	if (!Observation.bHeard) { return; }
-	const TCHAR* Response = TEXT("[RulePlaceholder] 我听见了，但对象不明。");
+	const TCHAR* Response = TEXT("[规则提示] 我听见了，但对象不明。");
 	if (Observation.TargetJudgment == EZLSocialTargetJudgment::ExplicitSelf)
 	{
-		Response = Observation.bHeardClearly ? TEXT("[RulePlaceholder] 我听清了。") : TEXT("[RulePlaceholder] 我听到了。");
+		Response = Observation.bHeardClearly ? TEXT("[规则提示] 我听清了。") : TEXT("[规则提示] 我听到了。");
 	}
 	else if (Observation.TargetJudgment == EZLSocialTargetJudgment::Candidate)
 	{
-		Response = TEXT("[RulePlaceholder] 你是在对我说吗？");
+		Response = TEXT("[规则提示] 你是在对我说吗？");
 	}
 	else if (Observation.TargetJudgment == EZLSocialTargetJudgment::ExplicitOther)
 	{
-		Response = TEXT("[RulePlaceholder]（旁听）");
+		Response = TEXT("[规则提示]（旁听）");
 	}
 	ShowBubble(FText::FromString(Response), FColor(255, 210, 80));
 }
@@ -311,37 +326,37 @@ void AZLSocialSandboxNpc::ShowActionObservation(const FZLSocialObservation& Obse
 void AZLSocialSandboxNpc::ShowDecisionSpeech(const FString& Text, const FString& Provider)
 {
 	const FString Bounded = Text.Len() > 96 ? Text.Left(96) + TEXT("…") : Text;
-	const FString Source = Provider.Equals(TEXT("kimi"), ESearchCase::IgnoreCase) ? TEXT("Kimi") : TEXT("Stub");
+	const FString Source = Provider.Equals(TEXT("kimi"), ESearchCase::IgnoreCase) ? TEXT("Kimi") : TEXT("本地模拟");
 	LastDecisionSpeech = FString::Printf(TEXT("[%s] %s"), *Source, *Bounded);
 	ShowBubble(FText::FromString(LastDecisionSpeech), FColor(90, 235, 170), 6.0f);
 }
 
 void AZLSocialSandboxNpc::ShowDecisionAction(const EZLSocialActionType Action, const EZLSocialActionPhase Phase)
 {
-	const TCHAR* ActionText = TEXT("停止 Stop");
+	const TCHAR* ActionText = TEXT("停止");
 	switch (Action)
 	{
-	case EZLSocialActionType::Face: ActionText = TEXT("面向 Face"); break;
-	case EZLSocialActionType::Approach: ActionText = TEXT("靠近 Approach"); break;
-	case EZLSocialActionType::MoveAway: ActionText = TEXT("远离 MoveAway"); break;
-	case EZLSocialActionType::Attack: ActionText = TEXT("攻击 Attack"); break;
+	case EZLSocialActionType::Face: ActionText = TEXT("面向"); break;
+	case EZLSocialActionType::Approach: ActionText = TEXT("靠近"); break;
+	case EZLSocialActionType::MoveAway: ActionText = TEXT("远离"); break;
+	case EZLSocialActionType::Attack: ActionText = TEXT("攻击"); break;
 	default: break;
 	}
 	const TCHAR* PhaseText = Phase == EZLSocialActionPhase::Started ? TEXT("执行") : TEXT("完成");
 	const FString SpeechPrefix = LastDecisionSpeech.IsEmpty() ? FString() : LastDecisionSpeech + TEXT("\n");
-	ShowBubble(FText::FromString(FString::Printf(TEXT("%s[Decision %s] %s"), *SpeechPrefix, PhaseText, ActionText)), FColor(90, 235, 170), 5.0f);
+	ShowBubble(FText::FromString(FString::Printf(TEXT("%s[决策%s] %s"), *SpeechPrefix, PhaseText, ActionText)), FColor(90, 235, 170), 5.0f);
 }
 
 void AZLSocialSandboxNpc::ShowDecisionRejection(const FName ReasonCode)
 {
 	const FString SpeechPrefix = LastDecisionSpeech.IsEmpty() ? FString() : LastDecisionSpeech + TEXT("\n");
-	ShowBubble(FText::FromString(FString::Printf(TEXT("%s[Tool rejected] %s"), *SpeechPrefix, *ReasonCode.ToString())), FColor(255, 115, 95), 5.0f);
+	ShowBubble(FText::FromString(FString::Printf(TEXT("%s[工具被拒绝] %s"), *SpeechPrefix, LocalizedReasonCode(ReasonCode))), FColor(255, 115, 95), 5.0f);
 }
 
 void AZLSocialSandboxNpc::ShowDecisionFallback()
 {
 	LastDecisionSpeech.Reset();
-	ShowBubble(FText::FromString(TEXT("[LocalFallback] 服务不可用：停止当前计划并进入防卫。")), FColor(255, 210, 80), 5.0f);
+	ShowBubble(FText::FromString(TEXT("[本地降级] 服务不可用：停止当前计划并进入防卫。")), FColor(255, 210, 80), 5.0f);
 }
 
 void AZLSocialSandboxNpc::ShowBubble(const FText& Text, const FColor& Color, const float DurationSeconds)
@@ -363,31 +378,21 @@ void AZLSocialSandboxNpc::ClearBubble()
 	if (BubbleWidget != nullptr) { BubbleWidget->SetVisibility(false); }
 }
 
-void AZLSocialSandboxNpc::FaceLabelsToCamera() const
-{
-	const APlayerCameraManager* Camera = UGameplayStatics::GetPlayerCameraManager(this, 0);
-	if (Camera == nullptr) { return; }
-	if (NameLabel != nullptr)
-	{
-		NameLabel->SetWorldRotation((Camera->GetCameraLocation() - NameLabel->GetComponentLocation()).Rotation());
-	}
-}
-
 void AZLSocialSandboxNpc::ShowDamageResult(const FZLSocialSandboxDamageResult& Result)
 {
 	if (!Result.bAccepted)
 	{
 		ShowBubble(
-			FText::FromString(FString::Printf(TEXT("[Attack rejected] %s"), *Result.ReasonCode.ToString())),
+			FText::FromString(FString::Printf(TEXT("[攻击被拒绝] %s"), LocalizedReasonCode(Result.ReasonCode))),
 			FColor(255, 170, 70),
 			3.0f);
 		return;
 	}
-	const FString Defense = Result.bDefended ? TEXT(" · DEFENDED") : FString();
-	const FString State = Result.bIncapacitated ? TEXT(" · INCAPACITATED") : FString();
+	const FString Defense = Result.bDefended ? TEXT(" · 已防御") : FString();
+	const FString State = Result.bIncapacitated ? TEXT(" · 已失能") : FString();
 	ShowBubble(
 		FText::FromString(FString::Printf(
-			TEXT("[Hit] -%.0f HP · %.0f remaining%s%s"),
+			TEXT("[命中] -%.0f 生命 · 剩余 %.0f%s%s"),
 			Result.AppliedDamage,
 			Result.HealthAfter,
 			*Defense,
@@ -398,23 +403,21 @@ void AZLSocialSandboxNpc::ShowDamageResult(const FZLSocialSandboxDamageResult& R
 
 void AZLSocialSandboxNpc::RefreshNameLabel()
 {
-	if (NameLabel == nullptr)
+	if (NameWidget == nullptr)
 	{
 		return;
 	}
-	FString ShortName = DisplayName.ToString();
-	int32 Separator = INDEX_NONE;
-	if (ShortName.FindLastChar(TEXT(' '), Separator))
-	{
-		ShortName.RightChopInline(Separator + 1);
-	}
 	const FString State = bIncapacitated
-		? TEXT("INCAPACITATED")
-		: (bDefending ? TEXT("DEFEND") : TEXT("READY"));
-	NameLabel->SetText(FText::FromString(FString::Printf(
-		TEXT("%s  HP %.0f/%.0f  %s"),
-		*ShortName,
+		? TEXT("失能")
+		: (bDefending ? TEXT("防御") : TEXT("就绪"));
+	NameWidget->InitWidget();
+	if (UZLSocialNameWidget* Widget = Cast<UZLSocialNameWidget>(NameWidget->GetUserWidgetObject()))
+	{
+		Widget->SetName(FText::FromString(FString::Printf(
+		TEXT("%s  生命 %.0f/%.0f  %s"),
+		*DisplayName.ToString(),
 		Health,
 		MaxHealth,
-		*State)));
+		*State)), FLinearColor::White);
+	}
 }

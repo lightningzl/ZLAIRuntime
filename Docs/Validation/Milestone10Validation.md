@@ -73,4 +73,20 @@
 - 120+5 确定性性能基准沿用 Milestone 6 证据，不把 100+ NPC 与真实 LLM 场景混为同一性能目标。
 - 当前未加入正式动画、复杂导航、NPC 间自主对话或 MassEntity 场景集成；这些限制与 Milestone 10 明确不做一致。
 
+## 交付后中文化修正
+
+- 2026-09-01：固定界面、角色名称/生命状态、规则与决策气泡、伤害反馈、个人 Inspector、本地 Stub Speech 及演示输入均改为简体中文；稳定协议字段、Tool 名称、Reason Code 和命令行参数未改。
+- 2026-09-01：Decision Context Builder 新增 Kimi Speech 必须使用简体中文的固定约束；针对性 Python 自动化 `test_decision_context_builder.py` 与 `test_stub_decision_planner.py` 通过，覆盖该指令和 4 个 NPC Stub 台词包含中文。
+- 2026-09-02：使用 `E:\MyEngine\UE_5.8` 完成 `ZLEditor Win64 Development` 编译；中文化相关的 7 个 UE 源文件均重新编译并完成链接。
+- 2026-09-02：启动本地 Stub Service 后运行默认地图 `-ZLSandboxMultiNpcSmoke`，结果 `Success`：生成 4 个 NPC、4/4 接受 `provider=stub` 的 Speech、在途请求为 0 且并发上限保持成立。
+- 2026-09-02：发现无 BOM UTF-8 C++ 源码未固定编译代码页时会使中文字面量显示乱码；在 Game 与 Editor Target 固定 `/utf-8`，并使用 `bOverrideBuildEnvironment` 适配已安装 UE。重新编译成功，实际响应文件含 `/utf-8`，随后 4 NPC Stub 场景烟测再次 `Success`。
+- 2026-09-02：发现角色名称的 `TextRenderComponent` 默认 `RobotoDistanceField` 缺少中文字形；玩家与 NPC 名称改用运行时 `Roboto` 复合字体，以使用 UE 自带中文回退。受影响两项源文件重新编译并链接成功。
+- 2026-09-02：运行时复合字体不兼容 `TextRenderComponent` 的离线字形材质，名称不可见；改为专用屏幕空间 `UZLSocialNameWidget`，复用 UMG 的中文回退字体路径。UE 5.8 编译成功，4 NPC Stub 场景烟测再次 `Success`。
+- 2026-09-02：玩家控制器绑定鼠标左键，命中有效 NPC 时同步左侧目标栏与个人 Inspector，命中非 NPC 时不改变选择。UE 5.8 编译成功；默认地图 `-ZLSandboxMultiNpcSmoke` 再次 `Success`（4 个 NPC、4/4 Stub Speech、在途 0）。
+
+| 验收 | 证据结论 |
+| --- | --- |
+| `M10-A12` | 固定玩家可见文本与 Stub Speech 已完成中文化，Kimi 指令已约束中文 Speech；Python 针对性自动化、UE 5.8 编译和 4 NPC Stub 场景烟测均通过。 |
+| `M10-A13` | 鼠标左键只在 Visibility 命中有效 NPC 时同步左侧选择和 Inspector；UE 5.8 编译与默认地图多 NPC 烟测通过。 |
+
 后续只在实际执行验证后补充结果；未执行项目不得写为通过。

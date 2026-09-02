@@ -9,7 +9,6 @@
 class UArrowComponent;
 class UCapsuleComponent;
 class UStaticMeshComponent;
-class UTextRenderComponent;
 class UWidgetComponent;
 
 struct FZLSocialSandboxDamageResult
@@ -77,7 +76,7 @@ private:
 	TObjectPtr<UArrowComponent> FacingArrow;
 
 	UPROPERTY(VisibleAnywhere, Category="Sandbox")
-	TObjectPtr<UTextRenderComponent> NameLabel;
+	TObjectPtr<UWidgetComponent> NameWidget;
 
 	UPROPERTY(VisibleAnywhere, Category="Sandbox")
 	TObjectPtr<UWidgetComponent> BubbleWidget;
@@ -107,7 +106,6 @@ private:
 
 	void ShowBubble(const FText& Text, const FColor& Color, float DurationSeconds = 4.0f);
 	void ClearBubble();
-	void FaceLabelsToCamera() const;
 	void AdvanceDecisionAction(float DeltaSeconds);
 	void RefreshNameLabel();
 

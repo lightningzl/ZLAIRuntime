@@ -19,7 +19,7 @@ FZLSocialSandboxNpcProfile FZLSocialSandboxNpcProfile::Create(const FName Stable
 	Profile.StableId = StableId;
 	if (StableId == TEXT("npc_guard"))
 	{
-		Profile.DisplayName = FText::FromString(TEXT("守卫 Guard"));
+		Profile.DisplayName = FText::FromString(TEXT("守卫"));
 		Profile.Role = TEXT("order-focused town guard");
 		Profile.Personality = {TEXT("cautious"), TEXT("dutiful"), TEXT("protective")};
 		Profile.SpeakingStyle = TEXT("brief, formal, and commanding");
@@ -31,7 +31,7 @@ FZLSocialSandboxNpcProfile FZLSocialSandboxNpcProfile::Create(const FName Stable
 	}
 	else if (StableId == TEXT("npc_merchant"))
 	{
-		Profile.DisplayName = FText::FromString(TEXT("商人 Merchant"));
+		Profile.DisplayName = FText::FromString(TEXT("商人"));
 		Profile.Role = TEXT("pragmatic market merchant");
 		Profile.Personality = {TEXT("sociable"), TEXT("calculating"), TEXT("risk-averse")};
 		Profile.SpeakingStyle = TEXT("courteous, observant, and transactional");
@@ -44,7 +44,7 @@ FZLSocialSandboxNpcProfile FZLSocialSandboxNpcProfile::Create(const FName Stable
 	}
 	else if (StableId == TEXT("npc_rival"))
 	{
-		Profile.DisplayName = FText::FromString(TEXT("旧敌 Rival"));
+		Profile.DisplayName = FText::FromString(TEXT("旧敌"));
 		Profile.Role = TEXT("proud rival with a prior grievance");
 		Profile.Personality = {TEXT("proud"), TEXT("bold in public"), TEXT("resentful")};
 		Profile.SpeakingStyle = TEXT("sharp, personal, and unwilling to look weak");
@@ -60,7 +60,7 @@ FZLSocialSandboxNpcProfile FZLSocialSandboxNpcProfile::Create(const FName Stable
 	else
 	{
 		Profile.StableId = TEXT("npc_civilian");
-		Profile.DisplayName = FText::FromString(TEXT("居民 Civilian"));
+		Profile.DisplayName = FText::FromString(TEXT("居民"));
 		Profile.Role = TEXT("uninvolved local civilian");
 		Profile.Personality = {TEXT("reserved"), TEXT("empathetic"), TEXT("conflict-averse")};
 		Profile.SpeakingStyle = TEXT("plain, hesitant, and conciliatory");

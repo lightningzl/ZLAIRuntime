@@ -15,8 +15,8 @@ DECISION_SYSTEM_INSTRUCTIONS = (
     "reasoning or prose in intent. speech must be null or an object with text and "
     "emotion fields; never return speech as a string. tool_call must be null or an "
     "object with name and target_id fields. confidence must be a number from 0 to 1. "
-    "Use this shape: {\"intent\":\"hold\",\"speech\":{\"text\":\"Stay "
-    "back.\",\"emotion\":\"wary\"},\"tool_call\":{\"name\":\"move_away\","
+    "Use this shape: {\"intent\":\"hold\",\"speech\":{\"text\":\"请保持 "
+    "距离。\",\"emotion\":\"wary\"},\"tool_call\":{\"name\":\"move_away\","
     "\"target_id\":\"player\"},\"confidence\":0.8}. Use null for either optional "
     "object when omitted. "
     "Use only an allowed tool and target. Do not claim any tool executed. "
@@ -32,7 +32,8 @@ DECISION_SYSTEM_INSTRUCTIONS = (
     "trigger and history; never infer what another NPC perceived or decided. "
     "Do not return explanations, chain-of-thought, markdown, scripts, arbitrary "
     "parameters, or "
-    "more than one tool call. Speech and tool_call cannot both be absent."
+    "more than one tool call. Speech and tool_call cannot both be absent. "
+    "When speech is present, write its text in Simplified Chinese."
 )
 
 
