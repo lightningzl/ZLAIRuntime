@@ -98,8 +98,8 @@ bool AZLSocialSandboxGameMode::TryApplyNamedPreset()
 		return false;
 	}
 	for (const FZLSocialSandboxNpcPreset& NpcPreset : Preset.Npcs) { SpawnNpc(NpcPreset); }
-	ExpectedPresetPlayerId = Preset.Player.StableId;
-	ExpectedPresetNpcCount = Preset.Npcs.Num();
+	ActivePreset = Preset;
+	bHasActivePreset = true;
 	if (AZLSocialSandboxPawn* Pawn = Cast<AZLSocialSandboxPawn>(UGameplayStatics::GetPlayerPawn(this, 0))) { Pawn->InitializeSandboxPlayer(Preset.Player); }
 	return true;
 }
@@ -1441,11 +1441,26 @@ void AZLSocialSandboxGameMode::FinishMultiNpcSmokeTest()
 void AZLSocialSandboxGameMode::FinishPresetSmokeTest()
 {
 	const AZLSocialSandboxPawn* Player = Cast<AZLSocialSandboxPawn>(UGameplayStatics::GetPlayerPawn(this, 0));
-	const bool bPassed = ExpectedPresetNpcCount >= 2
-		&& SandboxNpcs.Num() == ExpectedPresetNpcCount
-		&& Player != nullptr
-		&& Player->GetSandboxStableId() == ExpectedPresetPlayerId;
-	UE_LOG(LogZL, Display, TEXT("ZL_SANDBOX_PRESET_SMOKE result=%s player=%s npc_count=%d"), bPassed ? TEXT("Success") : TEXT("Fail"), *ExpectedPresetPlayerId.ToString(), SandboxNpcs.Num());
+	bool bNpcProfilesMatch = bHasActivePreset && SandboxNpcs.Num() == ActivePreset.Npcs.Num();
+	if (bNpcProfilesMatch)
+	{
+		for (const FZLSocialSandboxNpcPreset& Expected : ActivePreset.Npcs)
+		{
+			const AZLSocialSandboxNpc* Actual = FindSandboxNpc(Expected.Profile.StableId);
+			bNpcProfilesMatch = Actual != nullptr
+				&& Actual->GetDisplayName().EqualTo(Expected.Profile.DisplayName)
+				&& Actual->GetProfile().Role == Expected.Profile.Role
+				&& FMath::IsNearlyEqual(Actual->GetMaxHealth(), Expected.InitialHealth)
+				&& Actual->GetActorLocation().Equals(Expected.SpawnTransform.GetLocation(), 10.0f);
+			if (!bNpcProfilesMatch) { break; }
+		}
+	}
+	const bool bPlayerMatches = Player != nullptr && bHasActivePreset
+		&& Player->GetSandboxStableId() == ActivePreset.Player.StableId
+		&& Player->GetSandboxDisplayName().EqualTo(ActivePreset.Player.DisplayName)
+		&& Player->GetActorLocation().Equals(ActivePreset.Player.SpawnTransform.GetLocation(), 10.0f);
+	const bool bPassed = bPlayerMatches && bNpcProfilesMatch;
+	UE_LOG(LogZL, Display, TEXT("ZL_SANDBOX_PRESET_SMOKE result=%s player=%s npc_count=%d"), bPassed ? TEXT("Success") : TEXT("Fail"), bHasActivePreset ? *ActivePreset.Player.StableId.ToString() : TEXT("None"), SandboxNpcs.Num());
 	FPlatformMisc::RequestExitWithStatus(true, bPassed ? 0 : 1);
 }
 

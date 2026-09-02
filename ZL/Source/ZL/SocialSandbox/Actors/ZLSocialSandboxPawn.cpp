@@ -77,6 +77,7 @@ void AZLSocialSandboxPawn::InitializeSandboxPlayer(const FZLSocialSandboxPlayerP
 {
 	if (!Preset.IsValid()) { return; }
 	SandboxStableId = Preset.StableId;
+	SandboxDisplayName = Preset.DisplayName;
 	SandboxStartTransform = Preset.SpawnTransform;
 	SetActorTransform(SandboxStartTransform, false, nullptr, ETeleportType::TeleportPhysics);
 	if (UMaterialInstanceDynamic* Material = BodyMesh->CreateDynamicMaterialInstance(0))
@@ -86,7 +87,7 @@ void AZLSocialSandboxPawn::InitializeSandboxPlayer(const FZLSocialSandboxPlayerP
 	NameWidget->InitWidget();
 	if (UZLSocialNameWidget* Widget = Cast<UZLSocialNameWidget>(NameWidget->GetUserWidgetObject()))
 	{
-		Widget->SetName(Preset.DisplayName, Preset.BodyColor);
+		Widget->SetName(SandboxDisplayName, Preset.BodyColor);
 	}
 }
 

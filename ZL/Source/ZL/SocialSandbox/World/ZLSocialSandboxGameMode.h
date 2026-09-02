@@ -9,6 +9,7 @@
 #include "SocialSandbox/Decision/ZLSocialSandboxDecisionScheduler.h"
 #include "SocialSandbox/Decision/ZLSocialSandboxMultiNpcDecision.h"
 #include "SocialSandbox/Domain/ZLSocialSandboxConflictState.h"
+#include "SocialSandbox/Domain/ZLSocialSandboxPreset.h"
 #include "ZLSocialSandboxGameMode.generated.h"
 
 class AZLSocialSandboxNpc;
@@ -129,6 +130,6 @@ private:
 	int32 GuardDistanceBand = INDEX_NONE;
 	float LastGuardDistance = TNumericLimits<float>::Max();
 	double LastPlayerAttackSeconds = -DBL_MAX;
-	FName ExpectedPresetPlayerId;
-	int32 ExpectedPresetNpcCount = 0;
+	FZLSocialSandboxPreset ActivePreset;
+	bool bHasActivePreset = false;
 };

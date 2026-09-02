@@ -21,6 +21,7 @@ public:
 	AZLSocialSandboxPawn();
 	void InitializeSandboxPlayer(const FZLSocialSandboxPlayerPreset& Preset);
 	FName GetSandboxStableId() const { return SandboxStableId; }
+	const FText& GetSandboxDisplayName() const { return SandboxDisplayName; }
 
 	void ResetToSandboxStart();
 	bool StartScriptedAction(EZLSocialActionType Action, AActor* Target, TFunction<void()> OnCompleted);
@@ -62,6 +63,7 @@ private:
 
 	FTransform SandboxStartTransform;
 	FName SandboxStableId = TEXT("player");
+	FText SandboxDisplayName = FText::FromString(TEXT("玩家"));
 	TWeakObjectPtr<AActor> ScriptedTarget;
 	TFunction<void()> ScriptedCompletion;
 	EZLSocialActionType ScriptedAction = EZLSocialActionType::Stop;
