@@ -20,3 +20,9 @@
 
 - 2026-09-02：`ZLEditor Win64 Development` 编译成功，新增本地 JSON 预设解析、受控目录限制、字段白名单、范围校验和导出实现均通过编译链接。
 - 2026-09-02：NullRHI 执行 `ZL.Social.Sandbox.PresetValidation`，收集 1 项并通过；验证 `market_day`、`night_watch` 两套预设、稳定 ID/个人 Profile、路径穿越式预设名拒绝以及仅写入 Saved 的导出路径。
+
+## M11-T03 至 T04：场景接入与无资源表现接口
+
+- 2026-09-03：`ZLEditor Win64 Development` 编译成功；场景现在仅在提供 `-ZLSandboxPreset=<受控预设名>` 时从完整有效 JSON 快照生成玩家与 NPC，未提供或被拒绝时保持既有 4 NPC 默认场景。
+- 2026-09-03：同次编译确认攻击展示只在现有目标、距离、冷却及伤害校验成功后调用可选接口；未绑定任何蓝图或资源时接口不改变攻击、伤害或镜头行为。
+- 2026-09-03：最终合并后再次执行 `ZL.Social.Sandbox.PresetValidation`；日志显示收集 1 项并通过。命令行进程输出仅记录平台 SDK 探测，测试完成结果以 `ZL/Saved/Logs/ZL.log` 为准。
