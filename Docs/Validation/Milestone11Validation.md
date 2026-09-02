@@ -15,3 +15,8 @@
 | 验收项 | 状态 | 证据 |
 | --- | --- | --- |
 | `M11-A01` 至 `M11-A08` | 未验证 | 待 M11 实现与验证完成后补充。 |
+
+## M11-T02：JSON Schema、校验与受控预设
+
+- 2026-09-02：`ZLEditor Win64 Development` 编译成功，新增本地 JSON 预设解析、受控目录限制、字段白名单、范围校验和导出实现均通过编译链接。
+- 2026-09-02：NullRHI 执行 `ZL.Social.Sandbox.PresetValidation`，收集 1 项并通过；验证 `market_day`、`night_watch` 两套预设、稳定 ID/个人 Profile、路径穿越式预设名拒绝以及仅写入 Saved 的导出路径。
