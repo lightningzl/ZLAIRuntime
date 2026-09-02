@@ -267,13 +267,6 @@ FText AZLSocialSandboxGameMode::SubmitAction(const FName TargetId, const FString
 		}
 		LastPlayerAttackSeconds = NowSeconds;
 		ApplyGuardConflict(Target, EZLSocialSandboxConflictEvent::Attack);
-		FVector Direction = Target->GetActorLocation() - Player->GetActorLocation();
-		Direction.Z = 0.0f;
-		if (!Direction.IsNearlyZero())
-		{
-			Player->SetActorRotation(Direction.Rotation());
-			if (Player->GetController() != nullptr) { Player->GetController()->SetControlRotation(Direction.Rotation()); }
-		}
 		DispatchActionObservation(EZLSocialActionType::Attack, EZLSocialActionPhase::Started, TargetId);
 		DispatchActionObservation(EZLSocialActionType::Attack, EZLSocialActionPhase::Completed, TargetId);
 		Target->ShowDamageResult(DamageResult);
