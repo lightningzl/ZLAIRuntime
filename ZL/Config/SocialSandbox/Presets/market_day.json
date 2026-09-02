@@ -1,0 +1,28 @@
+{
+  "schema_version": 1,
+  "preset_id": "market_day",
+  "player": {
+    "stable_id": "player_market",
+    "type": "player",
+    "display_name": "旅人",
+    "color": { "r": 0.12, "g": 0.72, "b": 1.0, "a": 1.0 },
+    "spawn_transform": { "location": { "x": 0, "y": 0, "z": 96 }, "rotation": { "pitch": 0, "yaw": 0, "roll": 0 } },
+    "initial_health": 100
+  },
+  "npcs": [
+    {
+      "stable_id": "npc_market_guard", "type": "npc", "display_name": "市集守卫",
+      "color": { "r": 0.12, "g": 0.32, "b": 0.82, "a": 1.0 },
+      "spawn_transform": { "location": { "x": 500, "y": -350, "z": 96 }, "rotation": { "pitch": 0, "yaw": 145, "roll": 0 } }, "initial_health": 100,
+      "role": "market guard", "personality": ["cautious", "dutiful"], "speaking_style": "brief and formal", "goals": ["keep public order"],
+      "relationship": { "trust": 0, "affinity": 0, "fear": 0, "familiarity": 0.35 }, "instant_state": { "fear": 0, "anger": 0, "curiosity": 0, "alert": 0.45 }
+    },
+    {
+      "stable_id": "npc_market_merchant", "type": "npc", "display_name": "摊主",
+      "color": { "r": 0.92, "g": 0.5, "b": 0.08, "a": 1.0 },
+      "spawn_transform": { "location": { "x": 500, "y": 350, "z": 96 }, "rotation": { "pitch": 0, "yaw": 215, "roll": 0 } }, "initial_health": 85,
+      "role": "pragmatic market merchant", "personality": ["sociable", "risk-averse"], "speaking_style": "courteous and transactional", "goals": ["protect the stall"],
+      "relationship": { "trust": 0.15, "affinity": 0.1, "fear": 0, "familiarity": 0.5 }, "instant_state": { "fear": 0, "anger": 0, "curiosity": 0.35, "alert": 0 }
+    }
+  ]
+}

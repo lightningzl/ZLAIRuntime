@@ -5,6 +5,7 @@
 #include "Engine/World.h"
 #include "SocialSandbox/World/ZLSocialSandboxGameMode.h"
 #include "SocialSandbox/Domain/ZLSocialSandboxMotion.h"
+#include "SocialSandbox/Domain/ZLSocialSandboxPreset.h"
 #include "SocialSandbox/Actors/ZLSocialSandboxNpc.h"
 #include "SocialSandbox/Actors/ZLSocialSandboxPawn.h"
 #include "SocialSandbox/Actors/ZLSocialSandboxPlayerController.h"
@@ -32,6 +33,25 @@ bool FZLSocialSandboxMotionTest::RunTest(const FString&)
 	const FZLSocialSandboxMotionStep Away = FZLSocialSandboxMotion::Compute(EZLSocialActionType::MoveAway, FVector::ZeroVector, FVector(100.0f, 0.0f, 0.0f), 1.0f, 300.0f);
 	TestEqual(TEXT("MoveAway advances opposite target"), Away.Translation, FVector(-300.0f, 0.0f, 0.0f));
 	TestTrue(TEXT("MoveAway completes beyond bounded distance"), FZLSocialSandboxMotion::Compute(EZLSocialActionType::MoveAway, FVector(-550.0f, 0.0f, 0.0f), FVector(100.0f, 0.0f, 0.0f), 1.0f, 300.0f).bComplete);
+	return true;
+}
+
+IMPLEMENT_SIMPLE_AUTOMATION_TEST(FZLSocialSandboxPresetTest, "ZL.Social.Sandbox.PresetValidation", EAutomationTestFlags::EditorContext | EAutomationTestFlags::EngineFilter)
+bool FZLSocialSandboxPresetTest::RunTest(const FString&)
+{
+	FZLSocialSandboxPreset MarketDay;
+	FText Error;
+	TestTrue(TEXT("Market preset loads from the controlled directory"), FZLSocialSandboxPresetCodec::LoadNamedPreset(TEXT("market_day"), MarketDay, Error));
+	TestEqual(TEXT("Market preset has one player"), MarketDay.Player.StableId, FName(TEXT("player_market")));
+	TestEqual(TEXT("Market preset has two NPCs"), MarketDay.Npcs.Num(), 2);
+	TestEqual(TEXT("Market preset keeps NPC profile context"), MarketDay.Npcs[0].Profile.Role, FString(TEXT("market guard")));
+	FZLSocialSandboxPreset NightWatch;
+	TestTrue(TEXT("Second controlled preset loads"), FZLSocialSandboxPresetCodec::LoadNamedPreset(TEXT("night_watch"), NightWatch, Error));
+	TestNotEqual(TEXT("Presets use independent player identities"), MarketDay.Player.StableId, NightWatch.Player.StableId);
+	TestFalse(TEXT("Traversal-like preset names are rejected"), FZLSocialSandboxPresetCodec::LoadNamedPreset(TEXT("../market_day"), NightWatch, Error));
+	FString ExportPath;
+	TestTrue(TEXT("Validated preset exports only through Saved"), FZLSocialSandboxPresetCodec::ExportToSaved(MarketDay, ExportPath, Error));
+	TestTrue(TEXT("Export path is outside the controlled import directory"), ExportPath.Contains(TEXT("Saved")));
 	return true;
 }
 

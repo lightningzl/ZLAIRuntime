@@ -1,0 +1,25 @@
+{
+  "schema_version": 1,
+  "preset_id": "night_watch",
+  "player": {
+    "stable_id": "player_night", "type": "player", "display_name": "夜巡者",
+    "color": { "r": 0.58, "g": 0.24, "b": 0.95, "a": 1.0 },
+    "spawn_transform": { "location": { "x": -300, "y": 100, "z": 96 }, "rotation": { "pitch": 0, "yaw": 15, "roll": 0 } }, "initial_health": 120
+  },
+  "npcs": [
+    {
+      "stable_id": "npc_night_watch", "type": "npc", "display_name": "夜卫",
+      "color": { "r": 0.2, "g": 0.42, "b": 0.95, "a": 1.0 },
+      "spawn_transform": { "location": { "x": 700, "y": -200, "z": 96 }, "rotation": { "pitch": 0, "yaw": 160, "roll": 0 } }, "initial_health": 115,
+      "role": "night watch officer", "personality": ["watchful", "protective"], "speaking_style": "quiet and direct", "goals": ["keep the night calm"],
+      "relationship": { "trust": 0.2, "affinity": 0, "fear": 0, "familiarity": 0.2 }, "instant_state": { "fear": 0, "anger": 0, "curiosity": 0.1, "alert": 0.7 }
+    },
+    {
+      "stable_id": "npc_night_rival", "type": "npc", "display_name": "巡夜旧敌",
+      "color": { "r": 0.78, "g": 0.16, "b": 0.24, "a": 1.0 },
+      "spawn_transform": { "location": { "x": 1000, "y": 250, "z": 96 }, "rotation": { "pitch": 0, "yaw": 195, "roll": 0 } }, "initial_health": 105,
+      "role": "proud night rival", "personality": ["proud", "resentful"], "speaking_style": "sharp and personal", "goals": ["preserve reputation"],
+      "relationship": { "trust": -0.6, "affinity": -0.5, "fear": 0.2, "familiarity": 0.9 }, "instant_state": { "fear": 0, "anger": 0.45, "curiosity": 0, "alert": 0.35 }
+    }
+  ]
+}

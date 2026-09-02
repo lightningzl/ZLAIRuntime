@@ -24,7 +24,9 @@ public class ZL : ModuleRules
 
 		PrivateDependencyModuleNames.AddRange(new string[] {
 			"ZLAIRuntime",
-			"ZLASocialRuntime"
+			"ZLASocialRuntime",
+			"Json",
+			"JsonUtilities"
 		});
 
 		PublicIncludePaths.AddRange(new string[] {
