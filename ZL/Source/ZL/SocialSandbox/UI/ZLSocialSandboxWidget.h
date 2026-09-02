@@ -7,7 +7,10 @@
 class UButton;
 class UComboBoxString;
 class UEditableTextBox;
+class UExpandableArea;
+class UScrollBox;
 class UTextBlock;
+class UWidget;
 
 UENUM()
 enum class EZLSocialSandboxInputMode : uint8
@@ -54,13 +57,22 @@ private:
 	UFUNCTION()
 	void HandleTargetChanged(FString SelectedItem, ESelectInfo::Type SelectionType);
 
+	UFUNCTION()
+	UWidget* GenerateComboOption(FString Item);
+
 	FName GetSelectedSpeechMode() const;
+	FString GetSelectedActionInput() const;
+	void AddInteractionRecord(EZLSocialSandboxInputMode InputMode, const FString& Input);
+	void ClearInteractionRecords();
 
 	UPROPERTY()
 	TObjectPtr<UComboBoxString> InputModeCombo;
 
 	UPROPERTY()
 	TObjectPtr<UComboBoxString> SpeechModeCombo;
+
+	UPROPERTY()
+	TObjectPtr<UComboBoxString> ActionCombo;
 
 	UPROPERTY()
 	TObjectPtr<UComboBoxString> TargetCombo;
@@ -73,6 +85,12 @@ private:
 
 	UPROPERTY()
 	TObjectPtr<UTextBlock> InspectorText;
+
+	UPROPERTY()
+	TObjectPtr<UExpandableArea> InteractionHistoryArea;
+
+	UPROPERTY()
+	TObjectPtr<UScrollBox> InteractionHistoryList;
 
 	TMap<FString, FName> TargetIdsByOption;
 	FSubmitHandler SubmitHandler;

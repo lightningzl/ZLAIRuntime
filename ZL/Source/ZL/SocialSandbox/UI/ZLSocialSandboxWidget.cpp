@@ -1,4 +1,4 @@
-#include "SocialSandbox/ZLSocialSandboxWidget.h"
+#include "SocialSandbox/UI/ZLSocialSandboxWidget.h"
 
 #include "ZLSocialInputValidation.h"
 #include "Blueprint/WidgetTree.h"
@@ -8,11 +8,15 @@
 #include "Components/CanvasPanelSlot.h"
 #include "Components/ComboBoxString.h"
 #include "Components/EditableTextBox.h"
+#include "Components/ExpandableArea.h"
 #include "Components/HorizontalBox.h"
 #include "Components/HorizontalBoxSlot.h"
 #include "Components/TextBlock.h"
 #include "Components/VerticalBox.h"
 #include "Components/VerticalBoxSlot.h"
+#include "Components/Widget.h"
+#include "Components/ScrollBox.h"
+#include "Styling/SlateTypes.h"
 
 namespace
 {
@@ -23,6 +27,37 @@ const FString WhisperOption = TEXT("小声说话");
 const FString TalkOption = TEXT("正常说话");
 const FString ShoutOption = TEXT("大声呼喊");
 const FString InEarOption = TEXT("耳边说话");
+const FString FaceOption = TEXT("面向目标");
+const FString ApproachOption = TEXT("靠近目标");
+const FString MoveAwayOption = TEXT("远离目标");
+const FString AttackOption = TEXT("攻击目标");
+const FString StopOption = TEXT("停止当前行为");
+
+void ConfigureComboBoxAppearance(UComboBoxString* ComboBox)
+{
+	const FSlateColor TextColor(FLinearColor(0.95f, 0.97f, 1.0f));
+	FComboBoxStyle ComboBoxStyle = ComboBox->GetWidgetStyle();
+	FComboButtonStyle ComboButtonStyle = ComboBoxStyle.ComboButtonStyle;
+	FButtonStyle ButtonStyle = ComboButtonStyle.ButtonStyle;
+	ButtonStyle.Normal.TintColor = FSlateColor(FLinearColor(0.06f, 0.08f, 0.12f));
+	ButtonStyle.Hovered.TintColor = FSlateColor(FLinearColor(0.10f, 0.16f, 0.24f));
+	ButtonStyle.Pressed.TintColor = FSlateColor(FLinearColor(0.04f, 0.12f, 0.20f));
+	ButtonStyle.Disabled.TintColor = FSlateColor(FLinearColor(0.04f, 0.05f, 0.07f));
+	ButtonStyle.SetNormalForeground(TextColor);
+	ButtonStyle.SetHoveredForeground(TextColor);
+	ButtonStyle.SetPressedForeground(TextColor);
+	ButtonStyle.SetDisabledForeground(FSlateColor(FLinearColor(0.55f, 0.60f, 0.68f)));
+	ComboButtonStyle.SetButtonStyle(ButtonStyle);
+	ComboButtonStyle.DownArrowImage.TintColor = TextColor;
+	ComboButtonStyle.MenuBorderBrush.TintColor = FSlateColor(FLinearColor(0.03f, 0.04f, 0.06f));
+	ComboBoxStyle.SetComboButtonStyle(ComboButtonStyle);
+	ComboBox->SetWidgetStyle(ComboBoxStyle);
+
+	FTableRowStyle ItemStyle = ComboBox->GetItemStyle();
+	ItemStyle.SetTextColor(TextColor);
+	ItemStyle.SetSelectedTextColor(FSlateColor(FLinearColor(0.3f, 0.9f, 1.0f)));
+	ComboBox->SetItemStyle(ItemStyle);
+}
 
 UTextBlock* AddLabel(UWidgetTree* WidgetTree, UVerticalBox* Parent, const FString& Text, const float Size = 18.0f)
 {
@@ -47,7 +82,7 @@ void UZLSocialSandboxWidget::NativeOnInitialized()
 	PanelSlot->SetAnchors(FAnchors(0.0f, 1.0f));
 	PanelSlot->SetAlignment(FVector2D(0.0f, 1.0f));
 	PanelSlot->SetPosition(FVector2D(20.0f, -20.0f));
-	PanelSlot->SetSize(FVector2D(520.0f, 650.0f));
+	PanelSlot->SetSize(FVector2D(520.0f, 780.0f));
 
 	UVerticalBox* Layout = WidgetTree->ConstructWidget<UVerticalBox>();
 	Panel->SetContent(Layout);
@@ -55,6 +90,8 @@ void UZLSocialSandboxWidget::NativeOnInitialized()
 	AddLabel(WidgetTree, Layout, TEXT("WASD 移动 · 鼠标转向 · 输入不会发送到服务端"), 14.0f);
 
 	InputModeCombo = WidgetTree->ConstructWidget<UComboBoxString>();
+	ConfigureComboBoxAppearance(InputModeCombo);
+	InputModeCombo->OnGenerateWidgetEvent.BindDynamic(this, &UZLSocialSandboxWidget::GenerateComboOption);
 	InputModeCombo->AddOption(SpeechOption);
 	InputModeCombo->AddOption(ActionOption);
 	InputModeCombo->SetSelectedOption(SpeechOption);
@@ -62,6 +99,8 @@ void UZLSocialSandboxWidget::NativeOnInitialized()
 	Layout->AddChildToVerticalBox(InputModeCombo)->SetPadding(FMargin(0.0f, 5.0f));
 
 	SpeechModeCombo = WidgetTree->ConstructWidget<UComboBoxString>();
+	ConfigureComboBoxAppearance(SpeechModeCombo);
+	SpeechModeCombo->OnGenerateWidgetEvent.BindDynamic(this, &UZLSocialSandboxWidget::GenerateComboOption);
 	SpeechModeCombo->AddOption(WhisperOption);
 	SpeechModeCombo->AddOption(TalkOption);
 	SpeechModeCombo->AddOption(ShoutOption);
@@ -69,14 +108,28 @@ void UZLSocialSandboxWidget::NativeOnInitialized()
 	SpeechModeCombo->SetSelectedOption(TalkOption);
 	Layout->AddChildToVerticalBox(SpeechModeCombo)->SetPadding(FMargin(0.0f, 5.0f));
 
+	ActionCombo = WidgetTree->ConstructWidget<UComboBoxString>();
+	ConfigureComboBoxAppearance(ActionCombo);
+	ActionCombo->OnGenerateWidgetEvent.BindDynamic(this, &UZLSocialSandboxWidget::GenerateComboOption);
+	ActionCombo->AddOption(FaceOption);
+	ActionCombo->AddOption(ApproachOption);
+	ActionCombo->AddOption(MoveAwayOption);
+	ActionCombo->AddOption(AttackOption);
+	ActionCombo->AddOption(StopOption);
+	ActionCombo->SetSelectedOption(FaceOption);
+	ActionCombo->SetVisibility(ESlateVisibility::Collapsed);
+	Layout->AddChildToVerticalBox(ActionCombo)->SetPadding(FMargin(0.0f, 5.0f));
+
 	TargetCombo = WidgetTree->ConstructWidget<UComboBoxString>();
+	ConfigureComboBoxAppearance(TargetCombo);
+	TargetCombo->OnGenerateWidgetEvent.BindDynamic(this, &UZLSocialSandboxWidget::GenerateComboOption);
 	TargetCombo->AddOption(NoTargetOption);
 	TargetCombo->SetSelectedOption(NoTargetOption);
 	TargetCombo->OnSelectionChanged.AddDynamic(this, &UZLSocialSandboxWidget::HandleTargetChanged);
 	Layout->AddChildToVerticalBox(TargetCombo)->SetPadding(FMargin(0.0f, 5.0f));
 
 	InputBox = WidgetTree->ConstructWidget<UEditableTextBox>();
-	InputBox->SetHintText(FText::FromString(TEXT("输入说话内容或受控行为（1–512 个字符）")));
+	InputBox->SetHintText(FText::FromString(TEXT("输入说话内容（1–512 个字符）")));
 	InputBox->OnTextCommitted.AddDynamic(this, &UZLSocialSandboxWidget::HandleInputCommitted);
 	Layout->AddChildToVerticalBox(InputBox)->SetPadding(FMargin(0.0f, 5.0f));
 
@@ -98,6 +151,20 @@ void UZLSocialSandboxWidget::NativeOnInitialized()
 
 	StatusText = AddLabel(WidgetTree, Layout, TEXT("就绪"), 15.0f);
 	SetStatus(FText::FromString(TEXT("就绪")), false);
+	InteractionHistoryArea = WidgetTree->ConstructWidget<UExpandableArea>();
+	InteractionHistoryArea->SetMaxHeight(180.0f);
+	InteractionHistoryArea->SetHeaderPadding(FMargin(4.0f));
+	InteractionHistoryArea->SetAreaPadding(FMargin(4.0f));
+	InteractionHistoryArea->SetBorderColor(FSlateColor(FLinearColor(0.12f, 0.16f, 0.22f)));
+	UTextBlock* HistoryHeader = WidgetTree->ConstructWidget<UTextBlock>();
+	HistoryHeader->SetText(FText::FromString(TEXT("行动与对话记录（点击展开）")));
+	HistoryHeader->SetFont(FSlateFontInfo(FCoreStyle::GetDefaultFontStyle(TEXT("Regular"), 17.0f)));
+	HistoryHeader->SetColorAndOpacity(FSlateColor(FLinearColor(0.65f, 0.88f, 1.0f)));
+	InteractionHistoryArea->SetContentForSlot(TEXT("Header"), HistoryHeader);
+	InteractionHistoryList = WidgetTree->ConstructWidget<UScrollBox>();
+	InteractionHistoryArea->SetContentForSlot(TEXT("Body"), InteractionHistoryList);
+	InteractionHistoryArea->SetIsExpanded(false);
+	Layout->AddChildToVerticalBox(InteractionHistoryArea)->SetPadding(FMargin(0.0f, 6.0f));
 	AddLabel(WidgetTree, Layout, TEXT("NPC 个人感知面板"), 18.0f);
 	InspectorText = AddLabel(WidgetTree, Layout, TEXT("选择一个 NPC 查看个人感知。"), 14.0f);
 	InspectorText->SetAutoWrapText(true);
@@ -151,17 +218,17 @@ void UZLSocialSandboxWidget::SetStatus(const FText& Status, const bool bIsError)
 
 void UZLSocialSandboxWidget::HandleSubmitClicked()
 {
-	const FString Input = InputBox == nullptr ? FString() : InputBox->GetText().ToString().TrimStartAndEnd();
-	const EZLSocialInputValidationResult Validation = FZLSocialInputValidation::ValidateText(Input);
-	if (Validation != EZLSocialInputValidationResult::Valid)
+	const EZLSocialSandboxInputMode InputMode = InputModeCombo != nullptr && InputModeCombo->GetSelectedOption() == ActionOption
+		? EZLSocialSandboxInputMode::Action
+		: EZLSocialSandboxInputMode::Speech;
+	const FString Input = InputMode == EZLSocialSandboxInputMode::Action
+		? GetSelectedActionInput()
+		: (InputBox == nullptr ? FString() : InputBox->GetText().ToString().TrimStartAndEnd());
+	if (InputMode == EZLSocialSandboxInputMode::Speech && FZLSocialInputValidation::ValidateText(Input) != EZLSocialInputValidationResult::Valid)
 	{
 		SetStatus(FText::FromString(TEXT("拒绝：输入必须为 1–512 个字符")), true);
 		return;
 	}
-
-	const EZLSocialSandboxInputMode InputMode = InputModeCombo != nullptr && InputModeCombo->GetSelectedOption() == ActionOption
-		? EZLSocialSandboxInputMode::Action
-		: EZLSocialSandboxInputMode::Speech;
 	const FName SpeechMode = GetSelectedSpeechMode();
 	const FName TargetId = GetSelectedTargetId();
 	if (InputMode == EZLSocialSandboxInputMode::Speech && SpeechMode == TEXT("InEar") && TargetId.IsNone())
@@ -181,7 +248,11 @@ void UZLSocialSandboxWidget::HandleSubmitClicked()
 		SetStatus(Error, true);
 		return;
 	}
-	InputBox->SetText(FText::GetEmpty());
+	if (InputMode == EZLSocialSandboxInputMode::Speech && InputBox != nullptr)
+	{
+		InputBox->SetText(FText::GetEmpty());
+	}
+	AddInteractionRecord(InputMode, Input);
 	SetStatus(FText::FromString(TEXT("已接受：正在处理输入")), false);
 }
 
@@ -190,6 +261,7 @@ void UZLSocialSandboxWidget::HandleResetClicked()
 	if (ResetHandler)
 	{
 		ResetHandler();
+		ClearInteractionRecords();
 		SetStatus(FText::FromString(TEXT("舞台已恢复确定初始状态")), false);
 	}
 }
@@ -207,12 +279,30 @@ void UZLSocialSandboxWidget::HandleInputModeChanged(FString SelectedItem, ESelec
 	if (SpeechModeCombo != nullptr)
 	{
 		SpeechModeCombo->SetIsEnabled(SelectedItem != ActionOption);
+		SpeechModeCombo->SetVisibility(SelectedItem == ActionOption ? ESlateVisibility::Collapsed : ESlateVisibility::Visible);
+	}
+	if (ActionCombo != nullptr)
+	{
+		ActionCombo->SetVisibility(SelectedItem == ActionOption ? ESlateVisibility::Visible : ESlateVisibility::Collapsed);
+	}
+	if (InputBox != nullptr)
+	{
+		InputBox->SetVisibility(SelectedItem == ActionOption ? ESlateVisibility::Collapsed : ESlateVisibility::Visible);
 	}
 }
 
 void UZLSocialSandboxWidget::HandleTargetChanged(FString, ESelectInfo::Type)
 {
 	if (SelectionHandler) { SelectionHandler(); }
+}
+
+UWidget* UZLSocialSandboxWidget::GenerateComboOption(FString Item)
+{
+	UTextBlock* Option = WidgetTree->ConstructWidget<UTextBlock>();
+	Option->SetText(FText::FromString(Item));
+	Option->SetFont(FSlateFontInfo(FCoreStyle::GetDefaultFontStyle(TEXT("Regular"), 16.0f)));
+	Option->SetColorAndOpacity(FSlateColor(FLinearColor(0.95f, 0.97f, 1.0f)));
+	return Option;
 }
 
 FName UZLSocialSandboxWidget::GetSelectedTargetId() const
@@ -236,4 +326,53 @@ FName UZLSocialSandboxWidget::GetSelectedSpeechMode() const
 	if (Selected == ShoutOption) { return TEXT("Shout"); }
 	if (Selected == InEarOption) { return TEXT("InEar"); }
 	return TEXT("Talk");
+}
+
+FString UZLSocialSandboxWidget::GetSelectedActionInput() const
+{
+	if (ActionCombo == nullptr)
+	{
+		return FString();
+	}
+
+	const FString Selected = ActionCombo->GetSelectedOption();
+	if (Selected == FaceOption) { return TEXT("面向"); }
+	if (Selected == ApproachOption) { return TEXT("靠近"); }
+	if (Selected == MoveAwayOption) { return TEXT("远离"); }
+	if (Selected == AttackOption) { return TEXT("攻击"); }
+	if (Selected == StopOption) { return TEXT("停止"); }
+	return FString();
+}
+
+void UZLSocialSandboxWidget::AddInteractionRecord(const EZLSocialSandboxInputMode InputMode, const FString& Input)
+{
+	if (InteractionHistoryList == nullptr)
+	{
+		return;
+	}
+
+	while (InteractionHistoryList->GetChildrenCount() >= 12)
+	{
+		InteractionHistoryList->RemoveChildAt(0);
+	}
+
+	const FString Target = TargetCombo == nullptr ? NoTargetOption : TargetCombo->GetSelectedOption();
+	const FString Type = InputMode == EZLSocialSandboxInputMode::Speech
+		? FString::Printf(TEXT("对话 · %s"), SpeechModeCombo == nullptr ? *TalkOption : *SpeechModeCombo->GetSelectedOption())
+		: TEXT("行动");
+	UTextBlock* Record = WidgetTree->ConstructWidget<UTextBlock>();
+	Record->SetText(FText::FromString(FString::Printf(TEXT("[%s → %s] %s"), *Type, *Target, *Input)));
+	Record->SetFont(FSlateFontInfo(FCoreStyle::GetDefaultFontStyle(TEXT("Regular"), 15.0f)));
+	Record->SetColorAndOpacity(FSlateColor(FLinearColor(0.92f, 0.95f, 1.0f)));
+	Record->SetAutoWrapText(true);
+	InteractionHistoryList->AddChild(Record);
+	InteractionHistoryList->ScrollToEnd();
+}
+
+void UZLSocialSandboxWidget::ClearInteractionRecords()
+{
+	if (InteractionHistoryList != nullptr)
+	{
+		InteractionHistoryList->ClearChildren();
+	}
 }
