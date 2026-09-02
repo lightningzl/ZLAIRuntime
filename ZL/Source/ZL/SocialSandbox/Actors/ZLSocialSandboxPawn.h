@@ -20,6 +20,7 @@ class ZL_API AZLSocialSandboxPawn final : public ACharacter
 public:
 	AZLSocialSandboxPawn();
 	void InitializeSandboxPlayer(const FZLSocialSandboxPlayerPreset& Preset);
+	FName GetSandboxStableId() const { return SandboxStableId; }
 
 	void ResetToSandboxStart();
 	bool StartScriptedAction(EZLSocialActionType Action, AActor* Target, TFunction<void()> OnCompleted);
@@ -60,6 +61,7 @@ private:
 	TObjectPtr<UWidgetComponent> BubbleWidget;
 
 	FTransform SandboxStartTransform;
+	FName SandboxStableId = TEXT("player");
 	TWeakObjectPtr<AActor> ScriptedTarget;
 	TFunction<void()> ScriptedCompletion;
 	EZLSocialActionType ScriptedAction = EZLSocialActionType::Stop;

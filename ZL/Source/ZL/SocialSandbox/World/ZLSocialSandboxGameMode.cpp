@@ -52,9 +52,14 @@ void AZLSocialSandboxGameMode::BeginPlay()
 	const bool bFallbackSmoke = FParse::Param(FCommandLine::Get(), TEXT("ZLSandboxDecisionFallbackSmoke"));
 	const bool bKimiSmoke = FParse::Param(FCommandLine::Get(), TEXT("ZLSandboxDecisionKimiSmoke"));
 	const bool bMultiNpcSmoke = FParse::Param(FCommandLine::Get(), TEXT("ZLSandboxMultiNpcSmoke"));
+	const bool bPresetSmoke = FParse::Param(FCommandLine::Get(), TEXT("ZLSandboxPresetSmoke"));
 	bExpectStaleSmoke = FParse::Param(FCommandLine::Get(), TEXT("ZLSandboxDecisionStaleSmoke"));
 	bSmokeSawAcceptedTool = false;
-	if (bMultiNpcSmoke)
+	if (bPresetSmoke)
+	{
+		GetWorldTimerManager().SetTimer(PresetSmokeTimer, this, &AZLSocialSandboxGameMode::FinishPresetSmokeTest, 1.0f, false);
+	}
+	else if (bMultiNpcSmoke)
 	{
 		GetWorldTimerManager().SetTimer(DemoTimer, this, &AZLSocialSandboxGameMode::RunMultiNpcSandboxDemo, 0.5f, false);
 		GetWorldTimerManager().SetTimer(MultiNpcSmokeTimer, this, &AZLSocialSandboxGameMode::FinishMultiNpcSmokeTest, 8.0f, false);
@@ -93,6 +98,8 @@ bool AZLSocialSandboxGameMode::TryApplyNamedPreset()
 		return false;
 	}
 	for (const FZLSocialSandboxNpcPreset& NpcPreset : Preset.Npcs) { SpawnNpc(NpcPreset); }
+	ExpectedPresetPlayerId = Preset.Player.StableId;
+	ExpectedPresetNpcCount = Preset.Npcs.Num();
 	if (AZLSocialSandboxPawn* Pawn = Cast<AZLSocialSandboxPawn>(UGameplayStatics::GetPlayerPawn(this, 0))) { Pawn->InitializeSandboxPlayer(Preset.Player); }
 	return true;
 }
@@ -1428,6 +1435,17 @@ void AZLSocialSandboxGameMode::FinishMultiNpcSmokeTest()
 		StubSpeechCount,
 		MultiNpcDecision.GetInFlightCount() + (GuardDecisionScheduler.IsInFlight() ? 1 : 0),
 		bBounded ? TEXT("Yes") : TEXT("No"));
+	FPlatformMisc::RequestExitWithStatus(true, bPassed ? 0 : 1);
+}
+
+void AZLSocialSandboxGameMode::FinishPresetSmokeTest()
+{
+	const AZLSocialSandboxPawn* Player = Cast<AZLSocialSandboxPawn>(UGameplayStatics::GetPlayerPawn(this, 0));
+	const bool bPassed = ExpectedPresetNpcCount >= 2
+		&& SandboxNpcs.Num() == ExpectedPresetNpcCount
+		&& Player != nullptr
+		&& Player->GetSandboxStableId() == ExpectedPresetPlayerId;
+	UE_LOG(LogZL, Display, TEXT("ZL_SANDBOX_PRESET_SMOKE result=%s player=%s npc_count=%d"), bPassed ? TEXT("Success") : TEXT("Fail"), *ExpectedPresetPlayerId.ToString(), SandboxNpcs.Num());
 	FPlatformMisc::RequestExitWithStatus(true, bPassed ? 0 : 1);
 }
 
