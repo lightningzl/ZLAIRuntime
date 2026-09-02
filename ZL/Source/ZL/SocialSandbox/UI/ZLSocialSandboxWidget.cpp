@@ -8,7 +8,6 @@
 #include "Components/CanvasPanelSlot.h"
 #include "Components/ComboBoxString.h"
 #include "Components/EditableTextBox.h"
-#include "Components/ExpandableArea.h"
 #include "Components/HorizontalBox.h"
 #include "Components/HorizontalBoxSlot.h"
 #include "Components/TextBlock.h"
@@ -82,7 +81,7 @@ void UZLSocialSandboxWidget::NativeOnInitialized()
 	PanelSlot->SetAnchors(FAnchors(0.0f, 1.0f));
 	PanelSlot->SetAlignment(FVector2D(0.0f, 1.0f));
 	PanelSlot->SetPosition(FVector2D(20.0f, -20.0f));
-	PanelSlot->SetSize(FVector2D(520.0f, 780.0f));
+	PanelSlot->SetSize(FVector2D(520.0f, 650.0f));
 
 	UVerticalBox* Layout = WidgetTree->ConstructWidget<UVerticalBox>();
 	Panel->SetContent(Layout);
@@ -151,23 +150,38 @@ void UZLSocialSandboxWidget::NativeOnInitialized()
 
 	StatusText = AddLabel(WidgetTree, Layout, TEXT("就绪"), 15.0f);
 	SetStatus(FText::FromString(TEXT("就绪")), false);
-	InteractionHistoryArea = WidgetTree->ConstructWidget<UExpandableArea>();
-	InteractionHistoryArea->SetMaxHeight(180.0f);
-	InteractionHistoryArea->SetHeaderPadding(FMargin(4.0f));
-	InteractionHistoryArea->SetAreaPadding(FMargin(4.0f));
-	InteractionHistoryArea->SetBorderColor(FSlateColor(FLinearColor(0.12f, 0.16f, 0.22f)));
-	UTextBlock* HistoryHeader = WidgetTree->ConstructWidget<UTextBlock>();
-	HistoryHeader->SetText(FText::FromString(TEXT("行动与对话记录（点击展开）")));
-	HistoryHeader->SetFont(FSlateFontInfo(FCoreStyle::GetDefaultFontStyle(TEXT("Regular"), 17.0f)));
-	HistoryHeader->SetColorAndOpacity(FSlateColor(FLinearColor(0.65f, 0.88f, 1.0f)));
-	InteractionHistoryArea->SetContentForSlot(TEXT("Header"), HistoryHeader);
-	InteractionHistoryList = WidgetTree->ConstructWidget<UScrollBox>();
-	InteractionHistoryArea->SetContentForSlot(TEXT("Body"), InteractionHistoryList);
-	InteractionHistoryArea->SetIsExpanded(false);
-	Layout->AddChildToVerticalBox(InteractionHistoryArea)->SetPadding(FMargin(0.0f, 6.0f));
 	AddLabel(WidgetTree, Layout, TEXT("NPC 个人感知面板"), 18.0f);
 	InspectorText = AddLabel(WidgetTree, Layout, TEXT("选择一个 NPC 查看个人感知。"), 14.0f);
 	InspectorText->SetAutoWrapText(true);
+
+	UButton* HistoryToggleButton = WidgetTree->ConstructWidget<UButton>();
+	InteractionHistoryToggleText = WidgetTree->ConstructWidget<UTextBlock>();
+	InteractionHistoryToggleText->SetText(FText::FromString(TEXT("行动记录")));
+	InteractionHistoryToggleText->SetFont(FSlateFontInfo(FCoreStyle::GetDefaultFontStyle(TEXT("Regular"), 16.0f)));
+	InteractionHistoryToggleText->SetColorAndOpacity(FSlateColor(FLinearColor(0.85f, 0.93f, 1.0f)));
+	HistoryToggleButton->SetContent(InteractionHistoryToggleText);
+	HistoryToggleButton->OnClicked.AddDynamic(this, &UZLSocialSandboxWidget::HandleInteractionHistoryToggled);
+	UCanvasPanelSlot* HistoryButtonSlot = Root->AddChildToCanvas(HistoryToggleButton);
+	HistoryButtonSlot->SetAnchors(FAnchors(1.0f, 0.0f));
+	HistoryButtonSlot->SetAlignment(FVector2D(1.0f, 0.0f));
+	HistoryButtonSlot->SetPosition(FVector2D(-20.0f, 20.0f));
+	HistoryButtonSlot->SetSize(FVector2D(120.0f, 40.0f));
+
+	InteractionHistoryPanel = WidgetTree->ConstructWidget<UBorder>();
+	InteractionHistoryPanel->SetPadding(FMargin(12.0f));
+	InteractionHistoryPanel->SetBrushColor(FLinearColor(0.02f, 0.03f, 0.05f, 0.96f));
+	InteractionHistoryPanel->SetVisibility(ESlateVisibility::Collapsed);
+	UCanvasPanelSlot* HistoryPanelSlot = Root->AddChildToCanvas(InteractionHistoryPanel);
+	HistoryPanelSlot->SetAnchors(FAnchors(1.0f, 0.0f));
+	HistoryPanelSlot->SetAlignment(FVector2D(1.0f, 0.0f));
+	HistoryPanelSlot->SetPosition(FVector2D(-20.0f, 72.0f));
+	HistoryPanelSlot->SetSize(FVector2D(460.0f, 420.0f));
+	UVerticalBox* HistoryLayout = WidgetTree->ConstructWidget<UVerticalBox>();
+	InteractionHistoryPanel->SetContent(HistoryLayout);
+	AddLabel(WidgetTree, HistoryLayout, TEXT("行动与对话记录"), 20.0f);
+	AddLabel(WidgetTree, HistoryLayout, TEXT("玩家输入、NPC 对话与已接受行动（最近 12 条）"), 13.0f);
+	InteractionHistoryList = WidgetTree->ConstructWidget<UScrollBox>();
+	HistoryLayout->AddChildToVerticalBox(InteractionHistoryList)->SetSize(ESlateSizeRule::Fill);
 }
 
 void UZLSocialSandboxWidget::SetInspectorText(const FText& Text)
@@ -296,6 +310,21 @@ void UZLSocialSandboxWidget::HandleTargetChanged(FString, ESelectInfo::Type)
 	if (SelectionHandler) { SelectionHandler(); }
 }
 
+void UZLSocialSandboxWidget::HandleInteractionHistoryToggled()
+{
+	if (InteractionHistoryPanel == nullptr)
+	{
+		return;
+	}
+
+	const bool bOpening = InteractionHistoryPanel->GetVisibility() != ESlateVisibility::Visible;
+	InteractionHistoryPanel->SetVisibility(bOpening ? ESlateVisibility::Visible : ESlateVisibility::Collapsed);
+	if (InteractionHistoryToggleText != nullptr)
+	{
+		InteractionHistoryToggleText->SetText(FText::FromString(bOpening ? TEXT("收起记录") : TEXT("行动记录")));
+	}
+}
+
 UWidget* UZLSocialSandboxWidget::GenerateComboOption(FString Item)
 {
 	UTextBlock* Option = WidgetTree->ConstructWidget<UTextBlock>();
@@ -346,6 +375,15 @@ FString UZLSocialSandboxWidget::GetSelectedActionInput() const
 
 void UZLSocialSandboxWidget::AddInteractionRecord(const EZLSocialSandboxInputMode InputMode, const FString& Input)
 {
+	const FString Target = TargetCombo == nullptr ? NoTargetOption : TargetCombo->GetSelectedOption();
+	const FString Type = InputMode == EZLSocialSandboxInputMode::Speech
+		? FString::Printf(TEXT("对话 · %s"), SpeechModeCombo == nullptr ? *TalkOption : *SpeechModeCombo->GetSelectedOption())
+		: TEXT("行动");
+	AppendInteractionRecord(FText::FromString(FString::Printf(TEXT("[%s → %s] %s"), *Type, *Target, *Input)), FLinearColor(0.92f, 0.95f, 1.0f));
+}
+
+void UZLSocialSandboxWidget::AppendInteractionRecord(const FText& Text, const FLinearColor& Color)
+{
 	if (InteractionHistoryList == nullptr)
 	{
 		return;
@@ -356,14 +394,10 @@ void UZLSocialSandboxWidget::AddInteractionRecord(const EZLSocialSandboxInputMod
 		InteractionHistoryList->RemoveChildAt(0);
 	}
 
-	const FString Target = TargetCombo == nullptr ? NoTargetOption : TargetCombo->GetSelectedOption();
-	const FString Type = InputMode == EZLSocialSandboxInputMode::Speech
-		? FString::Printf(TEXT("对话 · %s"), SpeechModeCombo == nullptr ? *TalkOption : *SpeechModeCombo->GetSelectedOption())
-		: TEXT("行动");
 	UTextBlock* Record = WidgetTree->ConstructWidget<UTextBlock>();
-	Record->SetText(FText::FromString(FString::Printf(TEXT("[%s → %s] %s"), *Type, *Target, *Input)));
+	Record->SetText(Text);
 	Record->SetFont(FSlateFontInfo(FCoreStyle::GetDefaultFontStyle(TEXT("Regular"), 15.0f)));
-	Record->SetColorAndOpacity(FSlateColor(FLinearColor(0.92f, 0.95f, 1.0f)));
+	Record->SetColorAndOpacity(FSlateColor(Color));
 	Record->SetAutoWrapText(true);
 	InteractionHistoryList->AddChild(Record);
 	InteractionHistoryList->ScrollToEnd();

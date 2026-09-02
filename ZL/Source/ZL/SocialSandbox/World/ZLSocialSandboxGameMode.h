@@ -87,6 +87,7 @@ private:
 	void FinishDecisionSmokeTest();
 	void FinishMultiNpcSmokeTest();
 	void RefreshInspector() const;
+	void AppendInteractionRecord(const FText& Text, const FLinearColor& Color) const;
 
 	UPROPERTY()
 	TArray<TObjectPtr<AZLSocialSandboxNpc>> SandboxNpcs;
