@@ -84,7 +84,7 @@ Runtime 固定上限为 10000 个注册 Agent、1024 个活动 Root、4096 条 P
 | 类型 | 职责 | 不负责 |
 | --- | --- | --- |
 | `AZLSocialSandboxGameMode` | 生成 4 个稳定差异化 NPC，逐 NPC 计算 Observation、调度单 NPC Decision，并使用当前权威快照校验对应 NPC Tool；同时校验任意 NPC 玩家 Attack 的目标/距离/冷却并调用 UE 伤害入口 | Prompt、Provider SDK、任意 Tool、跨 NPC 隐式知识或 Python 社会状态 |
-| `AZLSocialSandboxPawn` | 提供玩家移动/转向、Face/Approach/MoveAway/Stop 的权威执行和说话/动作气泡；Attack 只由 GameMode 的即时权威路径执行 | 从自由文本推断未注册行为、伪造完成状态或直接伤害 NPC |
+| `AZLSocialSandboxPawn` | 提供玩家移动/转向、Face/Approach/MoveAway/Stop 的权威执行和说话/动作气泡；Attack 只由 GameMode 的即时权威路径执行且不改变当前镜头朝向 | 从自由文本推断未注册行为、伪造完成状态或直接伤害 NPC |
 | `AZLSocialSandboxNpc` | 保存稳定人物配置、权威状态版本、位置/朝向、生命、防卫、短暂无敌、失能和容量 32 的个人 Observation；显示规则/Decision/受击/降级反馈，并执行已接受的 Face/Approach/MoveAway/Stop | 读取其他 NPC Observation、解析模型输出、绕过 Registry 或读取玩家输入原文 |
 | `AZLSocialSandboxPlayerController` | 创建交互 Widget，连接提交/重置并刷新目标与 Inspector | 持有协议或 Provider 状态 |
 | `UZLSocialSandboxWidget` | 提供说话/行为、模式、目标、文本、提交、错误状态、右侧按钮展开的最多 12 条玩家/NPC 行动对话记录和逐 NPC Observation Inspector | 保存持久历史、Prompt、scope 或凭据 |
