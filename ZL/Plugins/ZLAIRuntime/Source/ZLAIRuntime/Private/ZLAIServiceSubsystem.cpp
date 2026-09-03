@@ -30,6 +30,12 @@ namespace
 		return ServiceBaseUrl + TEXT("/v1/decision");
 	}
 
+	FString BuildDecisionV2Endpoint(FString ServiceBaseUrl)
+	{
+		ServiceBaseUrl.TrimStartAndEndInline(); while (ServiceBaseUrl.RemoveFromEnd(TEXT("/"))) {}
+		return ServiceBaseUrl + TEXT("/v2/decision");
+	}
+
 	const TCHAR* ErrorCategoryToString(const EZLServiceErrorCategory Category)
 	{
 		switch (Category)
@@ -85,6 +91,22 @@ namespace
 			OnFailure.ExecuteIfBound(Error);
 		});
 	}
+}
+
+FString UZLAIServiceSubsystem::SendDecisionV2Request(FZLDecisionV2Request DecisionRequest, FZLDecisionV2SuccessDelegate OnSuccess, FZLDecisionV2FailureDelegate OnFailure)
+{
+	if (DecisionRequest.RequestId.IsEmpty()) { DecisionRequest.RequestId = FGuid::NewGuid().ToString(EGuidFormats::DigitsWithHyphens); }
+	const UZLAIServiceSettings* Settings=GetDefault<UZLAIServiceSettings>(); FString Body, ErrorText;
+	if (!ZLAIServiceProtocol::ValidateDecisionV2Request(DecisionRequest, ErrorText) || !ZLAIServiceProtocol::SerializeDecisionV2Request(DecisionRequest, Body))
+	{ FZLServiceError Error; Error.RequestId=DecisionRequest.RequestId; Error.Code=TEXT("client_error"); Error.Message=ErrorText; DispatchDecisionFailure(MoveTemp(Error),MoveTemp(OnFailure)); return DecisionRequest.RequestId; }
+	const double SentAt=FPlatformTime::Seconds(); const TSharedRef<IHttpRequest,ESPMode::ThreadSafe> Http=FHttpModule::Get().CreateRequest();
+	Http->SetURL(BuildDecisionV2Endpoint(Settings->ServiceBaseUrl)); Http->SetVerb(TEXT("POST")); Http->SetHeader(TEXT("Content-Type"),TEXT("application/json; charset=utf-8")); Http->SetContentAsString(Body); Http->SetTimeout(FMath::Max(Settings->RequestTimeoutSeconds,0.1f));
+	const TWeakObjectPtr<UZLAIServiceSubsystem> WeakThis(this);
+	Http->OnProcessRequestComplete().BindLambda([WeakThis, Id=DecisionRequest.RequestId, Npc=DecisionRequest.NpcId, Version=DecisionRequest.StateVersion, SentAt, Ttl=DecisionRequest.TtlMs, OnSuccess, OnFailure](FHttpRequestPtr Req,FHttpResponsePtr Resp,bool bOk) mutable
+	{ const int32 Status=Resp.IsValid()?Resp->GetResponseCode():0; const FString Response=Resp.IsValid()?Resp->GetContentAsString():FString(); const bool bTimeout=Req.IsValid()&&Req->GetFailureReason()==EHttpFailureReason::TimedOut;
+		AsyncTask(ENamedThreads::GameThread,[WeakThis,Id=MoveTemp(Id),Npc=MoveTemp(Npc),Version,SentAt,Ttl,bOk,bTimeout,Status,Response,OnSuccess=MoveTemp(OnSuccess),OnFailure=MoveTemp(OnFailure)]() mutable { if(WeakThis.IsValid()) WeakThis->CompleteDecisionV2Request(Id,Npc,Version,SentAt,Ttl,bOk,bTimeout,Status,Response,MoveTemp(OnSuccess),MoveTemp(OnFailure)); }); });
+	if(!Http->ProcessRequest()) { FZLServiceError Error; Error.RequestId=DecisionRequest.RequestId; Error.Code=TEXT("client_error"); Error.Message=TEXT("Failed to start Decision v2 request"); DispatchDecisionFailure(MoveTemp(Error),MoveTemp(OnFailure)); }
+	return DecisionRequest.RequestId;
 }
 
 FString UZLAIServiceSubsystem::SendDecisionRequest(
@@ -501,4 +523,13 @@ void UZLAIServiceSubsystem::CompleteDecisionRequest(
 		return;
 	}
 	OnSuccess.ExecuteIfBound(DecisionResponse);
+}
+
+void UZLAIServiceSubsystem::CompleteDecisionV2Request(const FString& ExpectedRequestId,const FString& ExpectedNpcId,int64 ExpectedStateVersion,double SentAtSeconds,int32 TtlMs,bool bTransportSucceeded,bool bTimedOut,int32 HttpStatusCode,const FString& ResponseBody,FZLDecisionV2SuccessDelegate OnSuccess,FZLDecisionV2FailureDelegate OnFailure)
+{
+	check(IsInGameThread()); FZLServiceError Error; Error.RequestId=ExpectedRequestId; Error.HttpStatusCode=HttpStatusCode;
+	if(!bTransportSucceeded){ Error.Category=bTimedOut?EZLServiceErrorCategory::Timeout:EZLServiceErrorCategory::Network; Error.Code=bTimedOut?TEXT("timeout"):TEXT("network_error"); Error.Message=TEXT("Decision v2 request did not complete"); OnFailure.ExecuteIfBound(Error); return; }
+	if(!EHttpResponseCodes::IsOk(HttpStatusCode)){ Error.Category=EZLServiceErrorCategory::Http; if(!ZLAIServiceProtocol::TryParseServiceError(ResponseBody,Error)){Error.Code=TEXT("http_error");Error.Message=TEXT("Service returned a non-success status");} Error.RequestId=ExpectedRequestId; Error.HttpStatusCode=HttpStatusCode; OnFailure.ExecuteIfBound(Error); return; }
+	if((FPlatformTime::Seconds()-SentAtSeconds)*1000.0>static_cast<double>(TtlMs)){Error.Category=EZLServiceErrorCategory::Stale;Error.Code=TEXT("stale_response");Error.Message=TEXT("Decision v2 response exceeded its local TTL");OnFailure.ExecuteIfBound(Error);return;}
+	FZLDecisionV2Response Response; if(!ZLAIServiceProtocol::TryParseDecisionV2Response(ResponseBody,Response)||Response.RequestId!=ExpectedRequestId||Response.NpcId!=ExpectedNpcId||Response.StateVersion!=ExpectedStateVersion){Error.Category=EZLServiceErrorCategory::Parse;Error.Code=TEXT("parse_error");Error.Message=TEXT("Service returned an invalid Decision v2 response");OnFailure.ExecuteIfBound(Error);return;} OnSuccess.ExecuteIfBound(Response);
 }
