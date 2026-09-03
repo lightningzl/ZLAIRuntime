@@ -25,6 +25,26 @@ UE 不直接调用 LLM。AI 推理、未来的 Prompt 组装和模型供应商�
 重要性：
 重要
 
+## 2026-09-03：社会沙盒 NPC 采用 ACharacter 与标准 AIController 基础
+
+决定：
+`AZLSocialSandboxNpc` 从 `AActor` 升级为 `ACharacter`，复用 UE 内置 Capsule、Mesh 和 CharacterMovement，并在放置或生成时自动创建标准 `AAIController`。现有社会沙盒继续由 GameMode 与 NPC 的受控规则计算移动；本决策不引入导航、Behavior Tree、StateTree 或新的 Tool/协议语义。
+
+原因：
+- 骨骼角色本身更适合建立在 Character 的内置 Mesh 与 Movement 基础上，避免自建 Actor 组件与标准角色生命周期分离。
+- `AAIController` 只能 Possess `APawn`，以 `ACharacter` 为基类可保留后续 AIController、NavMesh 和行为资产的接入空间。
+- 当前移动与安全校验已经由 UE 权威规则实现，保持该执行语义可将基类升级与未来导航行为解耦。
+
+取舍：
+- NPC 蓝图的网格配置位置从自定义 `CharacterMesh` 变为内置 `Mesh`；已有蓝图资源由用户自行迁移配置。
+- 自动具备 AIController 不代表当前 Tool 改为寻路；若将来接入 `MoveTo`、导航或行为树，必须在新范围中定义并验证其世界语义。
+
+状态：
+已接受
+
+重要性：
+重要
+
 ## 2026-07-16：第一里程碑使用 HTTP 和 JSON
 
 决定：

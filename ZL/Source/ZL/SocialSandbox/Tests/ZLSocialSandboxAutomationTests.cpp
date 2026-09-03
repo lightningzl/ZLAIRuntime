@@ -3,6 +3,7 @@
 #include "Engine/Engine.h"
 #include "Engine/StaticMeshActor.h"
 #include "Engine/World.h"
+#include "GameFramework/Character.h"
 #include "SocialSandbox/World/ZLSocialSandboxGameMode.h"
 #include "SocialSandbox/Domain/ZLSocialSandboxMotion.h"
 #include "SocialSandbox/Domain/ZLSocialSandboxPreset.h"
@@ -20,6 +21,9 @@ bool FZLSocialSandboxStageTest::RunTest(const FString&)
 	const AZLSocialSandboxGameMode* Defaults = GetDefault<AZLSocialSandboxGameMode>();
 	TestTrue(TEXT("Sandbox uses controllable pawn"), Defaults->DefaultPawnClass == AZLSocialSandboxPawn::StaticClass());
 	TestTrue(TEXT("Sandbox uses interaction controller"), Defaults->PlayerControllerClass == AZLSocialSandboxPlayerController::StaticClass());
+	const AZLSocialSandboxNpc* NpcDefaults = GetDefault<AZLSocialSandboxNpc>();
+	TestTrue(TEXT("Sandbox NPC is a Character that AIController can possess"), AZLSocialSandboxNpc::StaticClass()->IsChildOf(ACharacter::StaticClass()));
+	TestEqual(TEXT("Sandbox NPC auto-possesses AI when spawned"), NpcDefaults->AutoPossessAI, EAutoPossessAI::PlacedInWorldOrSpawned);
 	return true;
 }
 

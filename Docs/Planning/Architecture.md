@@ -89,7 +89,7 @@ Milestone 7 在同一依赖方向上增加可操作社会沙盒：
 - `ZL` 游戏模块中的 `AZLSocialSandboxGameMode` 是场景权威入口：默认生成既有 1 个玩家和 4 个 NPC；带受控 `-ZLSandboxPreset=<name>` 参数时，从本地版本化 JSON 的有效快照生成 1 个玩家与 2 至 4 个 NPC。它构造 Speech/Action Event 并逐 NPC 调用定向视觉和分级听觉规则；每个 NPC 只保存自己的容量 32 Observation Buffer。
 - `FZLSocialSandboxPresetCodec` 只从项目 Config 下的受控预设目录读取 JSON，校验 Schema、字段白名单、稳定 ID、角色数和数值范围，并仅向 Saved 导出公开字段；失败不替换当前有效场景。
 - `IZLSocialSandboxCombatPresentation` 是可选的 Blueprint 表现接口；只有 UE 已接受攻击和伤害后才通知玩家/NPC 自身配置的攻击/受击蒙太奇（可选 Section 与播放速率），未绑定资源时无副作用。
-- `AZLSocialSandboxPawn` 使用 `ACharacter::Mesh`，`AZLSocialSandboxNpc` 使用 `CharacterMesh` 承载用户设置的骨骼网格和动画蓝图；两者不再创建 `BodyMesh` 或 `FacingArrow` 占位组件。GameMode 仅通过可配置的玩家/NPC 子类生成角色，不把资源路径写入预设或协议。
+- `AZLSocialSandboxPawn` 与 `AZLSocialSandboxNpc` 都继承 `ACharacter` 并使用其内置 `Mesh` 承载用户设置的骨骼网格和动画蓝图；NPC 使用内置 Capsule/CharacterMovement，且在放置或生成时自动由标准 `AAIController` Possess。两者不再创建 `BodyMesh` 或 `FacingArrow` 占位组件。GameMode 仅通过可配置的玩家/NPC 子类生成角色，不把资源路径写入预设或协议。
 - 玩家可选接入 Enhanced Input 的 Mapping Context、Move、Look、Attack Action；无配置时既有轴映射和 UI 攻击入口继续有效。Face、Approach、MoveAway、Stop 只有在玩家 Gameplay 执行器接受后才产生 Started/Completed 观察，Action Observation 不包含输入原文。
 - `UZLSocialSandboxWidget` 提供说话/行为模式、Whisper/Talk/Shout/InEar、目标、文本提交、拒绝状态、右侧按钮展开的最多 12 条玩家/NPC 行动对话记录和逐 NPC Inspector；`UZLSocialBubbleWidget` 只显化已接受说话、动作状态和明确标记的 `RulePlaceholder` 本地反馈。
 - 默认沙盒参数为 120 度水平视野、1500 cm 视觉距离以及 Whisper 200、Talk 800、Shout 2500、InEar 150 cm；这些值保存在场景 Observation Settings，可由场景配置覆盖。

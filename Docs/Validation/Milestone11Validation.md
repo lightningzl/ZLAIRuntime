@@ -18,6 +18,7 @@
 | `M11-A02` 至 `M11-A06` | 通过 | 两套预设解析、路径拒绝、公开导出和两次真实地图烟测通过。 |
 | `M11-A07` | 通过 | 攻击/受击接口只在权威校验接受后通知；玩家/NPC 自身的蒙太奇、Section、播放速率未绑定时无副作用。 |
 | `M11-A08` | 通过 | UE Target 编译、29 项自动化、两套预设烟测、无资源回退与文档收口完成。 |
+| `M11-A09` | 通过 | NPC 已改为 `ACharacter`，具备内置 Mesh/Capsule/CharacterMovement 与自动 AIController Possess 条件；29 项社会沙盒自动化回归通过。 |
 
 ## M11-T02：JSON Schema、校验与受控预设
 
@@ -37,3 +38,8 @@
 - 2026-09-03：`ZLEditor Win64 Development` 编译成功。玩家移除 `BodyMesh` 与 `FacingArrow`，改用 `ACharacter::Mesh`；NPC 移除同名占位组件，改用 `CharacterMesh`。两类角色可各自设置骨骼网格、动画蓝图、Attack/Hit Montage、可选 Section 和播放速率。
 - 2026-09-03：GameMode 增加 `SandboxPlayerClass` 与 `SandboxNpcClass`，由用户的 GameMode 蓝图选择角色蓝图；玩家增加 Mapping Context、Move/Look/Attack Action 配置。资源缺失时不播放蒙太奇，并保留既有轴映射和 UI 攻击入口。
 - 2026-09-03：使用 NullRHI 与内存 DDC 执行 `Automation RunTests ZL.Social`，收集 29 项且全部 `Success`，进程退出码 0；覆盖攻击校验、NPC 行动、预设、场景配置以及既有社会模拟回归。
+
+## M11-T08 至 T09：NPC Character 与 AIController 基础
+
+- 2026-09-03：`AZLSocialSandboxNpc` 从 `AActor` 改为 `ACharacter`，复用内置 Capsule、Mesh 与 CharacterMovement，并设为在放置或生成时自动使用标准 `AAIController`。既有受控移动仍由社会沙盒规则计算和执行，不把本次基类升级扩展为导航或行为树实现。
+- 2026-09-03：`ZLEditor Win64 Development` 编译成功；NullRHI 与内存 DDC 执行 `Automation RunTests ZL.Social`，29 项全部 `Success`，进程退出码 0。

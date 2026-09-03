@@ -7,7 +7,9 @@
 #include "Components/CapsuleComponent.h"
 #include "Components/SkeletalMeshComponent.h"
 #include "Components/WidgetComponent.h"
+#include "AIController.h"
 #include "Animation/AnimInstance.h"
+#include "GameFramework/CharacterMovementComponent.h"
 #include "Camera/PlayerCameraManager.h"
 #include "Kismet/GameplayStatics.h"
 #include "Materials/MaterialInstanceDynamic.h"
@@ -31,18 +33,14 @@ const TCHAR* LocalizedReasonCode(const FName ReasonCode)
 AZLSocialSandboxNpc::AZLSocialSandboxNpc()
 {
 	PrimaryActorTick.bCanEverTick = true;
-
-	Capsule = CreateDefaultSubobject<UCapsuleComponent>(TEXT("Capsule"));
-	Capsule->InitCapsuleSize(44.0f, 96.0f);
-	Capsule->SetCollisionProfileName(TEXT("BlockAllDynamic"));
-	SetRootComponent(Capsule);
-
-	CharacterMesh = CreateDefaultSubobject<USkeletalMeshComponent>(TEXT("CharacterMesh"));
-	CharacterMesh->SetupAttachment(Capsule);
-	CharacterMesh->SetCollisionEnabled(ECollisionEnabled::NoCollision);
+	GetCapsuleComponent()->InitCapsuleSize(44.0f, 96.0f);
+	GetCapsuleComponent()->SetCollisionProfileName(TEXT("BlockAllDynamic"));
+	GetMesh()->SetCollisionEnabled(ECollisionEnabled::NoCollision);
+	AutoPossessAI = EAutoPossessAI::PlacedInWorldOrSpawned;
+	AIControllerClass = AAIController::StaticClass();
 
 	NameWidget = CreateDefaultSubobject<UWidgetComponent>(TEXT("NameWidget"));
-	NameWidget->SetupAttachment(Capsule);
+	NameWidget->SetupAttachment(GetCapsuleComponent());
 	NameWidget->SetRelativeLocation(FVector(0.0f, 0.0f, 145.0f));
 	NameWidget->SetWidgetSpace(EWidgetSpace::Screen);
 	NameWidget->SetDrawSize(FVector2D(360.0f, 44.0f));
@@ -50,7 +48,7 @@ AZLSocialSandboxNpc::AZLSocialSandboxNpc()
 	NameWidget->SetWidgetClass(UZLSocialNameWidget::StaticClass());
 
 	BubbleWidget = CreateDefaultSubobject<UWidgetComponent>(TEXT("BubbleWidget"));
-	BubbleWidget->SetupAttachment(Capsule);
+	BubbleWidget->SetupAttachment(GetCapsuleComponent());
 	BubbleWidget->SetRelativeLocation(FVector(0.0f, 0.0f, 205.0f));
 	BubbleWidget->SetWidgetSpace(EWidgetSpace::Screen);
 	BubbleWidget->SetDrawSize(FVector2D(320.0f, 72.0f));
@@ -81,9 +79,9 @@ void AZLSocialSandboxNpc::InitializeSandboxNpc(const FZLSocialSandboxNpcProfile&
 	bIncapacitated = false;
 	SetActorTransform(SandboxStartTransform, false, nullptr, ETeleportType::TeleportPhysics);
 	RefreshNameLabel();
-	if (CharacterMesh->GetNumMaterials() > 0)
+	if (GetMesh()->GetNumMaterials() > 0)
 	{
-		if (UMaterialInstanceDynamic* Material = CharacterMesh->CreateDynamicMaterialInstance(0))
+		if (UMaterialInstanceDynamic* Material = GetMesh()->CreateDynamicMaterialInstance(0))
 		{
 			Material->SetVectorParameterValue(TEXT("Color"), Profile.BodyColor);
 		}
@@ -265,6 +263,7 @@ void AZLSocialSandboxNpc::StopDecisionAction()
 	bDecisionActionActive = false;
 	DecisionTarget.Reset();
 	DecisionCompletion = nullptr;
+	GetCharacterMovement()->StopMovementImmediately();
 }
 
 void AZLSocialSandboxNpc::ShowRuleSpeech(const FZLSocialObservation& Observation)
@@ -382,9 +381,9 @@ void AZLSocialSandboxNpc::ShowDamageResult(const FZLSocialSandboxDamageResult& R
 
 void AZLSocialSandboxNpc::PlaySandboxAttackPresentation_Implementation(AActor*)
 {
-	if (AttackMontage != nullptr && CharacterMesh != nullptr)
+	if (AttackMontage != nullptr)
 	{
-		if (UAnimInstance* AnimInstance = CharacterMesh->GetAnimInstance())
+		if (UAnimInstance* AnimInstance = GetMesh()->GetAnimInstance())
 		{
 			if (AnimInstance->Montage_Play(AttackMontage, MontagePlayRate) > 0.0f && AttackMontageSection != NAME_None)
 			{
@@ -396,9 +395,9 @@ void AZLSocialSandboxNpc::PlaySandboxAttackPresentation_Implementation(AActor*)
 
 void AZLSocialSandboxNpc::PlaySandboxHitPresentation_Implementation(AActor*, float, bool)
 {
-	if (HitMontage != nullptr && CharacterMesh != nullptr)
+	if (HitMontage != nullptr)
 	{
-		if (UAnimInstance* AnimInstance = CharacterMesh->GetAnimInstance())
+		if (UAnimInstance* AnimInstance = GetMesh()->GetAnimInstance())
 		{
 			if (AnimInstance->Montage_Play(HitMontage, MontagePlayRate) > 0.0f && HitMontageSection != NAME_None)
 			{
