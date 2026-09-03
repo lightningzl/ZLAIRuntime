@@ -2,6 +2,7 @@
 
 #include "CoreMinimal.h"
 #include "GameFramework/Character.h"
+#include "Variant_Combat/Interfaces/CombatAttacker.h"
 #include "ZLSocialObservation.h"
 #include "SocialSandbox/Domain/ZLSocialSandboxCombatPresentation.h"
 #include "ZLSocialSandboxPawn.generated.h"
@@ -11,11 +12,12 @@ class USpringArmComponent;
 class UWidgetComponent;
 class UAnimMontage;
 class UInputAction;
+class AZLSocialSandboxNpc;
 struct FInputActionValue;
 struct FZLSocialSandboxPlayerPreset;
 
 UCLASS()
-class ZL_API AZLSocialSandboxPawn final : public ACharacter, public IZLSocialSandboxCombatPresentation
+class ZL_API AZLSocialSandboxPawn final : public ACharacter, public IZLSocialSandboxCombatPresentation, public ICombatAttacker
 {
 	GENERATED_BODY()
 
@@ -33,6 +35,14 @@ public:
 	void ShowActionBubble(EZLSocialActionType Action, EZLSocialActionPhase Phase, const FText& TargetName);
 	virtual void PlaySandboxAttackPresentation_Implementation(AActor* Target) override;
 	virtual void PlaySandboxHitPresentation_Implementation(AActor* Instigator, float AppliedDamage, bool bIncapacitated) override;
+	bool StartSandboxComboAttack(AZLSocialSandboxNpc* Target);
+	bool StartSandboxChargedAttack(AZLSocialSandboxNpc* Target);
+	void ReleaseSandboxChargedAttack();
+	AZLSocialSandboxNpc* GetPendingAttackTarget() const { return PendingAttackTarget.Get(); }
+	bool ConsumePendingAttackHit();
+	virtual void DoAttackTrace(FName DamageSourceBone) override;
+	virtual void CheckCombo() override;
+	virtual void CheckChargedAttack() override;
 
 protected:
 	virtual void BeginPlay() override;
@@ -46,7 +56,11 @@ private:
 	void LookUp(float Value);
 	void MoveFromInput(const FInputActionValue& Value);
 	void LookFromInput(const FInputActionValue& Value);
-	void ConfiguredAttackPressed();
+	void ComboAttackPressed();
+	void ChargedAttackPressed();
+	void ChargedAttackReleased();
+	void AttackMontageEnded(UAnimMontage* Montage, bool bInterrupted);
+	bool PlayAttackMontage(UAnimMontage* Montage, FName Section);
 	void ShowBubble(const FText& Text, const FColor& Color, float DurationSeconds = 4.0f);
 	void ClearBubble();
 
@@ -71,11 +85,27 @@ private:
 	bool bScriptedActionActive = false;
 	float ScriptedSpeed = 300.0f;
 	FTimerHandle BubbleTimer;
+	FOnMontageEnded OnAttackMontageEnded;
+	TWeakObjectPtr<AZLSocialSandboxNpc> PendingAttackTarget;
+	bool bIsAttacking = false;
+	bool bQueuedCombo = false;
+	bool bChargingAttack = false;
+	bool bChargeLoopReached = false;
+	bool bPendingAttackHitConsumed = false;
+	int32 ComboIndex = 0;
 
 	UPROPERTY(EditDefaultsOnly, Category="Sandbox|Combat Presentation")
 	TObjectPtr<UAnimMontage> AttackMontage;
 	UPROPERTY(EditDefaultsOnly, Category="Sandbox|Combat Presentation")
 	FName AttackMontageSection = NAME_None;
+	UPROPERTY(EditDefaultsOnly, Category="Sandbox|Combat Presentation")
+	TArray<FName> ComboSections;
+	UPROPERTY(EditDefaultsOnly, Category="Sandbox|Combat Presentation")
+	TObjectPtr<UAnimMontage> ChargedAttackMontage;
+	UPROPERTY(EditDefaultsOnly, Category="Sandbox|Combat Presentation")
+	FName ChargeLoopSection = NAME_None;
+	UPROPERTY(EditDefaultsOnly, Category="Sandbox|Combat Presentation")
+	FName ChargeAttackSection = NAME_None;
 	UPROPERTY(EditDefaultsOnly, Category="Sandbox|Combat Presentation")
 	TObjectPtr<UAnimMontage> HitMontage;
 	UPROPERTY(EditDefaultsOnly, Category="Sandbox|Combat Presentation")
@@ -88,4 +118,6 @@ private:
 	TObjectPtr<UInputAction> LookInputAction;
 	UPROPERTY(EditDefaultsOnly, Category="Sandbox|Input")
 	TObjectPtr<UInputAction> AttackInputAction;
+	UPROPERTY(EditDefaultsOnly, Category="Sandbox|Input")
+	TObjectPtr<UInputAction> ChargedAttackInputAction;
 };

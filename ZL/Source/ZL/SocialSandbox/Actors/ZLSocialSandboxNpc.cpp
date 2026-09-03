@@ -7,7 +7,7 @@
 #include "Components/CapsuleComponent.h"
 #include "Components/SkeletalMeshComponent.h"
 #include "Components/WidgetComponent.h"
-#include "AIController.h"
+#include "SocialSandbox/AI/ZLSocialSandboxAIController.h"
 #include "Animation/AnimInstance.h"
 #include "GameFramework/CharacterMovementComponent.h"
 #include "Camera/PlayerCameraManager.h"
@@ -37,7 +37,7 @@ AZLSocialSandboxNpc::AZLSocialSandboxNpc()
 	GetCapsuleComponent()->SetCollisionProfileName(TEXT("BlockAllDynamic"));
 	GetMesh()->SetCollisionEnabled(ECollisionEnabled::NoCollision);
 	AutoPossessAI = EAutoPossessAI::PlacedInWorldOrSpawned;
-	AIControllerClass = AAIController::StaticClass();
+	AIControllerClass = AZLSocialSandboxAIController::StaticClass();
 
 	NameWidget = CreateDefaultSubobject<UWidgetComponent>(TEXT("NameWidget"));
 	NameWidget->SetupAttachment(GetCapsuleComponent());

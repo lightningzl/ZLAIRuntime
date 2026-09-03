@@ -280,33 +280,7 @@ FText AZLSocialSandboxGameMode::SubmitAction(const FName TargetId, const FString
 	}
 	if (Parsed.Action == EZLSocialActionType::Attack)
 	{
-		const float AttackDistance = FVector::Dist2D(Player->GetActorLocation(), Target->GetActorLocation());
-		const double NowSeconds = GetWorld()->GetTimeSeconds();
-		FZLSocialSandboxAttackValidationContext AttackContext;
-		AttackContext.Distance = AttackDistance;
-		AttackContext.NowSeconds = NowSeconds;
-		AttackContext.LastAttackSeconds = LastPlayerAttackSeconds;
-		AttackContext.bTargetValid = IsValid(Target);
-		AttackContext.bPlayerExecutable = !Player->IsScriptedActionActive();
-		AttackContext.bTargetIncapacitated = Target->IsIncapacitated();
-		const FZLSocialSandboxAttackValidationResult Validation = FZLSocialSandboxCombat::ValidatePlayerAttack(AttackContext);
-		if (!Validation.bAccepted)
-		{
-			return FText::FromString(TEXT("拒绝：攻击条件不满足"));
-		}
-		FZLSocialSandboxDamageResult DamageResult;
-		if (!Target->ApplySandboxDamage(FZLSocialSandboxCombat::AttackDamage, NowSeconds, DamageResult))
-		{
-			Target->ShowDamageResult(DamageResult);
-			return FText::FromString(TEXT("拒绝：目标当前无法受到攻击"));
-		}
-		LastPlayerAttackSeconds = NowSeconds;
-		NotifyAcceptedAttackPresentation(Player, Target, DamageResult);
-		ApplyGuardConflict(Target, EZLSocialSandboxConflictEvent::Attack);
-		DispatchActionObservation(EZLSocialActionType::Attack, EZLSocialActionPhase::Started, TargetId);
-		DispatchActionObservation(EZLSocialActionType::Attack, EZLSocialActionPhase::Completed, TargetId);
-		Target->ShowDamageResult(DamageResult);
-		return FText::GetEmpty();
+		return BeginPlayerAttack(Player, TargetId, false);
 	}
 
 	if (Parsed.Action == EZLSocialActionType::Face)
@@ -347,18 +321,57 @@ FText AZLSocialSandboxGameMode::SubmitAction(const FName TargetId, const FString
 	return FText::GetEmpty();
 }
 
+FText AZLSocialSandboxGameMode::BeginPlayerAttack(AZLSocialSandboxPawn* Player, const FName TargetId, const bool bCharged)
+{
+	AZLSocialSandboxNpc* Target = TargetId.IsNone() ? nullptr : FindSandboxNpc(TargetId);
+	const double NowSeconds = GetWorld() == nullptr ? -1.0 : GetWorld()->GetTimeSeconds();
+	FZLSocialSandboxAttackValidationContext Context;
+	Context.Distance = Target == nullptr ? TNumericLimits<float>::Max() : FVector::Dist2D(Player->GetActorLocation(), Target->GetActorLocation());
+	Context.NowSeconds = NowSeconds;
+	Context.LastAttackSeconds = LastPlayerAttackSeconds;
+	Context.bTargetValid = IsValid(Target);
+	Context.bPlayerExecutable = Player != nullptr && !Player->IsScriptedActionActive();
+	Context.bTargetIncapacitated = Target != nullptr && Target->IsIncapacitated();
+	if (!FZLSocialSandboxCombat::ValidatePlayerAttack(Context).bAccepted)
+	{
+		return FText::FromString(TEXT("拒绝：攻击条件不满足"));
+	}
+	const bool bStarted = bCharged ? Player->StartSandboxChargedAttack(Target) : Player->StartSandboxComboAttack(Target);
+	if (!bStarted) { return FText::FromString(TEXT("拒绝：攻击蒙太奇不可用或当前正在攻击")); }
+	LastPlayerAttackSeconds = NowSeconds;
+	return FText::GetEmpty();
+}
+
+void AZLSocialSandboxGameMode::ResolvePlayerAttackFromAnimNotify(AZLSocialSandboxPawn* Player)
+{
+	if (!IsValid(Player) || !Player->ConsumePendingAttackHit()) { return; }
+	AZLSocialSandboxNpc* Target = Player->GetPendingAttackTarget();
+	if (!IsValid(Target) || Target->IsIncapacitated() || FVector::Dist2D(Player->GetActorLocation(), Target->GetActorLocation()) > FZLSocialSandboxCombat::AttackRange)
+	{
+		return;
+	}
+	FZLSocialSandboxDamageResult DamageResult;
+	const double NowSeconds = GetWorld()->GetTimeSeconds();
+	if (!Target->ApplySandboxDamage(FZLSocialSandboxCombat::AttackDamage, NowSeconds, DamageResult))
+	{
+		Target->ShowDamageResult(DamageResult);
+		return;
+	}
+	NotifyAcceptedAttackPresentation(Target, Player, DamageResult);
+	ApplyGuardConflict(Target, EZLSocialSandboxConflictEvent::Attack);
+	DispatchActionObservation(EZLSocialActionType::Attack, EZLSocialActionPhase::Started, Target->GetStableId());
+	DispatchActionObservation(EZLSocialActionType::Attack, EZLSocialActionPhase::Completed, Target->GetStableId());
+	Target->ShowDamageResult(DamageResult);
+}
+
 void AZLSocialSandboxGameMode::NotifyAcceptedAttackPresentation(
-	AActor* Player,
 	AZLSocialSandboxNpc* Target,
+	AActor* Player,
 	const FZLSocialSandboxDamageResult& DamageResult) const
 {
 	if (!DamageResult.bAccepted || !IsValid(Player) || !IsValid(Target))
 	{
 		return;
-	}
-	if (Player->GetClass()->ImplementsInterface(UZLSocialSandboxCombatPresentation::StaticClass()))
-	{
-		IZLSocialSandboxCombatPresentation::Execute_PlaySandboxAttackPresentation(Player, Target);
 	}
 	if (Target->GetClass()->ImplementsInterface(UZLSocialSandboxCombatPresentation::StaticClass()))
 	{
