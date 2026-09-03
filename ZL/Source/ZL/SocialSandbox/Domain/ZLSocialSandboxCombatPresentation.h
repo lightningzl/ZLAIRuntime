@@ -19,7 +19,4 @@ public:
 	UFUNCTION(BlueprintNativeEvent, BlueprintCallable, Category="Social Sandbox|Combat Presentation")
 	void PlaySandboxAttackPresentation(AActor* Target);
 
-	// Optional presentation hook. Damage has already changed authoritative health when this fires.
-	UFUNCTION(BlueprintNativeEvent, BlueprintCallable, Category="Social Sandbox|Combat Presentation")
-	void PlaySandboxHitPresentation(AActor* Instigator, float AppliedDamage, bool bIncapacitated);
 };

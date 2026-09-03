@@ -59,8 +59,7 @@ public:
 	AZLSocialSandboxNpc* FindSandboxNpc(FName StableId) const;
 	FText SubmitSpeech(FName SpeechMode, FName TargetId, const FString& Text);
 	FText SubmitAction(FName TargetId, const FString& Text);
-	FText BeginPlayerAttack(AZLSocialSandboxPawn* Player, FName TargetId, bool bCharged);
-	void ResolvePlayerAttackFromAnimNotify(AZLSocialSandboxPawn* Player);
+	void ResolvePlayerAttackFromAnimNotify(AZLSocialSandboxPawn* Player, FName DamageSourceBone);
 	const FZLSocialObservationSettings& GetObservationSettings() const { return ObservationSettings; }
 	const FZLSocialSandboxDecisionDebug& GetDecisionDebug() const { return DecisionDebug; }
 	FText BuildInspectorText(FName NpcId) const;
@@ -75,7 +74,6 @@ private:
 	void SpawnNpc(FName StableId, const FVector& Location, const FRotator& Rotation);
 	void SpawnNpc(const FZLSocialSandboxNpcPreset& Preset);
 	bool TryApplyNamedPreset();
-	void NotifyAcceptedAttackPresentation(AZLSocialSandboxNpc* Target, AActor* Player, const FZLSocialSandboxDamageResult& DamageResult) const;
 	void DispatchActionObservation(EZLSocialActionType Action, EZLSocialActionPhase Phase, FName TargetId);
 	FZLSocialObservation DispatchNpcActionObservation(AZLSocialSandboxNpc* Actor, EZLSocialActionType Action, EZLSocialActionPhase Phase, FName TargetId);
 	void QueueGuardDecision(AZLSocialSandboxNpc* Guard, const FZLSocialObservation& Trigger, const FString& SpeechContent, EZLSocialSandboxDecisionTriggerReason Reason, bool bAdvanceStateVersion = false);
@@ -140,7 +138,6 @@ private:
 	int64 SmokeInitialGuardVersion = 0;
 	int32 GuardDistanceBand = INDEX_NONE;
 	float LastGuardDistance = TNumericLimits<float>::Max();
-	double LastPlayerAttackSeconds = -DBL_MAX;
 	FZLSocialSandboxPreset ActivePreset;
 	bool bHasActivePreset = false;
 };

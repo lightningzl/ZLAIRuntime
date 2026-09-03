@@ -25,6 +25,26 @@ UE 不直接调用 LLM。AI 推理、未来的 Prompt 组装和模型供应商�
 重要性：
 重要
 
+## 2026-09-03：社会沙盒 NPC 受击沿用 Combat Damageable 与死亡 ragdoll 边界
+
+决定：
+`AZLSocialSandboxNpc` 实现 `ICombatDamageable`。普通有效命中按 `ACombatEnemy::ApplyDamage` 施加 CharacterMovement 击退；只有生命归零、进入失能时由 `HandleDeath` 禁用 Capsule/移动并启用 Mesh ragdoll。NPC 不再以受击蒙太奇表现命中。
+
+原因：
+- 命中权威仍在社会沙盒 GameMode/NPC，复用 Damageable 接口使伤害后的物理表现能与 Combat 资产和通知链保持一致。
+- 将完整 ragdoll 限于失能，避免非致命命中永久脱离 CharacterMovement 和既有社会行动流程。
+- 角色蓝图只需配置有效骨骼网格和 Physics Asset，不必为受击额外制作动画资源。
+
+取舍：
+- Reset 会显式恢复 Capsule 碰撞、行走模式与非物理 Mesh；Physics Asset 缺失时 ragdoll 视觉效果由用户资源配置决定。
+- 此项不改变攻击伤害、协议、Tool、导航或 StateTree 语义。
+
+状态：
+已接受
+
+重要性：
+重要
+
 ## 2026-09-03：社会沙盒 NPC 采用 ACharacter 与标准 AIController 基础
 
 决定：
