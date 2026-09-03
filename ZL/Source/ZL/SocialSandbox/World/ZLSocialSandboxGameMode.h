@@ -80,9 +80,13 @@ private:
 	void QueueNpcDecision(AZLSocialSandboxNpc* Npc, const FZLSocialObservation& Trigger, const FString& SpeechContent, EZLSocialSandboxDecisionTriggerReason Reason, bool bAdvanceStateVersion = false);
 	void TryDispatchNpcDecisions();
 	void RequestNpcDecision(AZLSocialSandboxNpc* Npc, const FZLSocialSandboxScheduledDecision& Scheduled);
+	void HandleNpcDecisionV2(AZLSocialSandboxNpc* Npc, const FZLDecisionV2Response& Response, const FZLDecisionV2Request& Request, double SentAtSeconds);
 	void HandleNpcDecision(AZLSocialSandboxNpc* Npc, const FZLDecisionResponse& Response, double SentAtSeconds);
 	void HandleNpcDecisionFailure(AZLSocialSandboxNpc* Npc, const FZLServiceError& Error, double SentAtSeconds);
 	void ExecuteNpcTool(AZLSocialSandboxNpc* Npc, const FZLDecisionResponse& Response);
+	void ExecuteNpcPlanStep(AZLSocialSandboxNpc* Npc, const FZLDecisionV2Response& Response, const FZLDecisionV2Capability& Capability, const FZLDecisionV2PlanStep& Step);
+	FText SubmitTradeAttempt(FName TargetId);
+	void RecordNpcSocialFact(FName NpcId, FString Kind, FName SubjectId, FName TargetId, FString Summary, float Salience);
 	void TryDispatchGuardDecision();
 	void SchedulePendingGuardDecision(double DelaySeconds);
 	void RequestGuardDecision(AZLSocialSandboxNpc* Guard, const FZLSocialObservation& Trigger, const FString& SpeechContent, EZLSocialSandboxDecisionTriggerReason Reason);
@@ -120,6 +124,8 @@ private:
 	TArray<double> GuardExecutionTimes;
 	TMap<FName, FZLSocialSandboxDecisionDebug> NpcDecisionDebug;
 	TMap<FName, TArray<FZLSocialSandboxPublicHistoryFact>> NpcPublicHistory;
+	TMap<FName, TArray<FZLDecisionV2SocialFact>> NpcSocialFacts;
+	TMap<FName, FString> NpcTradeStances;
 	TMap<FName, TArray<double>> NpcExecutionTimes;
 	TMap<FName, FZLSocialSandboxConflictState> NpcConflictStates;
 	TMap<FName, int32> NpcDistanceBands;

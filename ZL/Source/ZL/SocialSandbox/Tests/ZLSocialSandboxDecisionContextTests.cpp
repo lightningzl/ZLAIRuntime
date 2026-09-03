@@ -62,6 +62,19 @@ bool FZLSocialSandboxDecisionContextTest::RunTest(const FString& Parameters)
 	TestTrue(TEXT("Direct channel is explicit"), Request.Trigger.Channels.Contains(TEXT("direct")));
 	TestTrue(TEXT("Built context satisfies protocol"), ZLAIServiceProtocol::ValidateDecisionRequest(Request, Error));
 
+	FZLSocialObservation Harm = PersonalHistory;
+	Harm.EventId = FGuid::NewGuid();
+	Harm.Action = EZLSocialActionType::Attack;
+	Harm.ExplicitTargetId = Input.NpcId;
+	Harm.TargetJudgment = EZLSocialTargetJudgment::ExplicitSelf;
+	Harm.ObservedAtSeconds = 13.0;
+	Input.PersonalHistory.Add(Harm);
+	FZLDecisionV2Request V2Request;
+	TestTrue(TEXT("Personal harm builds a v2 plan context"), FZLSocialSandboxDecisionContextBuilder::BuildV2(Input, V2Request, Error));
+	TestEqual(TEXT("V2 keeps only the selected NPC's received harm"), V2Request.SocialSituation.Num(), 1);
+	TestEqual(TEXT("V2 labels direct harm as received_harm"), V2Request.SocialSituation[0].Kind, FString(TEXT("received_harm")));
+	TestTrue(TEXT("V2 request satisfies protocol"), ZLAIServiceProtocol::ValidateDecisionV2Request(V2Request, Error));
+
 	Input.TriggerObservation.bHeard = false;
 	TestFalse(TEXT("Unheard speech cannot build Decision context"), FZLSocialSandboxDecisionContextBuilder::Build(Input, Request, Error));
 

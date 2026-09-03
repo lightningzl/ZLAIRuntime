@@ -13,6 +13,11 @@ class ZLAIRUNTIME_API UZLAIServiceSubsystem final : public UGameInstanceSubsyste
 	GENERATED_BODY()
 
 public:
+	/** Sends one v2 personal social-plan request without changing the v1 path. */
+	FString SendDecisionV2Request(
+		FZLDecisionV2Request DecisionRequest,
+		FZLDecisionV2SuccessDelegate OnSuccess,
+		FZLDecisionV2FailureDelegate OnFailure);
 	/** Sends one complete personal Decision request to the independent endpoint. */
 	FString SendDecisionRequest(
 		FZLDecisionRequest DecisionRequest,
@@ -88,6 +93,12 @@ private:
 		const FString& ResponseBody,
 		FZLDecisionSuccessDelegate OnSuccess,
 		FZLDecisionFailureDelegate OnFailure);
+
+	void CompleteDecisionV2Request(
+		const FString& ExpectedRequestId, const FString& ExpectedNpcId, int64 ExpectedStateVersion,
+		double SentAtSeconds, int32 TtlMs, bool bTransportSucceeded, bool bTimedOut,
+		int32 HttpStatusCode, const FString& ResponseBody,
+		FZLDecisionV2SuccessDelegate OnSuccess, FZLDecisionV2FailureDelegate OnFailure);
 
 	friend class FZLAIServiceFailureHandlingTest;
 	friend class FZLDecisionClientCompletionTest;

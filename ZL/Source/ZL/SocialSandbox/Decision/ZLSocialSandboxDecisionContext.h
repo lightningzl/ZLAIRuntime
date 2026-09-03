@@ -24,6 +24,11 @@ struct FZLSocialSandboxDecisionContextInput
 	FString TriggerSpeechContent;
 	TArray<FZLSocialObservation> PersonalHistory;
 	TArray<FZLSocialSandboxPublicHistoryFact> PublicHistory;
+	// UE-authoritative, personally available social facts.  The caller may append
+	// facts received through a confirmed report; this builder never reads another
+	// NPC's private observations.
+	TArray<FZLDecisionV2SocialFact> SocialSituation;
+	TArray<FZLDecisionV2Capability> AvailableCapabilities;
 	int64 StateVersion = 0;
 };
 
@@ -33,5 +38,10 @@ public:
 	static bool Build(
 		const FZLSocialSandboxDecisionContextInput& Input,
 		FZLDecisionRequest& OutRequest,
+		FString& OutError);
+
+	static bool BuildV2(
+		const FZLSocialSandboxDecisionContextInput& Input,
+		FZLDecisionV2Request& OutRequest,
 		FString& OutError);
 };

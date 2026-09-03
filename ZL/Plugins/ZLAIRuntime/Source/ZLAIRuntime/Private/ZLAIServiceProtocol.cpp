@@ -596,3 +596,57 @@ bool ZLAIServiceProtocol::TryParseDecisionResponse(const FString& Json, FZLDecis
 	OutResponse = MoveTemp(Parsed);
 	return true;
 }
+
+bool ZLAIServiceProtocol::ValidateDecisionV2Request(const FZLDecisionV2Request& Request, FString& OutError)
+{
+	FZLDecisionRequest Base;
+	Base.RequestId = Request.RequestId; Base.NpcId = Request.NpcId; Base.StateVersion = Request.StateVersion;
+	Base.TtlMs = Request.TtlMs; Base.Trigger = Request.Trigger; Base.Context = Request.Context;
+	Base.AllowedTools.Add({TEXT("stop"), {}});
+	if (!ValidateDecisionRequest(Base, OutError)) { return false; }
+	if (Request.SocialSituation.Num() > 12 || Request.AvailableCapabilities.Num() < 1 || Request.AvailableCapabilities.Num() > 8)
+	{
+		OutError = TEXT("Decision v2 social facts or capabilities exceed confirmed bounds"); return false;
+	}
+	TSet<FString> CapabilityIds;
+	for (const FZLDecisionV2Capability& Item : Request.AvailableCapabilities)
+	{
+		if (!ValidateContextText(Item.CapabilityId, 64, TEXT("available_capabilities.capability_id"), OutError)
+			|| !ValidateContextText(Item.Kind, 64, TEXT("available_capabilities.kind"), OutError)
+			|| CapabilityIds.Contains(Item.CapabilityId) || Item.TargetIds.Num() > 4)
+		{ if (OutError.IsEmpty()) { OutError = TEXT("Decision v2 capability is invalid"); } return false; }
+		CapabilityIds.Add(Item.CapabilityId);
+	}
+	return true;
+}
+
+bool ZLAIServiceProtocol::SerializeDecisionV2Request(const FZLDecisionV2Request& Request, FString& OutJson)
+{
+	FString Error; if (!ValidateDecisionV2Request(Request, Error)) { OutJson.Reset(); return false; }
+	FZLDecisionRequest Base; Base.RequestId=Request.RequestId; Base.NpcId=Request.NpcId; Base.StateVersion=Request.StateVersion; Base.TtlMs=Request.TtlMs; Base.Trigger=Request.Trigger; Base.Context=Request.Context; Base.AllowedTools.Add({TEXT("stop"), {}});
+	if (!SerializeDecisionRequest(Base, OutJson)) { return false; }
+	TSharedPtr<FJsonObject> Root; if (!TryDeserializeObject(OutJson, Root)) { OutJson.Reset(); return false; }
+	Root->RemoveField(TEXT("allowed_tools"));
+	const TSharedPtr<FJsonObject>* Context = nullptr;
+	if (!Root->TryGetObjectField(TEXT("context"), Context) || Context == nullptr || !Context->IsValid()) { OutJson.Reset(); return false; }
+	TArray<TSharedPtr<FJsonValue>> Facts;
+	for (const FZLDecisionV2SocialFact& Fact : Request.SocialSituation) { const TSharedRef<FJsonObject> O=MakeShared<FJsonObject>(); O->SetStringField(TEXT("kind"),Fact.Kind); O->SetStringField(TEXT("subject_id"),Fact.SubjectId); if(!Fact.TargetId.IsEmpty())O->SetStringField(TEXT("target_id"),Fact.TargetId); O->SetStringField(TEXT("summary"),Fact.Summary); O->SetNumberField(TEXT("occurred_at_ms"),Fact.OccurredAtMs); O->SetNumberField(TEXT("salience"),Fact.Salience); Facts.Add(MakeShared<FJsonValueObject>(O)); }
+	(*Context)->SetArrayField(TEXT("social_situation"), MoveTemp(Facts));
+	TArray<TSharedPtr<FJsonValue>> Capabilities;
+	for (const FZLDecisionV2Capability& Item : Request.AvailableCapabilities) { const TSharedRef<FJsonObject> O=MakeShared<FJsonObject>(); O->SetStringField(TEXT("capability_id"),Item.CapabilityId); O->SetStringField(TEXT("kind"),Item.Kind); O->SetArrayField(TEXT("target_ids"),SerializeStringArray(Item.TargetIds)); Capabilities.Add(MakeShared<FJsonValueObject>(O)); }
+	Root->SetArrayField(TEXT("available_capabilities"), MoveTemp(Capabilities));
+	OutJson.Reset(); const TSharedRef<TJsonWriter<>> Writer=TJsonWriterFactory<>::Create(&OutJson); return FJsonSerializer::Serialize(Root.ToSharedRef(), Writer);
+}
+
+bool ZLAIServiceProtocol::TryParseDecisionV2Response(const FString& Json, FZLDecisionV2Response& OutResponse)
+{
+	TSharedPtr<FJsonObject> Root; if (!TryDeserializeObject(Json, Root)) { return false; }
+	FZLDecisionV2Response Parsed; double Confidence=0.0;
+	if (!Root->TryGetStringField(TEXT("request_id"),Parsed.RequestId) || !Root->TryGetStringField(TEXT("npc_id"),Parsed.NpcId) || !TryGetProtocolInt64(Root,TEXT("state_version"),Parsed.StateVersion) || !Root->TryGetStringField(TEXT("decision_id"),Parsed.DecisionId) || !Root->TryGetNumberField(TEXT("confidence"),Confidence) || !Root->TryGetStringField(TEXT("provider"),Parsed.Provider) || !FMath::IsFinite(Confidence) || Confidence<0 || Confidence>1) return false;
+	const TSharedPtr<FJsonObject>* Plan=nullptr; if (!Root->TryGetObjectField(TEXT("plan"),Plan) || Plan==nullptr || !Plan->IsValid() || !(*Plan)->TryGetStringField(TEXT("objective"),Parsed.Objective)) return false;
+	(*Plan)->TryGetStringField(TEXT("public_reason"),Parsed.PublicReason); (*Plan)->TryGetStringField(TEXT("attention_target_id"),Parsed.AttentionTargetId);
+	const TArray<TSharedPtr<FJsonValue>>* Steps=nullptr; if (!(*Plan)->TryGetArrayField(TEXT("steps"),Steps) || Steps==nullptr || Steps->Num()>4) return false;
+	for (const TSharedPtr<FJsonValue>& V:*Steps) { const TSharedPtr<FJsonObject> O=V.IsValid()?V->AsObject():nullptr; FZLDecisionV2PlanStep Step; if(!O.IsValid()||!O->TryGetStringField(TEXT("step_id"),Step.StepId)||!O->TryGetStringField(TEXT("capability_id"),Step.CapabilityId))return false; O->TryGetStringField(TEXT("target_id"),Step.TargetId); Parsed.Steps.Add(MoveTemp(Step)); }
+	const TSharedPtr<FJsonObject>* Speech=nullptr; if (Root->TryGetObjectField(TEXT("speech"),Speech) && Speech && Speech->IsValid()) { if(!(*Speech)->TryGetStringField(TEXT("text"),Parsed.Speech.Text))return false; (*Speech)->TryGetStringField(TEXT("emotion"),Parsed.Speech.Emotion); Parsed.bHasSpeech=true; }
+	Parsed.Confidence=static_cast<float>(Confidence); OutResponse=MoveTemp(Parsed); return true;
+}

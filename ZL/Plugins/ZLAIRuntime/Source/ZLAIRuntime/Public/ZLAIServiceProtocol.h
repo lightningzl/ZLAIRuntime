@@ -19,4 +19,8 @@ namespace ZLAIServiceProtocol
 	ZLAIRUNTIME_API bool SerializeDecisionRequest(const FZLDecisionRequest& Request, FString& OutJson);
 
 	ZLAIRUNTIME_API bool TryParseDecisionResponse(const FString& Json, FZLDecisionResponse& OutResponse);
+
+	ZLAIRUNTIME_API bool ValidateDecisionV2Request(const FZLDecisionV2Request& Request, FString& OutError);
+	ZLAIRUNTIME_API bool SerializeDecisionV2Request(const FZLDecisionV2Request& Request, FString& OutJson);
+	ZLAIRUNTIME_API bool TryParseDecisionV2Response(const FString& Json, FZLDecisionV2Response& OutResponse);
 }

@@ -48,6 +48,18 @@ namespace
 		if (bNeedsTarget) { Tool.TargetIds.Add(TEXT("player")); }
 		return Tool;
 	}
+
+	FZLDecisionV2Capability Capability(const TCHAR* Id, const TCHAR* Kind, const TCHAR* TargetId = nullptr)
+	{
+		FZLDecisionV2Capability Result;
+		Result.CapabilityId = Id;
+		Result.Kind = Kind;
+		if (TargetId != nullptr)
+		{
+			Result.TargetIds.Add(TargetId);
+		}
+		return Result;
+	}
 }
 
 bool FZLSocialSandboxDecisionContextBuilder::Build(
@@ -165,6 +177,74 @@ bool FZLSocialSandboxDecisionContextBuilder::Build(
 		AllowedTool(TEXT("move_away"), true),
 		AllowedTool(TEXT("stop"), false)
 	};
+	OutRequest = MoveTemp(Request);
+	return true;
+}
+
+bool FZLSocialSandboxDecisionContextBuilder::BuildV2(
+	const FZLSocialSandboxDecisionContextInput& Input,
+	FZLDecisionV2Request& OutRequest,
+	FString& OutError)
+{
+	FZLDecisionRequest BaseRequest;
+	if (!Build(Input, BaseRequest, OutError))
+	{
+		return false;
+	}
+
+	FZLDecisionV2Request Request;
+	Request.RequestId = MoveTemp(BaseRequest.RequestId);
+	Request.NpcId = MoveTemp(BaseRequest.NpcId);
+	Request.StateVersion = BaseRequest.StateVersion;
+	Request.TtlMs = BaseRequest.TtlMs;
+	Request.Trigger = MoveTemp(BaseRequest.Trigger);
+	Request.Context = MoveTemp(BaseRequest.Context);
+	Request.SocialSituation = Input.SocialSituation;
+	if (Request.SocialSituation.IsEmpty())
+	{
+		for (const FZLSocialObservation& Observation : Input.PersonalHistory)
+		{
+			if (Observation.ObserverId != Input.NpcId || !WasPerceived(Observation))
+			{
+				continue;
+			}
+			FZLDecisionV2SocialFact Fact;
+			Fact.SubjectId = Observation.SourceId.IsNone() ? TEXT("player") : Observation.SourceId.ToString();
+			Fact.TargetId = Observation.ExplicitTargetId.ToString();
+			Fact.OccurredAtMs = FMath::Max<int64>(0, FMath::RoundToInt64(Observation.ObservedAtSeconds * 1000.0));
+			Fact.Salience = Observation.TargetJudgment == EZLSocialTargetJudgment::ExplicitSelf ? 1.0f : 0.65f;
+			if (Observation.Source == EZLSocialObservationSource::Action && Observation.Action == EZLSocialActionType::Attack)
+			{
+				Fact.Kind = Observation.TargetJudgment == EZLSocialTargetJudgment::ExplicitSelf
+					? TEXT("received_harm") : TEXT("witnessed_violence");
+				Fact.Summary = Observation.TargetJudgment == EZLSocialTargetJudgment::ExplicitSelf
+					? TEXT("The player attacked this NPC.") : TEXT("This NPC witnessed a nearby attack.");
+			}
+			else
+			{
+				continue;
+			}
+			Request.SocialSituation.Add(MoveTemp(Fact));
+		}
+	}
+	Request.SocialSituation.Sort([](const FZLDecisionV2SocialFact& Left, const FZLDecisionV2SocialFact& Right)
+	{
+		return Left.OccurredAtMs < Right.OccurredAtMs;
+	});
+	if (Request.SocialSituation.Num() > 12)
+	{
+		Request.SocialSituation.RemoveAt(0, Request.SocialSituation.Num() - 12, EAllowShrinking::No);
+	}
+
+	Request.AvailableCapabilities = Input.AvailableCapabilities;
+	if (Request.AvailableCapabilities.IsEmpty())
+	{
+		Request.AvailableCapabilities = {
+			Capability(TEXT("face_player"), TEXT("face"), TEXT("player")),
+			Capability(TEXT("approach_player"), TEXT("move_toward"), TEXT("player")),
+			Capability(TEXT("keep_distance_from_player"), TEXT("move_away"), TEXT("player"))
+		};
+	}
 	OutRequest = MoveTemp(Request);
 	return true;
 }

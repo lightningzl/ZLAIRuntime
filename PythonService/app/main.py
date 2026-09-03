@@ -11,6 +11,7 @@ from fastapi.responses import JSONResponse
 
 from app.api.dialogue import router as dialogue_router
 from app.api.decision import router as decision_router
+from app.api.decision_v2 import router as decision_v2_router
 from app.core.settings import Settings
 from app.memory.base import DialogueMemoryRepository, MemoryRepositoryError
 from app.memory.sqlite_repository import SQLiteDialogueMemoryRepository
@@ -26,9 +27,12 @@ from app.providers.factory import create_dialogue_provider
 from app.planners.base import DecisionPlanner, DecisionPlannerInvalidResponse
 from app.planners.factory import create_decision_planner
 from app.planners.stub_planner import StubDecisionPlanner
+from app.planners.stub_decision_v2_planner import StubDecisionV2Planner
+from app.planners.kimi_decision_v2_planner import KimiDecisionV2Planner
 from app.schemas.dialogue import ErrorDetail, ErrorResponse
 from app.services.dialogue_service import DialogueService, InvalidDialogueRequest
 from app.services.decision_service import DecisionService, InvalidDecisionRequest
+from app.services.decision_v2_service import DecisionV2Service
 from app.services.memory_service import DialogueMemoryService, MemoryService
 
 
@@ -250,6 +254,9 @@ def create_app(
             selected_memory_service,
         )
         application.state.decision_service = DecisionService(selected_decision_planner)
+        application.state.decision_v2_service = DecisionV2Service(
+            KimiDecisionV2Planner(selected_settings) if selected_settings is not None and selected_settings.dialogue_provider == "kimi" else StubDecisionV2Planner()
+        )
         try:
             yield
         finally:
@@ -272,6 +279,7 @@ def create_app(
     application.add_exception_handler(Exception, _handle_internal_error)
     application.include_router(dialogue_router)
     application.include_router(decision_router)
+    application.include_router(decision_v2_router)
     return application
 
 

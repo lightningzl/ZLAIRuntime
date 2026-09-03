@@ -241,6 +241,8 @@ Decision 调度除 Event 外，也可以由距离跨阈值、目标开始或停�
 
 未来 Decision 响应可包含 `decision_id`、状态版本、Intent、可选 Speech、可选 ToolCall、Confidence 和 Expiry，但这些字段只有在协议获得明确确认后才能写入 [Protocol.md](../Reference/Protocol.md)。不得返回或保存 Chain-of-Thought。
 
+对于需要更丰富角色表现的场景，Decision 应演进为“开放高层计划 + 有限执行原语”：UE 发送该 NPC 已感知的社会事实、人物、关系、即时状态、近期经历和当前可用能力；LLM 自主判断目标、表达、表现倾向与短期步骤组合；UE 只校验并执行本次显式提供的能力实例。目标、理由和表情倾向不是已发生的世界事实，步骤成功/失败必须由 UE 回流后才进入个人记忆。该模型允许角色策略开放组合，同时保留移动、攻击、报告、互动立场和表现资产的 UE 权威与安全边界。
+
 ## Tool 验证
 
 UE 对每个 ToolCall 检查：注册、Capability、参数 Schema、Target、状态版本、距离、导航、视线、当前状态、冷却、速率、幂等和 Authority。
