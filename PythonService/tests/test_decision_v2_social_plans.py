@@ -35,3 +35,27 @@ def test_civilian_harm_plan_prefers_self_protection() -> None:
     data["context"]["npc"]["role"] = "civilian"
     response = DecisionV2Service(StubDecisionV2Planner()).build_response(DecisionV2Request.model_validate(data))
     assert any(step.capability_id == "keep_distance_from_player" for step in response.plan.steps)
+
+
+def test_first_harm_and_apology_are_not_collapsed_into_the_repeat_case() -> None:
+    first = DecisionV2Service(StubDecisionV2Planner()).build_response(
+        DecisionV2Request.model_validate(payload(fact("received_harm", "玩家第一次攻击你")))
+    )
+    apology = DecisionV2Service(StubDecisionV2Planner()).build_response(
+        DecisionV2Request.model_validate(payload(fact("apology_received", "玩家直接向你道歉")))
+    )
+    repeated = DecisionV2Service(StubDecisionV2Planner()).build_response(
+        DecisionV2Request.model_validate(payload(fact("received_harm", "第一次"), fact("received_harm", "第二次")))
+    )
+    assert first.plan.objective != apology.plan.objective
+    assert apology.speech is not None and "道歉" in apology.speech.text
+    assert repeated.speech is not None and "不会" in repeated.speech.text
+
+
+def test_witnessed_violence_does_not_become_personal_harm() -> None:
+    data = payload(fact("witnessed_violence", "你看见玩家攻击了另一个人"))
+    data["npc_id"] = "npc_civilian"
+    data["context"]["npc"]["role"] = "civilian"
+    response = DecisionV2Service(StubDecisionV2Planner()).build_response(DecisionV2Request.model_validate(data))
+    assert response.speech is not None
+    assert "有人能帮帮我" not in response.speech.text

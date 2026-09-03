@@ -8,6 +8,8 @@ import pytest
 from app.core.settings import Settings
 from app.planners.base import DecisionGenerationContext, DecisionPlannerInvalidResponse
 from app.planners.kimi_planner import KimiDecisionPlanner
+from app.planners.kimi_decision_v2_planner import KimiDecisionV2Planner
+from app.planners.decision_v2 import DecisionV2GenerationContext
 from app.providers.errors import ProviderTimeoutError
 
 
@@ -97,3 +99,18 @@ def test_kimi_planner_classifies_timeout_without_raw_detail() -> None:
 
     assert captured.value.provider == "kimi"
     assert "moonshot" not in str(captured.value).lower()
+
+
+def test_kimi_v2_planner_accepts_compact_social_plan() -> None:
+    client = FakeClient(
+        '{"objective":"保护自己","expression":"fear",'
+        '"steps":[{"capability_id":"keep_distance_from_player","target_id":"player"}],'
+        '"speech":"请离我远一点。","confidence":0.8}'
+    )
+    planner = KimiDecisionV2Planner(settings(), client=client)
+    result = planner.plan(DecisionV2GenerationContext("Return JSON.", '{"npc_id":"npc_civilian"}'))
+
+    assert result.objective == "保护自己"
+    assert result.speech_text == "请离我远一点。"
+    assert result.steps[0].capability_id == "keep_distance_from_player"
+    assert result.provider == "kimi"
