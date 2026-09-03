@@ -1,14 +1,12 @@
 #pragma once
 
 #include "CoreMinimal.h"
-#include "GameFramework/Actor.h"
+#include "GameFramework/Character.h"
 #include "ZLSocialObservation.h"
 #include "SocialSandbox/Domain/ZLSocialSandboxCombatPresentation.h"
 #include "SocialSandbox/Domain/ZLSocialSandboxNpcProfile.h"
 #include "ZLSocialSandboxNpc.generated.h"
 
-class UCapsuleComponent;
-class USkeletalMeshComponent;
 class UWidgetComponent;
 class UAnimMontage;
 
@@ -24,7 +22,7 @@ struct FZLSocialSandboxDamageResult
 };
 
 UCLASS()
-class ZL_API AZLSocialSandboxNpc final : public AActor, public IZLSocialSandboxCombatPresentation
+class ZL_API AZLSocialSandboxNpc final : public ACharacter, public IZLSocialSandboxCombatPresentation
 {
 	GENERATED_BODY()
 
@@ -69,12 +67,6 @@ protected:
 	virtual void Tick(float DeltaSeconds) override;
 
 private:
-	UPROPERTY(VisibleAnywhere, Category="Sandbox")
-	TObjectPtr<UCapsuleComponent> Capsule;
-
-	UPROPERTY(VisibleAnywhere, Category="Sandbox")
-	TObjectPtr<USkeletalMeshComponent> CharacterMesh;
-
 	UPROPERTY(VisibleAnywhere, Category="Sandbox")
 	TObjectPtr<UWidgetComponent> NameWidget;
 

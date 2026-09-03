@@ -94,7 +94,7 @@ Runtime 固定上限为 10000 个注册 Agent、1024 个活动 Root、4096 条 P
 | `FZLSocialSandboxDecisionContextBuilder` | 从一个选定 NPC 的稳定人物配置、已感知 Trigger 和个人 Observation 历史构造有界 Decision 请求，过滤其他 Observer | 自动读取 World、其他 NPC 知识、执行 Tool 或保存 Prompt |
 | `FZLSocialSandboxDecisionScheduler` | 合并单 Guard 的最新显著 Trigger，执行单在途、冷却和最多 3 次连续自动重规划硬上限 | Tick 逐帧请求、无限队列、HTTP、Tool 校验或 Gameplay 执行 |
 | `FZLSocialSandboxMultiNpcDecision` | 为最多 4 个注册 NPC 组合独立 Scheduler，按稳定轮转选择下一请求，并将全局在途数限制为 2 | HTTP、个人 Context 构造、Provider、Tool 执行或跨 NPC 事实共享 |
-| `AZLSocialSandboxNpc` | 使用 `CharacterMesh` 承载用户配置的骨骼模型/动画、名称/气泡和既有权威移动/生命状态；可配置 Attack/Hit Montage、Section 与播放速率 | 让动画资产改变 Tool、伤害、生命或状态版本 |
+| `AZLSocialSandboxNpc` | 继承 `ACharacter`，使用内置 Capsule、Mesh、CharacterMovement 和自动生成的标准 AIController；承载用户配置的骨骼模型/动画、名称/气泡和既有权威移动/生命状态，并可配置 Attack/Hit Montage、Section 与播放速率 | 让动画资产改变 Tool、伤害、生命或状态版本，或在未定义新范围时擅自启用导航/行为树语义 |
 | `IZLSocialSandboxCombatPresentation` | 在攻击和伤害均已被 UE 接受后，可选通知玩家/NPC 自身配置的攻击/受击蒙太奇 | 改变攻击校验、生命、伤害、镜头或让资源决定 Gameplay 结果 |
 
 专用地图为 `/Game/SocialSandbox/Lvl_SocialSandbox`，默认使用上述 GameMode、Pawn 和 PlayerController。GameMode 保持世界状态权威；Widget 只提交请求并展示结果。

@@ -81,10 +81,11 @@
 | `M11-A06` | 导出仅包含允许公开配置字段；不包含 Prompt、服务响应、密钥、运行时历史、Observation 或调试信息。 |
 | `M11-A07` | 合法攻击才触发一次可选攻击/受击展示请求；拒绝攻击不触发命中表现，镜头朝向保持不变；未配置资源时稳定回退。 |
 | `M11-A08` | 受影响 UE Target 编译、配置解析自动化、预设切换场景烟测、Stub 与离线降级烟测完成；需要用户在蓝图/资源编辑器完成的步骤单列且不伪称已验证。 |
+| `M11-A09` | `AZLSocialSandboxNpc` 继承 `ACharacter`，使用内置 Capsule/Mesh/CharacterMovement，生成时可被 AIController Possess；既有社会沙盒决策、伤害、受控移动和协议语义不变。 |
 
 ## 完成定义
 
-1. [TaskBoard.md](./TaskBoard.md) 的 M11 工作包全部完成，且 `M11-A01` 至 `M11-A08` 有可复查证据。
+1. [TaskBoard.md](./TaskBoard.md) 的 M11 工作包全部完成，且 `M11-A01` 至 `M11-A09` 有可复查证据。
 2. 两套预设在同一地图切换时，玩家/NPC 可见属性及每个 NPC 的个人 Context 均随配置变化。
 3. 无效 JSON、非法字段或越界值不会改变当前有效场景；导出保持脱敏、有限且可再次导入。
 4. 所有必须由用户完成的蓝图或资源绑定均以明确、可执行的清单交付，未配置时 C++ 路径保持可运行。
@@ -96,10 +97,15 @@
 - 玩家暴露 Enhanced Input Mapping Context 与移动、视角、攻击 Input Action 配置；未配置时保留已有轴映射输入和 UI 攻击入口。
 - 不修改用户已有蓝图、蒙太奇、Input Action 或 Mapping Context 资源；不将资源路径写入 JSON 或协议。
 
+## 追加范围：NPC Character 与 AIController 基础
+
+- `AZLSocialSandboxNpc` 改为继承 `ACharacter`，使用内置 Capsule、Mesh 与 CharacterMovement；生成的 NPC 自动具备标准 AIController 的可 Possess 条件。
+- 本次只建立 Character/Controller 基础，不新增 Behavior Tree、StateTree、导航 Tool、寻路语义或协议字段；既有受控移动、决策、伤害和攻击校验保持不变。
+
 ## 用户资源配置清单
 
 1. 创建玩家蓝图，父类为 `AZLSocialSandboxPawn`；在其内置 `Mesh` 设置骨骼网格、动画蓝图、相对位置与旋转。
-2. 创建 NPC 蓝图，父类为 `AZLSocialSandboxNpc`；在 `CharacterMesh` 设置骨骼网格、动画蓝图、相对位置与旋转。
+2. 创建 NPC 蓝图，父类为 `AZLSocialSandboxNpc`；在其内置 `Mesh` 设置骨骼网格、动画蓝图、相对位置与旋转。该角色可由标准 AIController Possess。
 3. 在两类蓝图的 `Sandbox|Combat Presentation` 中分别设置 Attack/Hit Montage、可选 Section 和播放速率；未设置时攻击、伤害和 UI 仍按既有权威路径工作，只不播放动画。
 4. 在玩家蓝图的 `Sandbox|Input` 中设置 Mapping Context 与 Move/Look/Attack Input Action。Move/Look 使用 `Axis2D`，Attack 使用数字/布尔触发；未设置时仍可用既有轴映射和 UI 攻击。
 5. 创建或配置 GameMode 蓝图（父类 `AZLSocialSandboxGameMode`），将 `SandboxPlayerClass` 和 `SandboxNpcClass` 指向上述角色蓝图，并在地图 World Settings 选用该 GameMode。资源路径不进入 JSON 或网络协议。
