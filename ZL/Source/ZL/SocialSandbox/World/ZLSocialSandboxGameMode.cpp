@@ -121,6 +121,8 @@ void AZLSocialSandboxGameMode::ResetSocialSandbox()
 	DecisionDebug = FZLSocialSandboxDecisionDebug();
 	NpcDecisionDebug.Reset();
 	NpcPublicHistory.Reset();
+	NpcSocialFacts.Reset();
+	NpcTradeStances.Reset();
 	NpcExecutionTimes.Reset();
 	NpcConflictStates.Reset();
 	NpcDistanceBands.Reset();
@@ -257,6 +259,12 @@ FText AZLSocialSandboxGameMode::SubmitSpeech(const FName SpeechMode, const FName
 
 FText AZLSocialSandboxGameMode::SubmitAction(const FName TargetId, const FString& Text)
 {
+	const FString NormalizedInput = Text.TrimStartAndEnd();
+	if (NormalizedInput.Equals(TEXT("交易"), ESearchCase::IgnoreCase)
+		|| NormalizedInput.Equals(TEXT("trade"), ESearchCase::IgnoreCase))
+	{
+		return SubmitTradeAttempt(TargetId);
+	}
 	const FZLSocialActionParseResult Parsed = FZLSocialActionParser::Parse(Text);
 	if (!Parsed.bMatched)
 	{
@@ -316,6 +324,60 @@ FText AZLSocialSandboxGameMode::SubmitAction(const FName TargetId, const FString
 	return FText::GetEmpty();
 }
 
+FText AZLSocialSandboxGameMode::SubmitTradeAttempt(const FName TargetId)
+{
+	AZLSocialSandboxNpc* Merchant = FindSandboxNpc(TargetId);
+	if (!IsValid(Merchant) || !Merchant->GetProfile().Role.Contains(TEXT("merchant"), ESearchCase::IgnoreCase))
+	{
+		return FText::FromString(TEXT("拒绝：交易尝试必须指定商人"));
+	}
+	const FString Stance = NpcTradeStances.FindRef(TargetId);
+	const FString Result = Stance == TEXT("refused") ? TEXT("拒绝") : (Stance == TEXT("cautious") ? TEXT("暂缓") : TEXT("可交谈"));
+	RecordNpcSocialFact(
+		TargetId, TEXT("trade_attempt"), TEXT("player"), TargetId,
+		FString::Printf(TEXT("The player attempted to trade; UE returned stance: %s."), *Result), 0.6f);
+	AppendInteractionRecord(
+		FText::FromString(FString::Printf(TEXT("[%s · 交易] %s"), *Merchant->GetDisplayName().ToString(), *Result)),
+		Stance == TEXT("refused") ? FLinearColor(1.0f, 0.38f, 0.3f) : FLinearColor(0.4f, 0.88f, 1.0f));
+	RefreshInspector();
+	return FText::GetEmpty();
+}
+
+void AZLSocialSandboxGameMode::RecordNpcSocialFact(
+	const FName NpcId,
+	FString Kind,
+	const FName SubjectId,
+	const FName TargetId,
+	FString Summary,
+	const float Salience)
+{
+	if (NpcId.IsNone() || Kind.IsEmpty() || SubjectId.IsNone() || Summary.TrimStartAndEnd().IsEmpty() || GetWorld() == nullptr)
+	{
+		return;
+	}
+	FZLDecisionV2SocialFact Fact;
+	Fact.Kind = MoveTemp(Kind);
+	Fact.SubjectId = SubjectId.ToString();
+	Fact.TargetId = TargetId.ToString();
+	Fact.Summary = Summary.TrimStartAndEnd().Left(256);
+	Fact.OccurredAtMs = FMath::Max<int64>(0, FMath::RoundToInt64(GetWorld()->GetTimeSeconds() * 1000.0));
+	Fact.Salience = FMath::Clamp(Salience, 0.0f, 1.0f);
+	TArray<FZLDecisionV2SocialFact>& Facts = NpcSocialFacts.FindOrAdd(NpcId);
+	const bool bDuplicate = Facts.ContainsByPredicate([&Fact](const FZLDecisionV2SocialFact& Existing)
+	{
+		return Existing.Kind == Fact.Kind && Existing.SubjectId == Fact.SubjectId && Existing.TargetId == Fact.TargetId
+			&& Existing.Summary == Fact.Summary && Fact.OccurredAtMs - Existing.OccurredAtMs < 1000;
+	});
+	if (!bDuplicate)
+	{
+		Facts.Add(MoveTemp(Fact));
+	}
+	while (Facts.Num() > 12)
+	{
+		Facts.RemoveAt(0, 1, EAllowShrinking::No);
+	}
+}
+
 void AZLSocialSandboxGameMode::ResolvePlayerAttackFromAnimNotify(AZLSocialSandboxPawn* Player, const FName DamageSourceBone)
 {
 	if (!IsValid(Player) || !Player->ConsumePendingAttackHit()) { return; }
@@ -365,6 +427,9 @@ void AZLSocialSandboxGameMode::ResolvePlayerAttackFromAnimNotify(AZLSocialSandbo
 	HitObservation.VisualFilter = EZLSocialObservationFilterReason::None;
 	HitObservation.TargetJudgment = EZLSocialTargetJudgment::ExplicitSelf;
 	Target->RecordObservation(HitObservation);
+	RecordNpcSocialFact(
+		Target->GetStableId(), TEXT("received_harm"), TEXT("player"), Target->GetStableId(),
+		TEXT("The player struck this NPC and caused confirmed damage."), 1.0f);
 	QueueNpcDecision(Target, HitObservation, FString(), EZLSocialSandboxDecisionTriggerReason::Hit);
 	Target->ShowDamageResult(DamageResult);
 }
@@ -525,11 +590,28 @@ void AZLSocialSandboxGameMode::RequestNpcDecision(
 	Input.TriggerSpeechContent = Scheduled.SpeechContent;
 	Input.PersonalHistory = Npc->GetObservationItems();
 	Input.PublicHistory = NpcPublicHistory.FindRef(Npc->GetStableId());
+	Input.SocialSituation = NpcSocialFacts.FindRef(Npc->GetStableId());
+	Input.AvailableCapabilities = {
+		{TEXT("face_player"), TEXT("face"), {TEXT("player")}},
+		{TEXT("keep_distance_from_player"), TEXT("move_away"), {TEXT("player")}},
+		{TEXT("seek_nearby_guard"), TEXT("move_toward"), {TEXT("npc_guard")}},
+		{TEXT("become_defensive"), TEXT("set_defending"), {}},
+		{TEXT("refuse_trade"), TEXT("set_interaction_stance"), {TEXT("player")}}
+	};
+	if (Scheduled.Observation.Source == EZLSocialObservationSource::Speech)
+	{
+		const FString LowerSpeech = Scheduled.SpeechContent.ToLower();
+		if (Scheduled.SpeechContent.Contains(TEXT("对不起")) || Scheduled.SpeechContent.Contains(TEXT("抱歉")) || LowerSpeech.Contains(TEXT("sorry")))
+		{
+			RecordNpcSocialFact(Npc->GetStableId(), TEXT("apology_received"), TEXT("player"), Npc->GetStableId(), TEXT("The player directly apologized to this NPC."), 0.7f);
+			Input.SocialSituation = NpcSocialFacts.FindRef(Npc->GetStableId());
+		}
+	}
 	Input.StateVersion = Npc->GetStateVersion();
-	FZLDecisionRequest Request;
+	FZLDecisionV2Request Request;
 	FString BuildError;
 	FZLSocialSandboxDecisionDebug& Debug = NpcDecisionDebug.FindOrAdd(Npc->GetStableId());
-	if (!FZLSocialSandboxDecisionContextBuilder::Build(Input, Request, BuildError))
+	if (!FZLSocialSandboxDecisionContextBuilder::BuildV2(Input, Request, BuildError))
 	{
 		Debug.ToolResult = TEXT("ContextRejected");
 		Npc->ShowDecisionFallback();
@@ -558,13 +640,14 @@ void AZLSocialSandboxGameMode::RequestNpcDecision(
 	const int32 RequestGeneration = GuardRequestGeneration;
 	const double SentAtSeconds = FPlatformTime::Seconds();
 	TWeakObjectPtr<AZLSocialSandboxNpc> WeakNpc(Npc);
-	Service->SendDecisionRequest(
+	const FZLDecisionV2Request RequestSnapshot = Request;
+	Service->SendDecisionV2Request(
 		MoveTemp(Request),
-		FZLDecisionSuccessDelegate::CreateWeakLambda(this, [this, WeakNpc, RequestGeneration, SentAtSeconds](const FZLDecisionResponse& Response)
+		FZLDecisionV2SuccessDelegate::CreateWeakLambda(this, [this, WeakNpc, RequestGeneration, SentAtSeconds, RequestSnapshot](const FZLDecisionV2Response& Response)
 		{
 			if (RequestGeneration == GuardRequestGeneration && WeakNpc.IsValid())
 			{
-				HandleNpcDecision(WeakNpc.Get(), Response, SentAtSeconds);
+				HandleNpcDecisionV2(WeakNpc.Get(), Response, RequestSnapshot, SentAtSeconds);
 			}
 		}),
 		FZLDecisionFailureDelegate::CreateWeakLambda(this, [this, WeakNpc, RequestGeneration, SentAtSeconds](const FZLServiceError& Error)
@@ -574,6 +657,129 @@ void AZLSocialSandboxGameMode::RequestNpcDecision(
 				HandleNpcDecisionFailure(WeakNpc.Get(), Error, SentAtSeconds);
 			}
 		}));
+}
+
+void AZLSocialSandboxGameMode::HandleNpcDecisionV2(
+	AZLSocialSandboxNpc* Npc,
+	const FZLDecisionV2Response& Response,
+	const FZLDecisionV2Request& Request,
+	const double SentAtSeconds)
+{
+	if (!IsValid(Npc))
+	{
+		return;
+	}
+	MultiNpcDecision.MarkCompleted(Npc->GetStableId());
+	FZLSocialSandboxDecisionDebug& Debug = NpcDecisionDebug.FindOrAdd(Npc->GetStableId());
+	Debug.bInFlight = false;
+	Debug.Provider = Response.Provider.Left(32);
+	Debug.Intent = Response.Objective.Left(64);
+	Debug.StateVersion = Response.StateVersion;
+	Debug.LatencyMs = FMath::Clamp(FMath::RoundToInt((FPlatformTime::Seconds() - SentAtSeconds) * 1000.0), 0, 60000);
+	Debug.bSpeechAccepted = Response.bHasSpeech;
+	Npc->ResetDecisionPresentation();
+	if (Response.bHasSpeech)
+	{
+		Npc->ShowDecisionSpeech(Response.Speech.Text, Response.Provider);
+		AppendInteractionRecord(
+			FText::FromString(FString::Printf(TEXT("[%s · 对话] %s"), *Npc->GetDisplayName().ToString(), *Response.Speech.Text)),
+			FLinearColor(1.0f, 0.84f, 0.45f));
+	}
+
+	const FZLDecisionV2PlanStep* Step = Response.Steps.Num() > 0 ? &Response.Steps[0] : nullptr;
+	const FZLDecisionV2Capability* Capability = Step == nullptr ? nullptr : Request.AvailableCapabilities.FindByPredicate(
+		[Step](const FZLDecisionV2Capability& Candidate) { return Candidate.CapabilityId == Step->CapabilityId; });
+	const bool bTargetAllowed = Capability != nullptr
+		&& ((Step->TargetId.IsEmpty() && Capability->TargetIds.IsEmpty()) || Capability->TargetIds.Contains(Step->TargetId));
+	if (Capability == nullptr || !bTargetAllowed)
+	{
+		Debug.ToolResult = Step == nullptr ? TEXT("NoStep") : TEXT("CapabilityRejected");
+	}
+	else if (Response.StateVersion != Npc->GetStateVersion())
+	{
+		Debug.ToolResult = TEXT("StaleState");
+	}
+	else
+	{
+		ExecuteNpcPlanStep(Npc, Response, *Capability, *Step);
+	}
+	Debug.bPending = MultiNpcDecision.HasPending(Npc->GetStableId());
+	TryDispatchGuardDecision();
+	TryDispatchNpcDecisions();
+	RefreshInspector();
+}
+
+void AZLSocialSandboxGameMode::ExecuteNpcPlanStep(
+	AZLSocialSandboxNpc* Npc,
+	const FZLDecisionV2Response& Response,
+	const FZLDecisionV2Capability& Capability,
+	const FZLDecisionV2PlanStep& Step)
+{
+	FZLSocialSandboxDecisionDebug& Debug = NpcDecisionDebug.FindOrAdd(Npc->GetStableId());
+	Debug.ToolName = Capability.CapabilityId.Left(32);
+	if (Npc->IsIncapacitated())
+	{
+		Debug.ToolResult = TEXT("Incapacitated");
+		return;
+	}
+	if (Capability.CapabilityId == TEXT("become_defensive"))
+	{
+		Npc->SetDefending(true);
+		RecordNpcSocialFact(Npc->GetStableId(), TEXT("defensive_posture"), Npc->GetStableId(), TEXT("player"), TEXT("This NPC entered a defensive posture."), 0.55f);
+		Debug.ToolResult = TEXT("Accepted");
+		return;
+	}
+	if (Capability.CapabilityId == TEXT("refuse_trade"))
+	{
+		NpcTradeStances.Add(Npc->GetStableId(), TEXT("refused"));
+		RecordNpcSocialFact(Npc->GetStableId(), TEXT("trade_stance_changed"), Npc->GetStableId(), TEXT("player"), TEXT("This NPC currently refuses trade with the player."), 0.8f);
+		Debug.ToolResult = TEXT("Accepted");
+		return;
+	}
+
+	AActor* Target = nullptr;
+	if (Step.TargetId == TEXT("player"))
+	{
+		Target = UGameplayStatics::GetPlayerPawn(this, 0);
+	}
+	else if (!Step.TargetId.IsEmpty())
+	{
+		Target = FindSandboxNpc(FName(*Step.TargetId));
+	}
+	if (!IsValid(Target))
+	{
+		Debug.ToolResult = TEXT("InvalidTarget");
+		return;
+	}
+	EZLSocialActionType Action = EZLSocialActionType::Stop;
+	if (Capability.CapabilityId == TEXT("face_player")) { Action = EZLSocialActionType::Face; }
+	else if (Capability.CapabilityId == TEXT("keep_distance_from_player")) { Action = EZLSocialActionType::MoveAway; }
+	else if (Capability.CapabilityId == TEXT("seek_nearby_guard")) { Action = EZLSocialActionType::Approach; }
+	else
+	{
+		Debug.ToolResult = TEXT("MissingHandler");
+		return;
+	}
+	const FName TargetId = FName(*Step.TargetId);
+	DispatchNpcActionObservation(Npc, Action, EZLSocialActionPhase::Started, TargetId);
+	TWeakObjectPtr<AZLSocialSandboxGameMode> WeakThis(this);
+	TWeakObjectPtr<AZLSocialSandboxNpc> WeakNpc(Npc);
+	if (!Npc->StartDecisionAction(Action, Target, [WeakThis, WeakNpc, Action, TargetId]()
+	{
+		if (WeakThis.IsValid() && WeakNpc.IsValid())
+		{
+			WeakThis->DispatchNpcActionObservation(WeakNpc.Get(), Action, EZLSocialActionPhase::Completed, TargetId);
+			WeakNpc->ShowDecisionAction(Action, EZLSocialActionPhase::Completed);
+			WeakThis->RecordNpcSocialFact(WeakNpc->GetStableId(), TEXT("executed_action"), WeakNpc->GetStableId(), TargetId, TEXT("This NPC completed an approved social action."), 0.45f);
+			WeakThis->RefreshInspector();
+		}
+	}))
+	{
+		Debug.ToolResult = TEXT("HandlerRejected");
+		return;
+	}
+	Debug.ToolResult = TEXT("Accepted");
+	Npc->ShowDecisionAction(Action, EZLSocialActionPhase::Started);
 }
 
 void AZLSocialSandboxGameMode::HandleNpcDecision(
@@ -1504,19 +1710,15 @@ FText AZLSocialSandboxGameMode::BuildInspectorText(const FName NpcId) const
 	{
 		switch (Value) { case EZLSocialActionType::Face: return TEXT("面向"); case EZLSocialActionType::Approach: return TEXT("靠近"); case EZLSocialActionType::MoveAway: return TEXT("远离"); case EZLSocialActionType::Attack: return TEXT("攻击"); default: return TEXT("停止"); }
 	};
-	auto IntentText = [](const FString& Value)
-	{
-		if (Value == TEXT("respond")) { return TEXT("回应"); }
-		if (Value == TEXT("engage")) { return TEXT("介入"); }
-		if (Value == TEXT("disengage")) { return TEXT("脱离"); }
-		if (Value == TEXT("hold")) { return TEXT("保持"); }
-		return TEXT("无");
-	};
 	auto ToolText = [](const FString& Value)
 	{
 		if (Value == TEXT("face_target")) { return TEXT("面向目标"); }
 		if (Value == TEXT("move_toward")) { return TEXT("靠近目标"); }
 		if (Value == TEXT("move_away")) { return TEXT("远离目标"); }
+		if (Value == TEXT("keep_distance_from_player")) { return TEXT("远离玩家"); }
+		if (Value == TEXT("seek_nearby_guard")) { return TEXT("前往守卫处"); }
+		if (Value == TEXT("become_defensive")) { return TEXT("进入防御姿态"); }
+		if (Value == TEXT("refuse_trade")) { return TEXT("设置交易拒绝"); }
 		if (Value == TEXT("stop")) { return TEXT("停止"); }
 		return TEXT("无");
 	};
@@ -1534,9 +1736,20 @@ FText AZLSocialSandboxGameMode::BuildInspectorText(const FName NpcId) const
 	const FZLSocialSandboxDecisionDebug* SelectedDebug = NpcId == TEXT("npc_guard")
 		? &DecisionDebug
 		: NpcDecisionDebug.Find(NpcId);
+	const TArray<FZLDecisionV2SocialFact> SocialFacts = NpcSocialFacts.FindRef(NpcId);
+	FString FactsLine;
+	for (const FZLDecisionV2SocialFact& Fact : SocialFacts)
+	{
+		FactsLine += FString::Printf(TEXT("\n- %s（%s → %s）"), *Fact.Kind, *Fact.SubjectId, Fact.TargetId.IsEmpty() ? TEXT("无") : *Fact.TargetId);
+	}
+	if (FactsLine.IsEmpty())
+	{
+		FactsLine = TEXT("\n- 无");
+	}
 	const FString DecisionLine = SelectedDebug != nullptr
 		? FString::Printf(
-			TEXT("\n冲突：%s · 生命 %.0f/%.0f · 防御：%s · 失能：%s\n决策：%s · 待处理：%s · 触发：%s · 本地降级：%s\n请求：%s · 状态：%lld · 合并：%d · 自动：%d\n来源：%s · 意图：%s · 台词：%s\n工具：%s · 结果：%s · 延迟：%d 毫秒"),
+			TEXT("\n个人社会事实：%s\n冲突：%s · 生命 %.0f/%.0f · 防御：%s · 失能：%s\n决策：%s · 待处理：%s · 触发：%s · 本地降级：%s\n请求：%s · 状态：%lld · 合并：%d · 自动：%d\n来源：%s · 当前目标：%s · 台词：%s\n步骤：%s · 结果：%s · 延迟：%d 毫秒"),
+			*FactsLine,
 			SelectedDebug->ConflictLevel.IsEmpty() ? TEXT("平静") : *SelectedDebug->ConflictLevel,
 			Npc->GetHealth(),
 			Npc->GetMaxHealth(),
@@ -1551,7 +1764,7 @@ FText AZLSocialSandboxGameMode::BuildInspectorText(const FName NpcId) const
 			SelectedDebug->CoalescedTriggers,
 			SelectedDebug->AutomaticReplans,
 			SelectedDebug->Provider.IsEmpty() ? TEXT("无") : *SelectedDebug->Provider,
-			IntentText(SelectedDebug->Intent),
+			SelectedDebug->Intent.IsEmpty() ? TEXT("无") : *SelectedDebug->Intent,
 			SelectedDebug->bSpeechAccepted ? TEXT("已接受") : TEXT("无"),
 			ToolText(SelectedDebug->ToolName),
 			ToolResultText(SelectedDebug->ToolResult),
