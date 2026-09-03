@@ -2,7 +2,7 @@
 
 ## 文档职责
 
-本文件只记录 Milestone 11 已实际执行的验证命令、环境与结果。范围和验收标准见 [CurrentMilestone.md](../Current/CurrentMilestone.md)。
+本文件只记录 Milestone 11 已实际执行的验证命令、环境与结果。归档范围和验收标准见 [Milestone11.md](../Milestones/Milestone11.md)。
 
 ## 基线
 
@@ -21,11 +21,17 @@
 | `M11-A09` | 通过 | NPC 已改为 `ACharacter`，具备内置 Mesh/Capsule/CharacterMovement 与自动 AIController Possess 条件；29 项社会沙盒自动化回归通过。 |
 | `M11-A10` | 通过 | Mapping Context 配置和本地添加已移至 PlayerController，Pawn 保留角色 Action 绑定；UE 编译与 29 项社会沙盒自动化回归通过。 |
 | `M11-A11` | 通过 | 普通/连招/蓄力攻击可复用 Combat AnimNotify，命中只在 Notify 帧结算；专用 AIController 提供 StateTree 配置；29 项回归通过。 |
+| `M11-A12` | 通过 | NPC 以 `ICombatDamageable` 接收非致命击退；失能时进入 ragdoll，重置恢复 Character 状态；用户于 2026-09-03 确认 M11 收口。 |
 
 ## M11-T12 至 T13：AnimNotify 战斗与 StateTree AI
 
 - 2026-09-03：攻击蒙太奇只记录攻击状态和目标，`Do Attack Trace` Notify 才由 GameMode 重查目标、距离、生命/失能并结算伤害；连招与蓄力循环复用 Combat Notify。
 - 2026-09-03：新增 `AZLSocialSandboxAIController` 与可配置 `StateTreeAIComponent`；UE 编译成功，`ZL.Social` 29 项全部 Success。
+
+## M11-T14 至 T15：NPC ragdoll、连招窗口与收口
+
+- 2026-09-03：`AZLSocialSandboxNpc` 已通过 `ICombatDamageable` 接收非致命 CharacterMovement 击退；生命归零时停止移动、禁用 Capsule 并启用 Mesh ragdoll，重置时恢复 Capsule 碰撞、行走模式与非物理 Mesh。NPC 不再使用受击蒙太奇；命中目标继续收到私有 `Hit` Decision Trigger。
+- 2026-09-03：玩家连招 Section 使用有序数组，并保留 `ComboInputCacheSeconds` 的可配置、有界输入窗口。Milestone 11 由用户确认完成并归档；本记录不将需要用户在资源编辑器设置的 Physics Asset、骨骼网格或蒙太奇伪称为自动化验证。
 
 ## M11-T02：JSON Schema、校验与受控预设
 

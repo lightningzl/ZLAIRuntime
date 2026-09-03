@@ -1,134 +1,89 @@
-# Milestone 11：可配置角色与 NPC 技术验证
+# Milestone 12：社会后果与角色行为打磨
 
 ## 状态
 
-- 状态：`进行中`
-- 开始日期：2026-09-02
-- 前置里程碑：Milestone 1 至 10 已完成
-- 历史范围：[Milestone10.md](../Milestones/Milestone10.md)
-- 验收证据：[Milestone11Validation.md](../Validation/Milestone11Validation.md)
+- 状态：`规划中`
+- 开始日期：2026-09-03
+- 前置里程碑：Milestone 1 至 11 已完成
+- 历史范围：[Milestone11.md](../Milestones/Milestone11.md)
+- 验收证据：实施后创建 `Milestone12Validation.md`
 
 长期路线见 [SocialSimulationPlan.md](../Planning/SocialSimulationPlan.md)，当前模块边界见 [Architecture.md](../Planning/Architecture.md)。
 
 ## 目标
 
-在既有社会沙盒上验证受控本地 JSON 预设能可靠改变角色/NPC 的生成、可见表现与个人 Decision Context。预设只替换当前写死的初始数据；UE 继续作为世界、校验和执行权威，Python、协议和现有 Tool 均不改变。
+在既有社会沙盒上优先打磨“NPC 像有个人经历、利益和社会关系的人”的反馈质量。攻击、威胁、道歉、后退、报告和交易尝试必须形成按 NPC 个人感知隔离的连续后果；UE 继续作为世界、关系、感知与执行权威，Python 只能基于个人公开事实提出表达和既有受控动作建议。
 
 ```text
-选择受控预设
-  -> UE 读取本地 JSON 并先完成 Schema/字段/范围/稳定 ID 校验
-  -> 校验成功时替换下一次场景生成快照；失败时保留当前有效场景
-  -> GameMode 生成一个玩家与至少两个 NPC
-  -> 名称、颜色、出生 Transform、生命和 NPC 人物/关系进入既有表现与个人 Context
-  -> 原有说话、行为、攻击、Stub 与离线降级路径继续工作
+个人感知的攻击 / 威胁 / 道歉 / 报告 / 交易尝试
+  -> UE 更新有界的个人社会后果、关系与公开立场
+  -> 当前 NPC 的个人 Context 与确定性候选策略
+  -> Kimi / Stub / 离线降级生成符合身份与经历的反应
+  -> UE 校验现有受控动作并显化语言、行动和互动结果
+  -> 后续个人感知继续改变该 NPC 的立场，而不广播为全局知识
 ```
 
 ## 协议边界
 
 - 不修改 [Protocol.md](../Reference/Protocol.md)、两端协议类型、Endpoint、Intent、Tool 或错误码。
-- JSON 仅由 UE 本地读取，绝不发送给 Python；Decision 请求仍由既有个人 Context Builder 产生。
-- AI 可以在未来生成候选文本，但本里程碑不实现 AI 写文件或自动应用；所有加载都必须通过 UE 校验。
+- 继续使用单 NPC、个人视角的 Decision v1；不引入批量请求、全局共享 Observation 或模型直接执行世界行为。
+- 若实施证明现有四个 Tool 无法形成可见闭环，必须先向用户说明缺口并获得协议确认；未经确认不得扩展能力。
 
 ## 玩家可操作成果
 
-- 进入测试场景时可在少量受控玩家角色预设中选择；下一次重置/进入场景后使用该角色的名称、颜色和出生位置。
-- 每套预设生成一个玩家和至少两个 NPC；玩家仍可使用既有说话、行为和攻击入口。
-- 修改公开 JSON 预设后重新加载场景，可观察名称、颜色、出生位置、生命、NPC 人物或初始关系变化。
-- 导出当前有效预设的公开字段；导出不含 Prompt、服务响应、密钥、运行时 Observation、历史、请求或调试状态。
+- 可以连续攻击、威胁、道歉、后退、求助或尝试与商人交易，观察既往行为如何改变后续互动。
+- 攻击商人后可尝试交易；交易入口只验证商人的互动立场，不创建库存、货币、物品或结算系统。
+- 攻击胆小平民后，玩家可以继续接近、离开或停止，观察平民的回避、呼救和守卫介入是否只在合法感知条件下发生。
 
 ## 屏幕可见成果
 
-- 玩家和每个 NPC 显示预设中的名称与颜色，并从预设出生 Transform 生成。
-- Inspector 显示选中 NPC 的个人感知与既有 Decision 信息；预设改变 NPC 人物/关系时，Stub/Decision Context 同步使用新值。
-- JSON 校验失败时，以简体中文明确显示原因，且当前有效场景不被半更新或清空。
+- 商人、平民和守卫对同一攻击/威胁表现出身份、风险、关系和个人经历导致的不同语言、立场与行动。
+- 第二次攻击、攻击后道歉、攻击后尝试交易等后续互动不重复首次遭遇的反应；语言与实际行动一致。
+- Inspector 显示当前 NPC 已感知的相关事实、公开后果、当前立场、Decision 来源和 UE 校验结果；不显示 Prompt、隐式推理或其他 NPC 私有信息。
 
 ## 本阶段范围
 
-### 受控 JSON 预设
+### UE 权威社会后果
 
-- 定义版本化 JSON Schema 和字段白名单：稳定 ID、角色类型、显示名、颜色、出生 Transform、初始生命，以及 NPC 的角色、人格、表达风格、目标、初始 Relationship/Instant State。
-- 提供至少两套仓库内的安全示例预设；稳定 ID 在单份文件内唯一，角色数固定为 1 个玩家与 2 至 4 个 NPC。
-- UE 在解析后、应用前校验版本、对象层级、未知字段、字符串边界、颜色、数值范围、生命、Transform、唯一 ID、角色数量和必需玩家；任一失败都不得替换当前有效快照。
-- 导入、选择、导出和重置只使用有效的内存快照；路径限定在项目受控预设目录，不接收玩家任意文件路径。
+- 为攻击、威胁、道歉、停止/后退、有效报告和交易尝试建立有界的公开社会后果事实，包含来源、目标、时间、感知途径、严重度和处理状态。
+- 在每个 NPC 自己的即时状态、关系和有界近期历史中，以确定性规则累积重复伤害、未解决损失、已发警告、正在求助、正在回避及相应缓和状态；必须定义去重、上限、衰减和 Reset 语义。
+- 角色 Profile 只提供少量可审查的反应倾向与阈值；不得把具体 NPC 或固定台词硬编码为剧情链。
+- 只有实际看见、听见或收到 UE 已确认报告的 NPC 接收对应后果；报告是可失败的世界行为，不是全局事实捷径。
 
-### 场景接入
+### 角色差异、Decision 与降级
 
-- 用有效预设驱动 `AZLSocialSandboxGameMode` 的玩家和 NPC 生成，移除本阶段触及的固定出生位置和固定 Profile 初始数据依赖。
-- 将玩家公开显示名、颜色、出生 Transform、初始生命接入既有 Pawn；将 NPC 配置接入既有 Profile、生命、名称、颜色和个人 Context 路径。
-- 保留当前 Pawn、NPC 类、UI 和四个受控 Tool；移除 `BodyMesh` 与 `FacingArrow` 占位组件，改由角色蓝图配置骨骼网格与动画蓝图；不要求新增蓝图或资产来完成代码验证。
+- 商人把伤害、损失和关系带入互动立场；平民优先回避、逃跑或求助；守卫在自己实际感知或确认收到报告后警告、隔开、保护或防卫。
+- Kimi 个人 Context 和固定约束明确呈现该 NPC 的已感知伤害、警告、损失、报告、交易立场和关系变化；禁止将首次遭遇、重复伤害和未解决损失视为同一情境。
+- Stub 与离线降级使用同一 UE 权威社会后果快照，仍提供可复现的角色差异，不退回无记忆的通用气泡。
+- Speech、气泡、行动记录和 Inspector 只显化公开事实、当前立场和 UE 校验结果。
 
-### 攻击表现边界
+### 最小交易立场入口
 
-- 攻击不属于社会交互行为下拉或文本白名单；玩家 Pawn 的攻击输入直接启动蒙太奇，不经 GameMode 的行为提交入口。攻击启动不读取 UI 选中目标，且不改变玩家镜头朝向。只有 `Do Attack Trace` Notify 在对应动画帧以前方球形 Sweep 实际命中 NPC 时，才会结算伤害。
-- `Variant_Combat` 的动画蒙太奇、AnimNotify、蓝图引用和资源绑定由用户配置；本里程碑的 C++ 只提供无资源依赖的可选接口与安全回退。
+- 提供受控的交易尝试入口，结果仅为可交谈、暂缓、拒绝或需先缓和等有界互动立场。
+- UE 决定互动结果；LLM 可以解释原因，但不能创建价格、物品、库存或交易成功事实。
 
 ## 明确不做
 
-- 不做角色编辑器、运行时自由创建、持久化、背包、装备、职业树、资产导入、动画重定向、完整 `Variant_Combat` 接入、连招、蓄力、敌人刷新、复杂战斗、多人同步或任何协议/Tool 扩展。
-- 不由 AI 自动写入、自动应用或绕过校验加载 JSON；不读取用户任意路径、网络路径或隐藏运行时数据。
-- 不创建、修改或提交蓝图、动画、蒙太奇、材质、地图或其他二进制资源；此类资源配置由用户完成。
-- 不改变现有感知、调度、Tool、伤害、镜头或 Python Provider 语义。
+- 不建设固定剧情、任务树、犯罪/通缉系统、开放世界经济、库存、货币、物品交易或完整商店 UI。
+- 不让 NPC 全局共享 Observation、隐藏状态或完整对话；模型不得自行断定报告已送达或动作已执行。
+- 不新增任意动作、批量 Decision、多人协作规划、长期 SaveGame、语义检索、Embedding 或多人同步。
+- 不以固定台词匹配作为验收，也不为每个输入穷举手写对话树。
 
 ## 验收标准
 
 | ID | 标准 |
 | --- | --- |
-| `M11-A01` | `Protocol.md`、两端协议 Schema、Tool 与 Intent 均无变更；现有社会沙盒说话、行为、攻击、Stub 与离线降级路径保持可用。 |
-| `M11-A02` | 至少两套受控 JSON 预设可由同一受限入口加载，每套恰有 1 个玩家与 2 至 4 个唯一稳定 ID NPC。 |
-| `M11-A03` | 预设的公开名称、颜色、出生 Transform 与初始生命可靠驱动玩家/NPC 生成和可见表现。 |
-| `M11-A04` | NPC 的角色、人格、表达风格、目标、初始 Relationship/Instant State 从预设进入既有 Profile 与个人 Decision Context，不混入其他 NPC 数据。 |
-| `M11-A05` | Schema 版本、字段白名单、类型、稳定 ID、角色数量、数值和路径均被校验；无效文件不会改变当前有效场景。 |
-| `M11-A06` | 导出仅包含允许公开配置字段；不包含 Prompt、服务响应、密钥、运行时历史、Observation 或调试信息。 |
-| `M11-A07` | 合法攻击才触发一次可选攻击展示请求；拒绝攻击不触发命中表现，镜头朝向保持不变；未配置资源时稳定回退。 |
-| `M11-A08` | 受影响 UE Target 编译、配置解析自动化、预设切换场景烟测、Stub 与离线降级烟测完成；需要用户在蓝图/资源编辑器完成的步骤单列且不伪称已验证。 |
-| `M11-A09` | `AZLSocialSandboxNpc` 继承 `ACharacter`，使用内置 Capsule/Mesh/CharacterMovement，生成时可被 AIController Possess；既有社会沙盒决策、伤害、受控移动和协议语义不变。 |
-| `M11-A10` | Mapping Context 由本地 `AZLSocialSandboxPlayerController` 配置并添加；Pawn 只绑定角色 Action，未配置时既有轴映射与 UI 攻击入口保持可用。 |
-| `M11-A11` | 普通/连招/蓄力攻击只在 Combat AnimNotify 帧进入 GameMode 权威结算；专用 AIController 可配置 StateTree，且不改变协议或既有 Tool 语义。 |
-| `M11-A12` | NPC 实现 `ICombatDamageable`；非致命命中按 `ACombatEnemy::ApplyDamage` 处理击退，失能时启用 ragdoll，且不播放受击蒙太奇；命中目标仍收到私有 `Hit` 决策触发；重置可恢复角色碰撞、移动和非物理网格。 |
+| `M12-A01` | `SC-01` 至 `SC-09` 均有可操作路径和可观察证据；相同攻击在首次、重复、已道歉/已后退等上下文下不退化为同一社会反应。 |
+| `M12-A02` | 每个 NPC 只使用自己已感知或 UE 已确认接收的伤害、报告、关系和交易事实；未感知 NPC 不泄露信息。 |
+| `M12-A03` | 商人、平民和守卫在攻击、威胁、道歉和交易尝试中表现出可解释的身份差异，且语言与已接受行动一致。 |
+| `M12-A04` | 重复伤害、未解决损失、警告、回避与报告均有有界状态、去重、过期/缓和规则和 Reset 语义；不会无限累积或跨 NPC 串线。 |
+| `M12-A05` | Kimi、Stub 和离线降级均消费同一 UE 权威社会后果快照；Stub/离线可复现，真实模型不越过 UE 执行权。 |
+| `M12-A06` | 最小交易尝试只验证商人互动立场，不引入库存、货币或物品；被拒绝、缓和中和可交谈结果均显化给玩家。 |
+| `M12-A07` | 受影响 UE/Python 自动化、默认地图烟测、离线烟测和真实模型抽样验收通过；日志与 Inspector 不泄露完整 Prompt、隐式推理或未感知事实。 |
 
 ## 完成定义
 
-1. [TaskBoard.md](./TaskBoard.md) 的 M11 工作包全部完成，且 `M11-A01` 至 `M11-A11` 有可复查证据。
-2. 两套预设在同一地图切换时，玩家/NPC 可见属性及每个 NPC 的个人 Context 均随配置变化。
-3. 无效 JSON、非法字段或越界值不会改变当前有效场景；导出保持脱敏、有限且可再次导入。
-4. 所有必须由用户完成的蓝图或资源绑定均以明确、可执行的清单交付，未配置时 C++ 路径保持可运行。
-
-## 追加范围：角色攻击与输入配置
-
-- 角色攻击表现采用与 `ACombatCharacter` 相同的“角色持有蒙太奇配置、运行时只负责播放”的边界，但不复用其连招、蓄力、Trace 或 AnimNotify 命中逻辑。
-- 玩家和 NPC 只暴露攻击蒙太奇与播放速率；普通攻击从蒙太奇默认起点播放，连招与蓄力使用各自明确配置的 Section。
-- 玩家暴露 Enhanced Input Mapping Context 与移动、视角、攻击 Input Action 配置；未配置时保留已有轴映射输入和 UI 攻击入口。
-- 不修改用户已有蓝图、蒙太奇、Input Action 或 Mapping Context 资源；不将资源路径写入 JSON 或协议。
-
-## 追加范围：NPC Character 与 AIController 基础
-
-- `AZLSocialSandboxNpc` 改为继承 `ACharacter`，使用内置 Capsule、Mesh 与 CharacterMovement；生成的 NPC 自动具备标准 AIController 的可 Possess 条件。
-- 本次只建立 Character/Controller 基础，不新增 Behavior Tree、StateTree、导航 Tool、寻路语义或协议字段；既有受控移动、决策、伤害和攻击校验保持不变。
-
-## 追加范围：PlayerController 输入上下文
-
-- Enhanced Input Mapping Context 由 `AZLSocialSandboxPlayerController` 持有并在本地控制器初始化时添加；玩家 Pawn 只保留 Move/Look/Attack Action 的绑定职责。
-- 不改变 Input Action 语义、既有轴映射回退、UI 攻击入口或网络协议。
-
-## 追加范围：AnimNotify 战斗与 StateTree AI
-
-- 普通、连招和蓄力攻击复用 `Variant_Combat` 的三个 AnimNotify；只有 `Do Attack Trace` Notify 才进入社会沙盒的权威命中结算。
-- 新增含可配置 `StateTreeAIComponent` 的 `AZLSocialSandboxAIController`；不自动新增导航、StateTree 资产或 Decision Tool。
-
-## 追加范围：AnimNotify 战斗与 StateTree AI
-
-- 玩家普通攻击、简单连招与蓄力攻击复用 `Variant_Combat` 的 `CombatAttacker` 与三个 AnimNotify；只有攻击蒙太奇中的 `Do Attack Trace` Notify 才会触发社会沙盒的权威命中结算。
-- 复用 Notify 仅复用动画事件入口，不复用 `Variant_Combat` 的伤害、击退、ragdoll、敌人扫描或网络语义；目标、距离、生命、防卫和失能继续由社会沙盒 GameMode/NPC 权威校验。
-- 新增 `AZLSocialSandboxAIController`，内含可在控制器蓝图配置的 `StateTreeAIComponent`；不自动新增导航、StateTree 资产、行为树或 Decision Tool。
-
-## 用户资源配置清单
-
-1. 创建玩家蓝图，父类为 `AZLSocialSandboxPawn`；在其内置 `Mesh` 设置骨骼网格、动画蓝图、相对位置与旋转。
-2. 创建 NPC 蓝图，父类为 `AZLSocialSandboxNpc`；在其内置 `Mesh` 设置骨骼网格、动画蓝图、相对位置与旋转。该角色可由标准 AIController Possess。
-3. 在两类蓝图的 `Sandbox|Combat Presentation` 中设置 Attack Montage 和播放速率；普通攻击从默认起点播放。未设置时攻击、伤害和 UI 仍按既有权威路径工作，只不播放动画。
-4. 在玩家控制器蓝图（父类 `AZLSocialSandboxPlayerController`）的 `Sandbox|Input` 中设置 Mapping Context；在玩家蓝图的同一分类设置 Move/Look/Attack Input Action。Move/Look 使用 `Axis2D`，Attack 使用数字/布尔触发；未设置时仍可用既有轴映射和 UI 攻击。
-5. 创建或配置 GameMode 蓝图（父类 `AZLSocialSandboxGameMode`），将 `SandboxPlayerClass` 和 `SandboxNpcClass` 指向上述角色蓝图，并在地图 World Settings 选用该 GameMode。资源路径不进入 JSON 或网络协议。
-6. 普通攻击蒙太奇加入 `Do Attack Trace` Notify；连招加入 `Check Combo String` Notify 并设置 `ComboSections`；蓄力循环加入 `Check Charged Attack` Notify 并设置 `ChargeLoopSection`、`ChargeAttackSection`。
-6. 普通攻击蒙太奇加入 `Do Attack Trace` Notify；需要连招时在可衔接帧加入 `Check Combo String` Notify，并设置 Pawn 的 `ComboSections`；蓄力蒙太奇在蓄力循环帧加入 `Check Charged Attack` Notify，并设置 `ChargeLoopSection` 与 `ChargeAttackSection`。这些 Notify 使用现有 `Variant_Combat` 类。
-7. 创建 NPC 控制器蓝图（父类 `AZLSocialSandboxAIController`），在 `StateTreeAI` 组件选择 StateTree 资产；NPC 蓝图的 AI Controller Class 可使用该控制器蓝图。
-8. NPC 蓝图的 Physics Asset 必须有效并为骨骼网格启用碰撞；失能时 C++ 自动切换为 ragdoll。NPC 不再配置 Hit Montage。玩家连招输入缓存时长在 Pawn 的 `ComboInputCacheSeconds` 配置，`ComboSections` 为按顺序对应的 Section 数组。
+1. [TaskBoard.md](./TaskBoard.md) 的 M12 工作包全部完成，且 `M12-A01` 至 `M12-A07` 有可复查证据。
+2. 商人、平民和守卫的个人社会后果在连续互动中保持隔离、可见、可缓和且不泄露未感知事实。
+3. 真实 Kimi、Stub 和离线降级在相同 UE 权威快照下都不会将重复伤害、已道歉和陌生遭遇混为同一情境。
+4. 最小交易立场入口不扩展为库存、货币、物品或完整经济系统；任何协议/Tool 缺口均已获得用户确认后才实现。
