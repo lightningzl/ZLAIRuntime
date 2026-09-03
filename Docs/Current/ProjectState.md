@@ -8,10 +8,10 @@
 | --- | --- |
 | 最后更新 | 2026-09-03 |
 | 当前里程碑 | Milestone 12：社会后果与角色行为打磨 |
-| 里程碑状态 | `验收中` |
-| 当前活动任务 | `M12-T06` 集成回归、场景验收与文档收口 |
-| 下一候选任务 | 无 |
-| 已知阻塞 | 无；无界面 UE 自动化尚未取得完成标记，不能作为通过证据 |
+| 里程碑状态 | `已完成` |
+| 当前活动任务 | 无 |
+| 下一候选任务 | 等待下一里程碑规划 |
+| 已知阻塞 | 无 |
 | 最近验收 | Milestone 11：`M11-A01` 至 `M11-A12` 已归档 |
 
 ## 当前能力基线
@@ -26,4 +26,4 @@
 - `/v1/decision` 保持现状；`/v2/decision` 以开放高层计划、`social_situation` 与请求级有限能力实例承载角色判断。
 - UE 继续权威维护逐 NPC 感知、社会后果、关系、状态版本、调度和动作执行；Python 每次只返回一个 NPC 的现有结构化建议。
 - M12 的最小交易入口仅验证互动立场；不建设货币、库存、物品、结算或经济系统。
-- M12 已完成 Python 情境回归、真实 Kimi 抽样和 UE Development 编译；最终无界面自动化/地图证据仍在收集，详见 [Milestone12Validation.md](../Validation/Milestone12Validation.md)。
+- M12 已完成 Python 情境回归、真实 Kimi 抽样、UE Development 编译及 29 项 `ZL.Social` 无界面自动化；证据见 [Milestone12Validation.md](../Validation/Milestone12Validation.md)。
