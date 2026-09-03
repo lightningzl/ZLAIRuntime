@@ -9,8 +9,8 @@
 | 最后更新 | 2026-09-03 |
 | 当前里程碑 | Milestone 11：可配置角色与 NPC 技术验证 |
 | 里程碑状态 | `进行中` |
-| 当前活动任务 | `M11-T12` AnimNotify 战斗与 StateTree AI |
-| 下一候选任务 | `M11-T13` 战斗回归与文档收口 |
+| 当前活动任务 | `M11-T14` NPC ragdoll 与连招输入窗口 |
+| 下一候选任务 | `M11-T15` ragdoll/连招回归与文档收口 |
 | 已知阻塞 | 无 |
 | 最近验收 | Milestone 11：8/8 项已验证 |
 
@@ -35,11 +35,12 @@
 - 行为输入已改为面向、靠近、远离、攻击、停止的下拉选择，并保持既有 Action Parser 白名单；下拉按钮、展开菜单与箭头统一为深色背景、浅色文字，避免白底白字。
 - 社会沙盒源码已按 Actors、Decision、Domain、UI、World、Tests 六类职责拆分，跨目录包含路径均显式声明；UE 5.8 Target 编译通过。
 - 屏幕右侧独立行动记录按钮可展开日志面板：最多显示最近 12 条玩家成功提交、NPC 对话及 NPC 已接受行动，重置场景时清空，不保留隐藏上下文。
-- 玩家攻击不再重置控制器视角；攻击继续沿用既有目标、距离、冷却与伤害校验。
+- 玩家攻击不再重置控制器视角；攻击不再限制目标距离、冷却或玩家当前社会行为状态，命中仍只由攻击蒙太奇的 AnimNotify 触发。
 - M11 配置驱动技术验证已完成：少量本地 JSON 预设驱动玩家与 NPC 的公开属性及既有个人 Context；UE 在应用前校验 Schema、字段白名单、稳定 ID、角色数量和数值范围。
-- 玩家和 NPC 的 `BodyMesh`、`FacingArrow` 占位组件已移除，改为蓝图配置骨骼网格和动画蓝图；玩家/NPC 暴露攻击与受击蒙太奇（含可选 Section、播放速率），玩家另暴露 Enhanced Input Mapping Context 与 Move/Look/Attack Action。GameMode 可选择玩家/NPC 角色蓝图类；没有资源绑定时继续安全回退。
+- 玩家和 NPC 的 `BodyMesh`、`FacingArrow` 占位组件已移除，改为蓝图配置骨骼网格和动画蓝图；玩家/NPC 仅暴露攻击蒙太奇与播放速率，玩家另暴露 Enhanced Input Mapping Context 与 Move/Look/Attack Action。GameMode 可选择玩家/NPC 角色蓝图类；没有资源绑定时继续安全回退。
 - `AZLSocialSandboxNpc` 现继承 `ACharacter`，使用内置 Capsule、Mesh 与 CharacterMovement；生成时自动获得标准 `AAIController`。当前受控 Tool 仍由 GameMode/NPC 规则执行，不在本次变更中新增导航或行为树语义。
 - 玩家 Enhanced Input 的 Mapping Context 现由本地 `AZLSocialSandboxPlayerController` 配置并添加；Pawn 只绑定角色 Move/Look/Attack Action，既有轴映射和 UI 攻击仍作为未配置资源时的回退。
+- NPC 正在接入 `ICombatDamageable`：非致命命中沿用 Combat 的击退边界，失能时切换 ragdoll；NPC 不再播放受击蒙太奇。玩家连招 Section 使用有序数组，并保留可配置的输入缓存时长。
 
 ## 当前执行边界
 

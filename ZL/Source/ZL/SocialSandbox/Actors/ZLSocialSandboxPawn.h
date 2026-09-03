@@ -34,11 +34,9 @@ public:
 	void ShowSpeechBubble(const FString& SpokenText);
 	void ShowActionBubble(EZLSocialActionType Action, EZLSocialActionPhase Phase, const FText& TargetName);
 	virtual void PlaySandboxAttackPresentation_Implementation(AActor* Target) override;
-	virtual void PlaySandboxHitPresentation_Implementation(AActor* Instigator, float AppliedDamage, bool bIncapacitated) override;
-	bool StartSandboxComboAttack(AZLSocialSandboxNpc* Target);
-	bool StartSandboxChargedAttack(AZLSocialSandboxNpc* Target);
+	bool StartSandboxComboAttack();
+	bool StartSandboxChargedAttack();
 	void ReleaseSandboxChargedAttack();
-	AZLSocialSandboxNpc* GetPendingAttackTarget() const { return PendingAttackTarget.Get(); }
 	bool ConsumePendingAttackHit();
 	virtual void DoAttackTrace(FName DamageSourceBone) override;
 	virtual void CheckCombo() override;
@@ -86,18 +84,18 @@ private:
 	float ScriptedSpeed = 300.0f;
 	FTimerHandle BubbleTimer;
 	FOnMontageEnded OnAttackMontageEnded;
-	TWeakObjectPtr<AZLSocialSandboxNpc> PendingAttackTarget;
 	bool bIsAttacking = false;
 	bool bQueuedCombo = false;
+	double CachedComboInputSeconds = -DBL_MAX;
 	bool bChargingAttack = false;
 	bool bChargeLoopReached = false;
 	bool bPendingAttackHitConsumed = false;
 	int32 ComboIndex = 0;
+	UPROPERTY(EditDefaultsOnly, Category="Sandbox|Combat Presentation", meta=(ClampMin="0.0", ClampMax="2.0"))
+	float ComboInputCacheSeconds = 0.45f;
 
 	UPROPERTY(EditDefaultsOnly, Category="Sandbox|Combat Presentation")
 	TObjectPtr<UAnimMontage> AttackMontage;
-	UPROPERTY(EditDefaultsOnly, Category="Sandbox|Combat Presentation")
-	FName AttackMontageSection = NAME_None;
 	UPROPERTY(EditDefaultsOnly, Category="Sandbox|Combat Presentation")
 	TArray<FName> ComboSections;
 	UPROPERTY(EditDefaultsOnly, Category="Sandbox|Combat Presentation")
@@ -106,10 +104,6 @@ private:
 	FName ChargeLoopSection = NAME_None;
 	UPROPERTY(EditDefaultsOnly, Category="Sandbox|Combat Presentation")
 	FName ChargeAttackSection = NAME_None;
-	UPROPERTY(EditDefaultsOnly, Category="Sandbox|Combat Presentation")
-	TObjectPtr<UAnimMontage> HitMontage;
-	UPROPERTY(EditDefaultsOnly, Category="Sandbox|Combat Presentation")
-	FName HitMontageSection = NAME_None;
 	UPROPERTY(EditDefaultsOnly, Category="Sandbox|Combat Presentation", meta=(ClampMin="0.1", ClampMax="3.0"))
 	float MontagePlayRate = 1.0f;
 	UPROPERTY(EditDefaultsOnly, Category="Sandbox|Input")

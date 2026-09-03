@@ -88,10 +88,10 @@ Milestone 7 在同一依赖方向上增加可操作社会沙盒：
 - `ZLASocialRuntime` 公开彼此分离的有界 Speech Event、Action Event、Observer、Observation 与 Observation Buffer，以及说话模式、目标判断、行为白名单解析和输入边界校验。纯规则层不保存 Actor、Widget、HTTP 或输入正文到 Observation。
 - `ZL` 游戏模块中的 `AZLSocialSandboxGameMode` 是场景权威入口：默认生成既有 1 个玩家和 4 个 NPC；带受控 `-ZLSandboxPreset=<name>` 参数时，从本地版本化 JSON 的有效快照生成 1 个玩家与 2 至 4 个 NPC。它构造 Speech/Action Event 并逐 NPC 调用定向视觉和分级听觉规则；每个 NPC 只保存自己的容量 32 Observation Buffer。
 - `FZLSocialSandboxPresetCodec` 只从项目 Config 下的受控预设目录读取 JSON，校验 Schema、字段白名单、稳定 ID、角色数和数值范围，并仅向 Saved 导出公开字段；失败不替换当前有效场景。
-- `IZLSocialSandboxCombatPresentation` 是可选的 Blueprint 表现接口；只有 UE 已接受攻击和伤害后才通知玩家/NPC 自身配置的攻击/受击蒙太奇（可选 Section 与播放速率），未绑定资源时无副作用。
+- `IZLSocialSandboxCombatPresentation` 是可选的 Blueprint 攻击表现接口；仅在 UE 已接受攻击后通知角色播放其攻击蒙太奇，未绑定资源时无副作用。
 - `AZLSocialSandboxPawn` 与 `AZLSocialSandboxNpc` 都继承 `ACharacter` 并使用其内置 `Mesh` 承载用户设置的骨骼网格和动画蓝图；NPC 使用内置 Capsule/CharacterMovement，且在放置或生成时自动由标准 `AAIController` Possess。两者不再创建 `BodyMesh` 或 `FacingArrow` 占位组件。GameMode 仅通过可配置的玩家/NPC 子类生成角色，不把资源路径写入预设或协议。
 - `AZLSocialSandboxPlayerController` 在本地初始化时添加其配置的 Enhanced Input Mapping Context；`AZLSocialSandboxPawn` 只绑定 Move、Look、Attack Action。无配置时既有轴映射和 UI 攻击入口继续有效。Face、Approach、MoveAway、Stop 只有在玩家 Gameplay 执行器接受后才产生 Started/Completed 观察，Action Observation 不包含输入原文。
-- 普通、连招和蓄力攻击复用 `CombatAttacker` AnimNotify：Pawn 只在 Notify 帧请求，GameMode 重查目标、距离与状态后才结算生命。NPC 的专用 AIController 提供可配置 StateTree 组件，不改变现有 Tool 执行语义。
+- 普通、连招和蓄力攻击复用 `CombatAttacker` AnimNotify：攻击输入由 Pawn 直接启动蒙太奇，不读取 UI 选中目标，也不经 GameMode 的社会行为入口；Pawn 只在 Notify 帧请求命中，GameMode 从 Notify 指定骨骼（无骨骼时角色中心）向前执行球形 Sweep，实际命中 NPC 才结算生命。攻击不产生社会行为标签或公开 Action Observation，但命中目标会收到私有 `Hit` Observation 并重新触发自己的 Decision，从而生成正确的 Agent 回复。连招 Section 由有序数组配置，并使用有界输入缓存窗口。NPC 实现 `ICombatDamageable`：非致命命中沿用 `ACombatEnemy::ApplyDamage` 的击退边界，失能后由 `HandleDeath` 切换 ragdoll，不播放受击蒙太奇。NPC 的专用 AIController 提供可配置 StateTree 组件，不改变现有 Tool 执行语义。
 - `UZLSocialSandboxWidget` 提供说话/行为模式、Whisper/Talk/Shout/InEar、目标、文本提交、拒绝状态、右侧按钮展开的最多 12 条玩家/NPC 行动对话记录和逐 NPC Inspector；`UZLSocialBubbleWidget` 只显化已接受说话、动作状态和明确标记的 `RulePlaceholder` 本地反馈。
 - 默认沙盒参数为 120 度水平视野、1500 cm 视觉距离以及 Whisper 200、Talk 800、Shout 2500、InEar 150 cm；这些值保存在场景 Observation Settings，可由场景配置覆盖。
 - 专用地图 `/Game/SocialSandbox/Lvl_SocialSandbox` 使用 `AZLSocialSandboxGameMode`；`ResetSocialSandbox` 恢复确定初始状态，`RunSocialSandboxDemo` 经正常 UI/GameMode 提交路径执行一次不依赖 Python 的受控 Talk。
@@ -118,7 +118,7 @@ Milestone 9 当前已增加连续判断基础：
 Milestone 9 当前已增加最小冲突 Gameplay 基础：
 
 - `ZLASocialRuntime` 的受控玩家行为解析增加 Attack 别名；该 Action 只代表 UE 已接受的玩家行为，不是 Decision Tool，也不能由 Python 建议或执行。
-- `ZL` 的纯数据攻击校验先检查目标、玩家可执行状态、目标失能、220 cm 距离与 1 秒冷却。只有通过校验后，GameMode 才产生 Attack Observation 并调用 NPC 权威伤害入口。
+- `ZL` 保留纯数据攻击校验类型供独立规则测试；当前玩家攻击路径不调用它。GameMode 在攻击开始和 Notify 命中时仅检查参与对象仍可用，再产生 Attack Observation 并调用 NPC 权威伤害入口。
 - `AZLSocialSandboxNpc` 保存有界生命、防卫、0.35 秒受击无敌窗口与失能状态；命中、减伤、状态版本、停止当前动作和生命显示均在 UE 内完成。拒绝攻击和拒绝伤害不改变生命或状态版本。
 - 攻击、受击和失能通过动作气泡、命中气泡、名称生命标识和 Inspector 显化。
 - 玩家攻击不改变 Pawn 或 PlayerController 当前旋转；镜头朝向只由玩家输入和显式“面向目标”行为改变。

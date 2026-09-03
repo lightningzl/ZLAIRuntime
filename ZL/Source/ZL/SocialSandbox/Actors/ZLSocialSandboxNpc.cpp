@@ -74,7 +74,6 @@ void AZLSocialSandboxNpc::InitializeSandboxNpc(const FZLSocialSandboxNpcProfile&
 	StateVersion = 1;
 	MaxHealth = FMath::Clamp(InInitialHealth, 1.0f, 1000.0f);
 	Health = MaxHealth;
-	LastDamageSeconds = -DBL_MAX;
 	bDefending = false;
 	bIncapacitated = false;
 	SetActorTransform(SandboxStartTransform, false, nullptr, ETeleportType::TeleportPhysics);
@@ -96,9 +95,12 @@ void AZLSocialSandboxNpc::ResetToSandboxStart()
 	ObservationBuffer.Reset();
 	LastDecisionSpeech.Reset();
 	Health = MaxHealth;
-	LastDamageSeconds = -DBL_MAX;
 	bDefending = false;
 	bIncapacitated = false;
+	GetCapsuleComponent()->SetCollisionEnabled(ECollisionEnabled::QueryAndPhysics);
+	GetCapsuleComponent()->SetCollisionProfileName(TEXT("BlockAllDynamic"));
+	GetCharacterMovement()->SetMovementMode(MOVE_Walking);
+	GetMesh()->SetSimulatePhysics(false);
 	RefreshNameLabel();
 	ClearBubble();
 }
@@ -121,23 +123,17 @@ bool AZLSocialSandboxNpc::ApplySandboxDamage(
 		OutResult.ReasonCode = TEXT("TargetIncapacitated");
 		return false;
 	}
-	if (NowSeconds - LastDamageSeconds < 0.35)
-	{
-		OutResult.ReasonCode = TEXT("DamageInvulnerable");
-		return false;
-	}
-
 	const bool bWasDefending = bDefending;
 	const float AppliedDamage = bWasDefending
 		? FMath::Max(1.0f, FMath::CeilToFloat(RawDamage * 0.35f))
 		: RawDamage;
 	Health = FMath::Clamp(Health - AppliedDamage, 0.0f, MaxHealth);
-	LastDamageSeconds = NowSeconds;
 	bIncapacitated = Health <= 0.0f;
 	if (bIncapacitated)
 	{
 		StopDecisionAction();
 		bDefending = false;
+		HandleDeath();
 	}
 	++StateVersion;
 	RefreshNameLabel();
@@ -149,6 +145,27 @@ bool AZLSocialSandboxNpc::ApplySandboxDamage(
 	OutResult.bIncapacitated = bIncapacitated;
 	return true;
 }
+
+void AZLSocialSandboxNpc::ApplyDamage(const float Damage, AActor*, const FVector& DamageLocation, const FVector& DamageImpulse)
+{
+	if (Damage <= 0.0f) { return; }
+	GetCharacterMovement()->AddImpulse(DamageImpulse, true);
+	if (GetMesh()->IsSimulatingPhysics())
+	{
+		GetMesh()->AddImpulseAtLocation(DamageImpulse * GetMesh()->GetMass(), DamageLocation);
+	}
+}
+
+void AZLSocialSandboxNpc::HandleDeath()
+{
+	GetCapsuleComponent()->SetCollisionEnabled(ECollisionEnabled::NoCollision);
+	GetCharacterMovement()->DisableMovement();
+	GetMesh()->SetSimulatePhysics(true);
+}
+
+void AZLSocialSandboxNpc::ApplyHealing(float, AActor*) {}
+
+void AZLSocialSandboxNpc::NotifyDanger(const FVector&, AActor*) {}
 
 void AZLSocialSandboxNpc::SetDefending(const bool bValue)
 {
@@ -385,24 +402,7 @@ void AZLSocialSandboxNpc::PlaySandboxAttackPresentation_Implementation(AActor*)
 	{
 		if (UAnimInstance* AnimInstance = GetMesh()->GetAnimInstance())
 		{
-			if (AnimInstance->Montage_Play(AttackMontage, MontagePlayRate) > 0.0f && AttackMontageSection != NAME_None)
-			{
-				AnimInstance->Montage_JumpToSection(AttackMontageSection, AttackMontage);
-			}
-		}
-	}
-}
-
-void AZLSocialSandboxNpc::PlaySandboxHitPresentation_Implementation(AActor*, float, bool)
-{
-	if (HitMontage != nullptr)
-	{
-		if (UAnimInstance* AnimInstance = GetMesh()->GetAnimInstance())
-		{
-			if (AnimInstance->Montage_Play(HitMontage, MontagePlayRate) > 0.0f && HitMontageSection != NAME_None)
-			{
-				AnimInstance->Montage_JumpToSection(HitMontageSection, HitMontage);
-			}
+			AnimInstance->Montage_Play(AttackMontage, MontagePlayRate);
 		}
 	}
 }

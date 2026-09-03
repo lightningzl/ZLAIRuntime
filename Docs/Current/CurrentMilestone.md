@@ -2,7 +2,7 @@
 
 ## 状态
 
-- 状态：`已完成`
+- 状态：`进行中`
 - 开始日期：2026-09-02
 - 前置里程碑：Milestone 1 至 10 已完成
 - 历史范围：[Milestone10.md](../Milestones/Milestone10.md)
@@ -59,7 +59,7 @@
 
 ### 攻击表现边界
 
-- 只有现有攻击目标、距离、冷却、伤害和受击校验成功后，才允许由可选展示适配器请求一次攻击/受击表现；拒绝攻击不得请求命中表现，且不改变玩家镜头朝向。
+- 攻击不属于社会交互行为下拉或文本白名单；玩家 Pawn 的攻击输入直接启动蒙太奇，不经 GameMode 的行为提交入口。攻击启动不读取 UI 选中目标，且不改变玩家镜头朝向。只有 `Do Attack Trace` Notify 在对应动画帧以前方球形 Sweep 实际命中 NPC 时，才会结算伤害。
 - `Variant_Combat` 的动画蒙太奇、AnimNotify、蓝图引用和资源绑定由用户配置；本里程碑的 C++ 只提供无资源依赖的可选接口与安全回退。
 
 ## 明确不做
@@ -79,11 +79,12 @@
 | `M11-A04` | NPC 的角色、人格、表达风格、目标、初始 Relationship/Instant State 从预设进入既有 Profile 与个人 Decision Context，不混入其他 NPC 数据。 |
 | `M11-A05` | Schema 版本、字段白名单、类型、稳定 ID、角色数量、数值和路径均被校验；无效文件不会改变当前有效场景。 |
 | `M11-A06` | 导出仅包含允许公开配置字段；不包含 Prompt、服务响应、密钥、运行时历史、Observation 或调试信息。 |
-| `M11-A07` | 合法攻击才触发一次可选攻击/受击展示请求；拒绝攻击不触发命中表现，镜头朝向保持不变；未配置资源时稳定回退。 |
+| `M11-A07` | 合法攻击才触发一次可选攻击展示请求；拒绝攻击不触发命中表现，镜头朝向保持不变；未配置资源时稳定回退。 |
 | `M11-A08` | 受影响 UE Target 编译、配置解析自动化、预设切换场景烟测、Stub 与离线降级烟测完成；需要用户在蓝图/资源编辑器完成的步骤单列且不伪称已验证。 |
 | `M11-A09` | `AZLSocialSandboxNpc` 继承 `ACharacter`，使用内置 Capsule/Mesh/CharacterMovement，生成时可被 AIController Possess；既有社会沙盒决策、伤害、受控移动和协议语义不变。 |
 | `M11-A10` | Mapping Context 由本地 `AZLSocialSandboxPlayerController` 配置并添加；Pawn 只绑定角色 Action，未配置时既有轴映射与 UI 攻击入口保持可用。 |
 | `M11-A11` | 普通/连招/蓄力攻击只在 Combat AnimNotify 帧进入 GameMode 权威结算；专用 AIController 可配置 StateTree，且不改变协议或既有 Tool 语义。 |
+| `M11-A12` | NPC 实现 `ICombatDamageable`；非致命命中按 `ACombatEnemy::ApplyDamage` 处理击退，失能时启用 ragdoll，且不播放受击蒙太奇；命中目标仍收到私有 `Hit` 决策触发；重置可恢复角色碰撞、移动和非物理网格。 |
 
 ## 完成定义
 
@@ -95,7 +96,7 @@
 ## 追加范围：角色攻击与输入配置
 
 - 角色攻击表现采用与 `ACombatCharacter` 相同的“角色持有蒙太奇配置、运行时只负责播放”的边界，但不复用其连招、蓄力、Trace 或 AnimNotify 命中逻辑。
-- 玩家和 NPC 分别暴露攻击/受击蒙太奇、Section 与播放速率；现有社会沙盒攻击校验和伤害先完成，才允许播放对应表现。
+- 玩家和 NPC 只暴露攻击蒙太奇与播放速率；普通攻击从蒙太奇默认起点播放，连招与蓄力使用各自明确配置的 Section。
 - 玩家暴露 Enhanced Input Mapping Context 与移动、视角、攻击 Input Action 配置；未配置时保留已有轴映射输入和 UI 攻击入口。
 - 不修改用户已有蓝图、蒙太奇、Input Action 或 Mapping Context 资源；不将资源路径写入 JSON 或协议。
 
@@ -124,9 +125,10 @@
 
 1. 创建玩家蓝图，父类为 `AZLSocialSandboxPawn`；在其内置 `Mesh` 设置骨骼网格、动画蓝图、相对位置与旋转。
 2. 创建 NPC 蓝图，父类为 `AZLSocialSandboxNpc`；在其内置 `Mesh` 设置骨骼网格、动画蓝图、相对位置与旋转。该角色可由标准 AIController Possess。
-3. 在两类蓝图的 `Sandbox|Combat Presentation` 中分别设置 Attack/Hit Montage、可选 Section 和播放速率；未设置时攻击、伤害和 UI 仍按既有权威路径工作，只不播放动画。
+3. 在两类蓝图的 `Sandbox|Combat Presentation` 中设置 Attack Montage 和播放速率；普通攻击从默认起点播放。未设置时攻击、伤害和 UI 仍按既有权威路径工作，只不播放动画。
 4. 在玩家控制器蓝图（父类 `AZLSocialSandboxPlayerController`）的 `Sandbox|Input` 中设置 Mapping Context；在玩家蓝图的同一分类设置 Move/Look/Attack Input Action。Move/Look 使用 `Axis2D`，Attack 使用数字/布尔触发；未设置时仍可用既有轴映射和 UI 攻击。
 5. 创建或配置 GameMode 蓝图（父类 `AZLSocialSandboxGameMode`），将 `SandboxPlayerClass` 和 `SandboxNpcClass` 指向上述角色蓝图，并在地图 World Settings 选用该 GameMode。资源路径不进入 JSON 或网络协议。
 6. 普通攻击蒙太奇加入 `Do Attack Trace` Notify；连招加入 `Check Combo String` Notify 并设置 `ComboSections`；蓄力循环加入 `Check Charged Attack` Notify 并设置 `ChargeLoopSection`、`ChargeAttackSection`。
 6. 普通攻击蒙太奇加入 `Do Attack Trace` Notify；需要连招时在可衔接帧加入 `Check Combo String` Notify，并设置 Pawn 的 `ComboSections`；蓄力蒙太奇在蓄力循环帧加入 `Check Charged Attack` Notify，并设置 `ChargeLoopSection` 与 `ChargeAttackSection`。这些 Notify 使用现有 `Variant_Combat` 类。
 7. 创建 NPC 控制器蓝图（父类 `AZLSocialSandboxAIController`），在 `StateTreeAI` 组件选择 StateTree 资产；NPC 蓝图的 AI Controller Class 可使用该控制器蓝图。
+8. NPC 蓝图的 Physics Asset 必须有效并为骨骼网格启用碰撞；失能时 C++ 自动切换为 ragdoll。NPC 不再配置 Hit Montage。玩家连招输入缓存时长在 Pawn 的 `ComboInputCacheSeconds` 配置，`ComboSections` 为按顺序对应的 Section 数组。

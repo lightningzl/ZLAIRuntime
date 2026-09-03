@@ -29,10 +29,6 @@ FZLSocialActionParseResult FZLSocialActionParser::Parse(const FString& Input)
 		{ TEXT("back away"), EZLSocialActionType::MoveAway, TEXT("back_away") },
 		{ TEXT("远离"), EZLSocialActionType::MoveAway, TEXT("move_away_zh") },
 		{ TEXT("退开"), EZLSocialActionType::MoveAway, TEXT("move_away_zh") },
-		{ TEXT("attack"), EZLSocialActionType::Attack, TEXT("attack") },
-		{ TEXT("strike"), EZLSocialActionType::Attack, TEXT("strike") },
-		{ TEXT("攻击"), EZLSocialActionType::Attack, TEXT("attack_zh") },
-		{ TEXT("打击"), EZLSocialActionType::Attack, TEXT("attack_zh") },
 		{ TEXT("stop"), EZLSocialActionType::Stop, TEXT("stop") },
 		{ TEXT("停止"), EZLSocialActionType::Stop, TEXT("stop_zh") },
 		{ TEXT("停下"), EZLSocialActionType::Stop, TEXT("stop_zh") }

@@ -5,6 +5,7 @@
 #include "ZLSocialObservation.h"
 #include "SocialSandbox/Domain/ZLSocialSandboxCombatPresentation.h"
 #include "SocialSandbox/Domain/ZLSocialSandboxNpcProfile.h"
+#include "Variant_Combat/Interfaces/CombatDamageable.h"
 #include "ZLSocialSandboxNpc.generated.h"
 
 class UWidgetComponent;
@@ -22,7 +23,7 @@ struct FZLSocialSandboxDamageResult
 };
 
 UCLASS()
-class ZL_API AZLSocialSandboxNpc final : public ACharacter, public IZLSocialSandboxCombatPresentation
+class ZL_API AZLSocialSandboxNpc final : public ACharacter, public IZLSocialSandboxCombatPresentation, public ICombatDamageable
 {
 	GENERATED_BODY()
 
@@ -60,8 +61,11 @@ public:
 	void ShowDecisionRejection(FName ReasonCode);
 	void ShowDecisionFallback();
 	void ShowDamageResult(const FZLSocialSandboxDamageResult& Result);
+	virtual void ApplyDamage(float Damage, AActor* DamageCauser, const FVector& DamageLocation, const FVector& DamageImpulse) override;
+	virtual void HandleDeath() override;
+	virtual void ApplyHealing(float Healing, AActor* Healer) override;
+	virtual void NotifyDanger(const FVector& DangerLocation, AActor* DangerSource) override;
 	virtual void PlaySandboxAttackPresentation_Implementation(AActor* Target) override;
-	virtual void PlaySandboxHitPresentation_Implementation(AActor* Instigator, float AppliedDamage, bool bIncapacitated) override;
 
 protected:
 	virtual void Tick(float DeltaSeconds) override;
@@ -75,12 +79,6 @@ private:
 
 	UPROPERTY(EditDefaultsOnly, Category="Sandbox|Combat Presentation")
 	TObjectPtr<UAnimMontage> AttackMontage;
-	UPROPERTY(EditDefaultsOnly, Category="Sandbox|Combat Presentation")
-	FName AttackMontageSection = NAME_None;
-	UPROPERTY(EditDefaultsOnly, Category="Sandbox|Combat Presentation")
-	TObjectPtr<UAnimMontage> HitMontage;
-	UPROPERTY(EditDefaultsOnly, Category="Sandbox|Combat Presentation")
-	FName HitMontageSection = NAME_None;
 	UPROPERTY(EditDefaultsOnly, Category="Sandbox|Combat Presentation", meta=(ClampMin="0.1", ClampMax="3.0"))
 	float MontagePlayRate = 1.0f;
 
@@ -102,7 +100,6 @@ private:
 	FString LastDecisionSpeech;
 	float MaxHealth = 100.0f;
 	float Health = 100.0f;
-	double LastDamageSeconds = -DBL_MAX;
 	bool bDefending = false;
 	bool bIncapacitated = false;
 	FTimerHandle BubbleTimer;

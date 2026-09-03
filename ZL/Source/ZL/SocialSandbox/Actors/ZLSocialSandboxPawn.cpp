@@ -1,5 +1,6 @@
 #include "SocialSandbox/Actors/ZLSocialSandboxPawn.h"
 
+#include "SocialSandbox/Actors/ZLSocialSandboxNpc.h"
 #include "SocialSandbox/Domain/ZLSocialSandboxMotion.h"
 #include "SocialSandbox/Domain/ZLSocialSandboxPreset.h"
 #include "SocialSandbox/UI/ZLSocialBubbleWidget.h"
@@ -9,13 +10,13 @@
 #include "EnhancedInputComponent.h"
 #include "InputActionValue.h"
 #include "Components/CapsuleComponent.h"
+#include "Components/SkeletalMeshComponent.h"
 #include "Components/WidgetComponent.h"
 #include "GameFramework/CharacterMovementComponent.h"
 #include "GameFramework/Controller.h"
 #include "Camera/PlayerCameraManager.h"
 #include "GameFramework/SpringArmComponent.h"
 #include "Animation/AnimInstance.h"
-#include "SocialSandbox/Actors/ZLSocialSandboxPlayerController.h"
 #include "SocialSandbox/World/ZLSocialSandboxGameMode.h"
 #include "Kismet/GameplayStatics.h"
 #include "Materials/MaterialInstanceDynamic.h"
@@ -125,14 +126,10 @@ void AZLSocialSandboxPawn::ComboAttackPressed()
 	if (bIsAttacking)
 	{
 		bQueuedCombo = true;
+		CachedComboInputSeconds = GetWorld()->GetTimeSeconds();
 		return;
 	}
-	const AZLSocialSandboxPlayerController* SandboxController = Cast<AZLSocialSandboxPlayerController>(Controller);
-	AZLSocialSandboxGameMode* GameMode = GetWorld() == nullptr ? nullptr : GetWorld()->GetAuthGameMode<AZLSocialSandboxGameMode>();
-	if (SandboxController != nullptr && GameMode != nullptr && SandboxController->GetSandboxWidget() != nullptr)
-	{
-		GameMode->BeginPlayerAttack(this, SandboxController->GetSandboxWidget()->GetSelectedTargetId(), false);
-	}
+	StartSandboxComboAttack();
 }
 
 void AZLSocialSandboxPawn::ChargedAttackPressed()
@@ -142,12 +139,7 @@ void AZLSocialSandboxPawn::ChargedAttackPressed()
 		bChargingAttack = true;
 		return;
 	}
-	const AZLSocialSandboxPlayerController* SandboxController = Cast<AZLSocialSandboxPlayerController>(Controller);
-	AZLSocialSandboxGameMode* GameMode = GetWorld() == nullptr ? nullptr : GetWorld()->GetAuthGameMode<AZLSocialSandboxGameMode>();
-	if (SandboxController != nullptr && GameMode != nullptr && SandboxController->GetSandboxWidget() != nullptr)
-	{
-		GameMode->BeginPlayerAttack(this, SandboxController->GetSandboxWidget()->GetSelectedTargetId(), true);
-	}
+	StartSandboxChargedAttack();
 }
 
 void AZLSocialSandboxPawn::ChargedAttackReleased()
@@ -170,21 +162,19 @@ bool AZLSocialSandboxPawn::PlayAttackMontage(UAnimMontage* Montage, const FName 
 	return false;
 }
 
-bool AZLSocialSandboxPawn::StartSandboxComboAttack(AZLSocialSandboxNpc* Target)
+bool AZLSocialSandboxPawn::StartSandboxComboAttack()
 {
-	if (bIsAttacking || !IsValid(Target)) { return false; }
-	PendingAttackTarget = Target;
+	if (bIsAttacking) { return false; }
 	ComboIndex = 0;
 	bQueuedCombo = false;
 	bPendingAttackHitConsumed = false;
-	bIsAttacking = PlayAttackMontage(AttackMontage, ComboSections.IsValidIndex(0) ? ComboSections[0] : AttackMontageSection);
+	bIsAttacking = PlayAttackMontage(AttackMontage, ComboSections.IsValidIndex(0) ? ComboSections[0] : NAME_None);
 	return bIsAttacking;
 }
 
-bool AZLSocialSandboxPawn::StartSandboxChargedAttack(AZLSocialSandboxNpc* Target)
+bool AZLSocialSandboxPawn::StartSandboxChargedAttack()
 {
-	if (bIsAttacking || !IsValid(Target)) { return false; }
-	PendingAttackTarget = Target;
+	if (bIsAttacking) { return false; }
 	bChargingAttack = true;
 	bChargeLoopReached = false;
 	bPendingAttackHitConsumed = false;
@@ -200,22 +190,22 @@ void AZLSocialSandboxPawn::ReleaseSandboxChargedAttack()
 
 bool AZLSocialSandboxPawn::ConsumePendingAttackHit()
 {
-	if (!bIsAttacking || bPendingAttackHitConsumed || !PendingAttackTarget.IsValid()) { return false; }
+	if (!bIsAttacking || bPendingAttackHitConsumed) { return false; }
 	bPendingAttackHitConsumed = true;
 	return true;
 }
 
-void AZLSocialSandboxPawn::DoAttackTrace(FName)
+void AZLSocialSandboxPawn::DoAttackTrace(const FName DamageSourceBone)
 {
 	if (AZLSocialSandboxGameMode* GameMode = GetWorld() == nullptr ? nullptr : GetWorld()->GetAuthGameMode<AZLSocialSandboxGameMode>())
 	{
-		GameMode->ResolvePlayerAttackFromAnimNotify(this);
+		GameMode->ResolvePlayerAttackFromAnimNotify(this, DamageSourceBone);
 	}
 }
 
 void AZLSocialSandboxPawn::CheckCombo()
 {
-	if (!bIsAttacking || !bQueuedCombo) { return; }
+	if (!bIsAttacking || !bQueuedCombo || GetWorld()->GetTimeSeconds() - CachedComboInputSeconds > ComboInputCacheSeconds) { return; }
 	if (UAnimInstance* ExistingInstance = GetMesh()->GetAnimInstance())
 	{
 		if (ChargedAttackMontage != nullptr && ExistingInstance->Montage_IsPlaying(ChargedAttackMontage)) { return; }
@@ -248,7 +238,6 @@ void AZLSocialSandboxPawn::AttackMontageEnded(UAnimMontage*, bool)
 	bChargingAttack = false;
 	bChargeLoopReached = false;
 	bPendingAttackHitConsumed = false;
-	PendingAttackTarget.Reset();
 }
 
 void AZLSocialSandboxPawn::PlaySandboxAttackPresentation_Implementation(AActor*)
@@ -257,24 +246,7 @@ void AZLSocialSandboxPawn::PlaySandboxAttackPresentation_Implementation(AActor*)
 	{
 		if (UAnimInstance* AnimInstance = GetMesh()->GetAnimInstance())
 		{
-			if (AnimInstance->Montage_Play(AttackMontage, MontagePlayRate) > 0.0f && AttackMontageSection != NAME_None)
-			{
-				AnimInstance->Montage_JumpToSection(AttackMontageSection, AttackMontage);
-			}
-		}
-	}
-}
-
-void AZLSocialSandboxPawn::PlaySandboxHitPresentation_Implementation(AActor*, float, bool)
-{
-	if (HitMontage != nullptr)
-	{
-		if (UAnimInstance* AnimInstance = GetMesh()->GetAnimInstance())
-		{
-			if (AnimInstance->Montage_Play(HitMontage, MontagePlayRate) > 0.0f && HitMontageSection != NAME_None)
-			{
-				AnimInstance->Montage_JumpToSection(HitMontageSection, HitMontage);
-			}
+			AnimInstance->Montage_Play(AttackMontage, MontagePlayRate);
 		}
 	}
 }

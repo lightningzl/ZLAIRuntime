@@ -29,7 +29,6 @@ const FString InEarOption = TEXT("耳边说话");
 const FString FaceOption = TEXT("面向目标");
 const FString ApproachOption = TEXT("靠近目标");
 const FString MoveAwayOption = TEXT("远离目标");
-const FString AttackOption = TEXT("攻击目标");
 const FString StopOption = TEXT("停止当前行为");
 
 void ConfigureComboBoxAppearance(UComboBoxString* ComboBox)
@@ -113,7 +112,6 @@ void UZLSocialSandboxWidget::NativeOnInitialized()
 	ActionCombo->AddOption(FaceOption);
 	ActionCombo->AddOption(ApproachOption);
 	ActionCombo->AddOption(MoveAwayOption);
-	ActionCombo->AddOption(AttackOption);
 	ActionCombo->AddOption(StopOption);
 	ActionCombo->SetSelectedOption(FaceOption);
 	ActionCombo->SetVisibility(ESlateVisibility::Collapsed);
@@ -368,7 +366,6 @@ FString UZLSocialSandboxWidget::GetSelectedActionInput() const
 	if (Selected == FaceOption) { return TEXT("面向"); }
 	if (Selected == ApproachOption) { return TEXT("靠近"); }
 	if (Selected == MoveAwayOption) { return TEXT("远离"); }
-	if (Selected == AttackOption) { return TEXT("攻击"); }
 	if (Selected == StopOption) { return TEXT("停止"); }
 	return FString();
 }
