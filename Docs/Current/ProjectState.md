@@ -39,6 +39,7 @@
 - M11 配置驱动技术验证已完成：少量本地 JSON 预设驱动玩家与 NPC 的公开属性及既有个人 Context；UE 在应用前校验 Schema、字段白名单、稳定 ID、角色数量和数值范围。
 - 玩家和 NPC 的 `BodyMesh`、`FacingArrow` 占位组件已移除，改为蓝图配置骨骼网格和动画蓝图；玩家/NPC 暴露攻击与受击蒙太奇（含可选 Section、播放速率），玩家另暴露 Enhanced Input Mapping Context 与 Move/Look/Attack Action。GameMode 可选择玩家/NPC 角色蓝图类；没有资源绑定时继续安全回退。
 - `AZLSocialSandboxNpc` 现继承 `ACharacter`，使用内置 Capsule、Mesh 与 CharacterMovement；生成时自动获得标准 `AAIController`。当前受控 Tool 仍由 GameMode/NPC 规则执行，不在本次变更中新增导航或行为树语义。
+- 玩家 Enhanced Input 的 Mapping Context 现由本地 `AZLSocialSandboxPlayerController` 配置并添加；Pawn 只绑定角色 Move/Look/Attack Action，既有轴映射和 UI 攻击仍作为未配置资源时的回退。
 
 ## 当前执行边界
 

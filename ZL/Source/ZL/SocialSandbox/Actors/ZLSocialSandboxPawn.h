@@ -11,7 +11,6 @@ class USpringArmComponent;
 class UWidgetComponent;
 class UAnimMontage;
 class UInputAction;
-class UInputMappingContext;
 struct FInputActionValue;
 struct FZLSocialSandboxPlayerPreset;
 
@@ -38,7 +37,6 @@ public:
 protected:
 	virtual void BeginPlay() override;
 	virtual void Tick(float DeltaSeconds) override;
-	virtual void PawnClientRestart() override;
 	virtual void SetupPlayerInputComponent(UInputComponent* PlayerInputComponent) override;
 
 private:
@@ -49,7 +47,6 @@ private:
 	void MoveFromInput(const FInputActionValue& Value);
 	void LookFromInput(const FInputActionValue& Value);
 	void ConfiguredAttackPressed();
-	void ApplyCharacterInputMapping();
 	void ShowBubble(const FText& Text, const FColor& Color, float DurationSeconds = 4.0f);
 	void ClearBubble();
 
@@ -85,8 +82,6 @@ private:
 	FName HitMontageSection = NAME_None;
 	UPROPERTY(EditDefaultsOnly, Category="Sandbox|Combat Presentation", meta=(ClampMin="0.1", ClampMax="3.0"))
 	float MontagePlayRate = 1.0f;
-	UPROPERTY(EditDefaultsOnly, Category="Sandbox|Input")
-	TObjectPtr<UInputMappingContext> CharacterInputMapping;
 	UPROPERTY(EditDefaultsOnly, Category="Sandbox|Input")
 	TObjectPtr<UInputAction> MoveInputAction;
 	UPROPERTY(EditDefaultsOnly, Category="Sandbox|Input")

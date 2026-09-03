@@ -19,6 +19,7 @@
 | `M11-A07` | 通过 | 攻击/受击接口只在权威校验接受后通知；玩家/NPC 自身的蒙太奇、Section、播放速率未绑定时无副作用。 |
 | `M11-A08` | 通过 | UE Target 编译、29 项自动化、两套预设烟测、无资源回退与文档收口完成。 |
 | `M11-A09` | 通过 | NPC 已改为 `ACharacter`，具备内置 Mesh/Capsule/CharacterMovement 与自动 AIController Possess 条件；29 项社会沙盒自动化回归通过。 |
+| `M11-A10` | 通过 | Mapping Context 配置和本地添加已移至 PlayerController，Pawn 保留角色 Action 绑定；UE 编译与 29 项社会沙盒自动化回归通过。 |
 
 ## M11-T02：JSON Schema、校验与受控预设
 
@@ -42,4 +43,9 @@
 ## M11-T08 至 T09：NPC Character 与 AIController 基础
 
 - 2026-09-03：`AZLSocialSandboxNpc` 从 `AActor` 改为 `ACharacter`，复用内置 Capsule、Mesh 与 CharacterMovement，并设为在放置或生成时自动使用标准 `AAIController`。既有受控移动仍由社会沙盒规则计算和执行，不把本次基类升级扩展为导航或行为树实现。
+- 2026-09-03：`ZLEditor Win64 Development` 编译成功；NullRHI 与内存 DDC 执行 `Automation RunTests ZL.Social`，29 项全部 `Success`，进程退出码 0。
+
+## M11-T10 至 T11：PlayerController IMC 配置
+
+- 2026-09-03：Mapping Context 从 Pawn 移至 `AZLSocialSandboxPlayerController` 的 `Sandbox|Input` 配置；控制器仅在本地初始化时添加该上下文，Pawn 保留 Move/Look/Attack Action 绑定以及既有轴映射/UI 攻击回退。
 - 2026-09-03：`ZLEditor Win64 Development` 编译成功；NullRHI 与内存 DDC 执行 `Automation RunTests ZL.Social`，29 项全部 `Success`，进程退出码 0。
