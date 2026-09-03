@@ -336,6 +336,19 @@ FText AZLSocialSandboxGameMode::SubmitTradeAttempt(const FName TargetId)
 	RecordNpcSocialFact(
 		TargetId, TEXT("trade_attempt"), TEXT("player"), TargetId,
 		FString::Printf(TEXT("The player attempted to trade; UE returned stance: %s."), *Result), 0.6f);
+	FZLSocialObservation TradeObservation;
+	TradeObservation.EventId = FGuid::NewGuid();
+	TradeObservation.ObserverId = TargetId;
+	TradeObservation.SourceId = TEXT("player");
+	TradeObservation.Source = EZLSocialObservationSource::Action;
+	TradeObservation.Action = EZLSocialActionType::Stop;
+	TradeObservation.ActionPhase = EZLSocialActionPhase::Completed;
+	TradeObservation.ExplicitTargetId = TargetId;
+	TradeObservation.TargetJudgment = EZLSocialTargetJudgment::ExplicitSelf;
+	TradeObservation.bSaw = true;
+	TradeObservation.ObservedAtSeconds = GetWorld()->GetTimeSeconds();
+	Merchant->RecordObservation(TradeObservation);
+	QueueNpcDecision(Merchant, TradeObservation, FString(), EZLSocialSandboxDecisionTriggerReason::PlayerAction);
 	AppendInteractionRecord(
 		FText::FromString(FString::Printf(TEXT("[%s · 交易] %s"), *Merchant->GetDisplayName().ToString(), *Result)),
 		Stance == TEXT("refused") ? FLinearColor(1.0f, 0.38f, 0.3f) : FLinearColor(0.4f, 0.88f, 1.0f));
@@ -768,6 +781,18 @@ void AZLSocialSandboxGameMode::ExecuteNpcPlanStep(
 	{
 		if (WeakThis.IsValid() && WeakNpc.IsValid())
 		{
+			if (TargetId == TEXT("npc_guard"))
+			{
+				FZLSocialSandboxPublicHistoryFact Report;
+				Report.Kind = TEXT("action_result");
+				Report.SourceId = WeakNpc->GetStableId();
+				Report.TargetId = TEXT("player");
+				Report.Summary = TEXT("This NPC reached the guard and delivered a confirmed report about the player.");
+				Report.OccurredAtSeconds = WeakThis->GetWorld()->GetTimeSeconds();
+				TArray<FZLSocialSandboxPublicHistoryFact>& GuardFacts = WeakThis->GuardPublicHistory;
+				GuardFacts.Add(MoveTemp(Report));
+				if (GuardFacts.Num() > 16) { GuardFacts.RemoveAt(0, GuardFacts.Num() - 16, EAllowShrinking::No); }
+			}
 			WeakThis->DispatchNpcActionObservation(WeakNpc.Get(), Action, EZLSocialActionPhase::Completed, TargetId);
 			WeakNpc->ShowDecisionAction(Action, EZLSocialActionPhase::Completed);
 			WeakThis->RecordNpcSocialFact(WeakNpc->GetStableId(), TEXT("executed_action"), WeakNpc->GetStableId(), TargetId, TEXT("This NPC completed an approved social action."), 0.45f);
