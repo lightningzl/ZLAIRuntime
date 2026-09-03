@@ -7,7 +7,6 @@
 
 #include "Camera/CameraComponent.h"
 #include "EnhancedInputComponent.h"
-#include "EnhancedInputSubsystems.h"
 #include "InputActionValue.h"
 #include "Components/CapsuleComponent.h"
 #include "Components/WidgetComponent.h"
@@ -16,7 +15,6 @@
 #include "Camera/PlayerCameraManager.h"
 #include "GameFramework/SpringArmComponent.h"
 #include "Animation/AnimInstance.h"
-#include "Engine/LocalPlayer.h"
 #include "SocialSandbox/Actors/ZLSocialSandboxPlayerController.h"
 #include "SocialSandbox/World/ZLSocialSandboxGameMode.h"
 #include "Kismet/GameplayStatics.h"
@@ -101,12 +99,6 @@ void AZLSocialSandboxPawn::BeginPlay()
 	}
 }
 
-void AZLSocialSandboxPawn::PawnClientRestart()
-{
-	Super::PawnClientRestart();
-	ApplyCharacterInputMapping();
-}
-
 void AZLSocialSandboxPawn::SetupPlayerInputComponent(UInputComponent* PlayerInputComponent)
 {
 	Super::SetupPlayerInputComponent(PlayerInputComponent);
@@ -119,22 +111,6 @@ void AZLSocialSandboxPawn::SetupPlayerInputComponent(UInputComponent* PlayerInpu
 		if (MoveInputAction != nullptr) { EnhancedInput->BindAction(MoveInputAction, ETriggerEvent::Triggered, this, &AZLSocialSandboxPawn::MoveFromInput); }
 		if (LookInputAction != nullptr) { EnhancedInput->BindAction(LookInputAction, ETriggerEvent::Triggered, this, &AZLSocialSandboxPawn::LookFromInput); }
 		if (AttackInputAction != nullptr) { EnhancedInput->BindAction(AttackInputAction, ETriggerEvent::Started, this, &AZLSocialSandboxPawn::ConfiguredAttackPressed); }
-	}
-}
-
-void AZLSocialSandboxPawn::ApplyCharacterInputMapping()
-{
-	const APlayerController* PlayerController = Cast<APlayerController>(Controller);
-	if (PlayerController == nullptr || CharacterInputMapping == nullptr)
-	{
-		return;
-	}
-	if (ULocalPlayer* LocalPlayer = PlayerController->GetLocalPlayer())
-	{
-		if (UEnhancedInputLocalPlayerSubsystem* InputSubsystem = LocalPlayer->GetSubsystem<UEnhancedInputLocalPlayerSubsystem>())
-		{
-			InputSubsystem->AddMappingContext(CharacterInputMapping, 0);
-		}
 	}
 }
 

@@ -6,6 +6,7 @@
 #include "ZLSocialSandboxPlayerController.generated.h"
 
 class UZLSocialSandboxWidget;
+class UInputMappingContext;
 
 UCLASS()
 class ZL_API AZLSocialSandboxPlayerController final : public APlayerController
@@ -24,10 +25,14 @@ protected:
 	virtual void SetupInputComponent() override;
 
 private:
+	void ApplyInputMappingContext();
 	void SelectSandboxNpcUnderCursor();
 	FText SubmitSandboxInput(EZLSocialSandboxInputMode InputMode, FName SpeechMode, FName TargetId, const FString& Input);
 	void ResetSandbox();
 
 	UPROPERTY()
 	TObjectPtr<UZLSocialSandboxWidget> SandboxWidget;
+
+	UPROPERTY(EditDefaultsOnly, Category="Sandbox|Input")
+	TObjectPtr<UInputMappingContext> SandboxInputMappingContext;
 };

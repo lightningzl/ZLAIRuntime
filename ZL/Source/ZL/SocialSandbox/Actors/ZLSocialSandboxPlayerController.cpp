@@ -1,5 +1,7 @@
 #include "SocialSandbox/Actors/ZLSocialSandboxPlayerController.h"
 
+#include "EnhancedInputSubsystems.h"
+#include "Engine/LocalPlayer.h"
 #include "Kismet/GameplayStatics.h"
 #include "SocialSandbox/World/ZLSocialSandboxGameMode.h"
 #include "SocialSandbox/Actors/ZLSocialSandboxNpc.h"
@@ -12,6 +14,7 @@ void AZLSocialSandboxPlayerController::BeginPlay()
 	{
 		return;
 	}
+	ApplyInputMappingContext();
 
 	SandboxWidget = CreateWidget<UZLSocialSandboxWidget>(this, UZLSocialSandboxWidget::StaticClass());
 	if (SandboxWidget != nullptr)
@@ -30,6 +33,21 @@ void AZLSocialSandboxPlayerController::BeginPlay()
 	FInputModeGameAndUI InputMode;
 	InputMode.SetHideCursorDuringCapture(false);
 	SetInputMode(InputMode);
+}
+
+void AZLSocialSandboxPlayerController::ApplyInputMappingContext()
+{
+	if (SandboxInputMappingContext == nullptr)
+	{
+		return;
+	}
+	if (ULocalPlayer* LocalPlayer = GetLocalPlayer())
+	{
+		if (UEnhancedInputLocalPlayerSubsystem* InputSubsystem = LocalPlayer->GetSubsystem<UEnhancedInputLocalPlayerSubsystem>())
+		{
+			InputSubsystem->AddMappingContext(SandboxInputMappingContext, 0);
+		}
+	}
 }
 
 void AZLSocialSandboxPlayerController::SetupInputComponent()
