@@ -20,6 +20,12 @@
 | `M11-A08` | 通过 | UE Target 编译、29 项自动化、两套预设烟测、无资源回退与文档收口完成。 |
 | `M11-A09` | 通过 | NPC 已改为 `ACharacter`，具备内置 Mesh/Capsule/CharacterMovement 与自动 AIController Possess 条件；29 项社会沙盒自动化回归通过。 |
 | `M11-A10` | 通过 | Mapping Context 配置和本地添加已移至 PlayerController，Pawn 保留角色 Action 绑定；UE 编译与 29 项社会沙盒自动化回归通过。 |
+| `M11-A11` | 通过 | 普通/连招/蓄力攻击可复用 Combat AnimNotify，命中只在 Notify 帧结算；专用 AIController 提供 StateTree 配置；29 项回归通过。 |
+
+## M11-T12 至 T13：AnimNotify 战斗与 StateTree AI
+
+- 2026-09-03：攻击蒙太奇只记录攻击状态和目标，`Do Attack Trace` Notify 才由 GameMode 重查目标、距离、生命/失能并结算伤害；连招与蓄力循环复用 Combat Notify。
+- 2026-09-03：新增 `AZLSocialSandboxAIController` 与可配置 `StateTreeAIComponent`；UE 编译成功，`ZL.Social` 29 项全部 Success。
 
 ## M11-T02：JSON Schema、校验与受控预设
 

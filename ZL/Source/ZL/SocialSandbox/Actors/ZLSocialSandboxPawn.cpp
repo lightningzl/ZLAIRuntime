@@ -24,6 +24,7 @@
 AZLSocialSandboxPawn::AZLSocialSandboxPawn()
 {
 	PrimaryActorTick.bCanEverTick = true;
+	OnAttackMontageEnded.BindUObject(this, &AZLSocialSandboxPawn::AttackMontageEnded);
 	GetCapsuleComponent()->InitCapsuleSize(42.0f, 96.0f);
 	bUseControllerRotationYaw = true;
 	GetCharacterMovement()->bOrientRotationToMovement = false;
@@ -110,18 +111,144 @@ void AZLSocialSandboxPawn::SetupPlayerInputComponent(UInputComponent* PlayerInpu
 	{
 		if (MoveInputAction != nullptr) { EnhancedInput->BindAction(MoveInputAction, ETriggerEvent::Triggered, this, &AZLSocialSandboxPawn::MoveFromInput); }
 		if (LookInputAction != nullptr) { EnhancedInput->BindAction(LookInputAction, ETriggerEvent::Triggered, this, &AZLSocialSandboxPawn::LookFromInput); }
-		if (AttackInputAction != nullptr) { EnhancedInput->BindAction(AttackInputAction, ETriggerEvent::Started, this, &AZLSocialSandboxPawn::ConfiguredAttackPressed); }
+		if (AttackInputAction != nullptr) { EnhancedInput->BindAction(AttackInputAction, ETriggerEvent::Started, this, &AZLSocialSandboxPawn::ComboAttackPressed); }
+		if (ChargedAttackInputAction != nullptr)
+		{
+			EnhancedInput->BindAction(ChargedAttackInputAction, ETriggerEvent::Started, this, &AZLSocialSandboxPawn::ChargedAttackPressed);
+			EnhancedInput->BindAction(ChargedAttackInputAction, ETriggerEvent::Completed, this, &AZLSocialSandboxPawn::ChargedAttackReleased);
+		}
 	}
 }
 
-void AZLSocialSandboxPawn::ConfiguredAttackPressed()
+void AZLSocialSandboxPawn::ComboAttackPressed()
 {
+	if (bIsAttacking)
+	{
+		bQueuedCombo = true;
+		return;
+	}
 	const AZLSocialSandboxPlayerController* SandboxController = Cast<AZLSocialSandboxPlayerController>(Controller);
 	AZLSocialSandboxGameMode* GameMode = GetWorld() == nullptr ? nullptr : GetWorld()->GetAuthGameMode<AZLSocialSandboxGameMode>();
 	if (SandboxController != nullptr && GameMode != nullptr && SandboxController->GetSandboxWidget() != nullptr)
 	{
-		GameMode->SubmitAction(SandboxController->GetSandboxWidget()->GetSelectedTargetId(), TEXT("攻击"));
+		GameMode->BeginPlayerAttack(this, SandboxController->GetSandboxWidget()->GetSelectedTargetId(), false);
 	}
+}
+
+void AZLSocialSandboxPawn::ChargedAttackPressed()
+{
+	if (bIsAttacking)
+	{
+		bChargingAttack = true;
+		return;
+	}
+	const AZLSocialSandboxPlayerController* SandboxController = Cast<AZLSocialSandboxPlayerController>(Controller);
+	AZLSocialSandboxGameMode* GameMode = GetWorld() == nullptr ? nullptr : GetWorld()->GetAuthGameMode<AZLSocialSandboxGameMode>();
+	if (SandboxController != nullptr && GameMode != nullptr && SandboxController->GetSandboxWidget() != nullptr)
+	{
+		GameMode->BeginPlayerAttack(this, SandboxController->GetSandboxWidget()->GetSelectedTargetId(), true);
+	}
+}
+
+void AZLSocialSandboxPawn::ChargedAttackReleased()
+{
+	ReleaseSandboxChargedAttack();
+}
+
+bool AZLSocialSandboxPawn::PlayAttackMontage(UAnimMontage* Montage, const FName Section)
+{
+	if (Montage == nullptr) { return false; }
+	if (UAnimInstance* AnimInstance = GetMesh()->GetAnimInstance())
+	{
+		if (AnimInstance->Montage_Play(Montage, MontagePlayRate) > 0.0f)
+		{
+			AnimInstance->Montage_SetEndDelegate(OnAttackMontageEnded, Montage);
+			if (Section != NAME_None) { AnimInstance->Montage_JumpToSection(Section, Montage); }
+			return true;
+		}
+	}
+	return false;
+}
+
+bool AZLSocialSandboxPawn::StartSandboxComboAttack(AZLSocialSandboxNpc* Target)
+{
+	if (bIsAttacking || !IsValid(Target)) { return false; }
+	PendingAttackTarget = Target;
+	ComboIndex = 0;
+	bQueuedCombo = false;
+	bPendingAttackHitConsumed = false;
+	bIsAttacking = PlayAttackMontage(AttackMontage, ComboSections.IsValidIndex(0) ? ComboSections[0] : AttackMontageSection);
+	return bIsAttacking;
+}
+
+bool AZLSocialSandboxPawn::StartSandboxChargedAttack(AZLSocialSandboxNpc* Target)
+{
+	if (bIsAttacking || !IsValid(Target)) { return false; }
+	PendingAttackTarget = Target;
+	bChargingAttack = true;
+	bChargeLoopReached = false;
+	bPendingAttackHitConsumed = false;
+	bIsAttacking = PlayAttackMontage(ChargedAttackMontage, NAME_None);
+	return bIsAttacking;
+}
+
+void AZLSocialSandboxPawn::ReleaseSandboxChargedAttack()
+{
+	bChargingAttack = false;
+	if (bIsAttacking && bChargeLoopReached) { CheckChargedAttack(); }
+}
+
+bool AZLSocialSandboxPawn::ConsumePendingAttackHit()
+{
+	if (!bIsAttacking || bPendingAttackHitConsumed || !PendingAttackTarget.IsValid()) { return false; }
+	bPendingAttackHitConsumed = true;
+	return true;
+}
+
+void AZLSocialSandboxPawn::DoAttackTrace(FName)
+{
+	if (AZLSocialSandboxGameMode* GameMode = GetWorld() == nullptr ? nullptr : GetWorld()->GetAuthGameMode<AZLSocialSandboxGameMode>())
+	{
+		GameMode->ResolvePlayerAttackFromAnimNotify(this);
+	}
+}
+
+void AZLSocialSandboxPawn::CheckCombo()
+{
+	if (!bIsAttacking || !bQueuedCombo) { return; }
+	if (UAnimInstance* ExistingInstance = GetMesh()->GetAnimInstance())
+	{
+		if (ChargedAttackMontage != nullptr && ExistingInstance->Montage_IsPlaying(ChargedAttackMontage)) { return; }
+	}
+	bQueuedCombo = false;
+	++ComboIndex;
+	if (!ComboSections.IsValidIndex(ComboIndex)) { return; }
+	if (UAnimInstance* AnimInstance = GetMesh()->GetAnimInstance())
+	{
+		bPendingAttackHitConsumed = false;
+		AnimInstance->Montage_JumpToSection(ComboSections[ComboIndex], AttackMontage);
+	}
+}
+
+void AZLSocialSandboxPawn::CheckChargedAttack()
+{
+	if (!bIsAttacking || ChargedAttackMontage == nullptr) { return; }
+	bChargeLoopReached = true;
+	if (UAnimInstance* AnimInstance = GetMesh()->GetAnimInstance())
+	{
+		if (bChargingAttack) { AnimInstance->Montage_JumpToSection(ChargeLoopSection, ChargedAttackMontage); }
+		else { bPendingAttackHitConsumed = false; AnimInstance->Montage_JumpToSection(ChargeAttackSection, ChargedAttackMontage); }
+	}
+}
+
+void AZLSocialSandboxPawn::AttackMontageEnded(UAnimMontage*, bool)
+{
+	bIsAttacking = false;
+	bQueuedCombo = false;
+	bChargingAttack = false;
+	bChargeLoopReached = false;
+	bPendingAttackHitConsumed = false;
+	PendingAttackTarget.Reset();
 }
 
 void AZLSocialSandboxPawn::PlaySandboxAttackPresentation_Implementation(AActor*)

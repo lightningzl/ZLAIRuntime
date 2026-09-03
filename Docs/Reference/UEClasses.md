@@ -88,6 +88,7 @@ Runtime 固定上限为 10000 个注册 Agent、1024 个活动 Root、4096 条 P
 | `AZLSocialSandboxPawn` | 提供玩家移动/转向、Face/Approach/MoveAway/Stop 的权威执行和说话/动作气泡，并应用预设公开显示名、颜色、出生 Transform；使用 `ACharacter::Mesh` 承载用户配置的骨骼模型/动画，并可配置 Attack/Hit Montage、Section、播放速率和 Enhanced Input | 从自由文本推断未注册行为、伪造完成状态或直接伤害 NPC |
 | `AZLSocialSandboxNpc` | 保存稳定人物配置、权威状态版本、位置/朝向、生命、防卫、短暂无敌、失能和容量 32 的个人 Observation；显示规则/Decision/受击/降级反馈，并执行已接受的 Face/Approach/MoveAway/Stop | 读取其他 NPC Observation、解析模型输出、绕过 Registry 或读取玩家输入原文 |
 | `AZLSocialSandboxPlayerController` | 创建交互 Widget，连接提交/重置并刷新目标与 Inspector；为本地玩家添加配置的 Enhanced Input Mapping Context | 持有协议或 Provider 状态，或绑定角色 Move/Look/Attack Action |
+| `AZLSocialSandboxAIController` | 持有可配置的 `StateTreeAIComponent`，在 Possess 后启动其 StateTree | 将 StateTree 资产直接变成未校验的 Tool、伤害或协议行为 |
 | `UZLSocialSandboxWidget` | 提供说话/行为、模式、目标、文本、提交、错误状态、右侧按钮展开的最多 12 条玩家/NPC 行动对话记录和逐 NPC Observation Inspector | 保存持久历史、Prompt、scope 或凭据 |
 | `UZLSocialBubbleWidget` | 使用屏幕空间 UMG 显示有界时长的中英文说话、动作和 `RulePlaceholder` 反馈 | 产生事件或改变 Gameplay 状态 |
 | `FZLSocialSandboxMotion` | 计算 Approach/MoveAway 的单步平面位移、完成边界与面向 | 导航、避障、动画或复杂路径规划 |

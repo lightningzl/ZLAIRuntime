@@ -83,10 +83,11 @@
 | `M11-A08` | 受影响 UE Target 编译、配置解析自动化、预设切换场景烟测、Stub 与离线降级烟测完成；需要用户在蓝图/资源编辑器完成的步骤单列且不伪称已验证。 |
 | `M11-A09` | `AZLSocialSandboxNpc` 继承 `ACharacter`，使用内置 Capsule/Mesh/CharacterMovement，生成时可被 AIController Possess；既有社会沙盒决策、伤害、受控移动和协议语义不变。 |
 | `M11-A10` | Mapping Context 由本地 `AZLSocialSandboxPlayerController` 配置并添加；Pawn 只绑定角色 Action，未配置时既有轴映射与 UI 攻击入口保持可用。 |
+| `M11-A11` | 普通/连招/蓄力攻击只在 Combat AnimNotify 帧进入 GameMode 权威结算；专用 AIController 可配置 StateTree，且不改变协议或既有 Tool 语义。 |
 
 ## 完成定义
 
-1. [TaskBoard.md](./TaskBoard.md) 的 M11 工作包全部完成，且 `M11-A01` 至 `M11-A10` 有可复查证据。
+1. [TaskBoard.md](./TaskBoard.md) 的 M11 工作包全部完成，且 `M11-A01` 至 `M11-A11` 有可复查证据。
 2. 两套预设在同一地图切换时，玩家/NPC 可见属性及每个 NPC 的个人 Context 均随配置变化。
 3. 无效 JSON、非法字段或越界值不会改变当前有效场景；导出保持脱敏、有限且可再次导入。
 4. 所有必须由用户完成的蓝图或资源绑定均以明确、可执行的清单交付，未配置时 C++ 路径保持可运行。
@@ -108,6 +109,17 @@
 - Enhanced Input Mapping Context 由 `AZLSocialSandboxPlayerController` 持有并在本地控制器初始化时添加；玩家 Pawn 只保留 Move/Look/Attack Action 的绑定职责。
 - 不改变 Input Action 语义、既有轴映射回退、UI 攻击入口或网络协议。
 
+## 追加范围：AnimNotify 战斗与 StateTree AI
+
+- 普通、连招和蓄力攻击复用 `Variant_Combat` 的三个 AnimNotify；只有 `Do Attack Trace` Notify 才进入社会沙盒的权威命中结算。
+- 新增含可配置 `StateTreeAIComponent` 的 `AZLSocialSandboxAIController`；不自动新增导航、StateTree 资产或 Decision Tool。
+
+## 追加范围：AnimNotify 战斗与 StateTree AI
+
+- 玩家普通攻击、简单连招与蓄力攻击复用 `Variant_Combat` 的 `CombatAttacker` 与三个 AnimNotify；只有攻击蒙太奇中的 `Do Attack Trace` Notify 才会触发社会沙盒的权威命中结算。
+- 复用 Notify 仅复用动画事件入口，不复用 `Variant_Combat` 的伤害、击退、ragdoll、敌人扫描或网络语义；目标、距离、生命、防卫和失能继续由社会沙盒 GameMode/NPC 权威校验。
+- 新增 `AZLSocialSandboxAIController`，内含可在控制器蓝图配置的 `StateTreeAIComponent`；不自动新增导航、StateTree 资产、行为树或 Decision Tool。
+
 ## 用户资源配置清单
 
 1. 创建玩家蓝图，父类为 `AZLSocialSandboxPawn`；在其内置 `Mesh` 设置骨骼网格、动画蓝图、相对位置与旋转。
@@ -115,3 +127,6 @@
 3. 在两类蓝图的 `Sandbox|Combat Presentation` 中分别设置 Attack/Hit Montage、可选 Section 和播放速率；未设置时攻击、伤害和 UI 仍按既有权威路径工作，只不播放动画。
 4. 在玩家控制器蓝图（父类 `AZLSocialSandboxPlayerController`）的 `Sandbox|Input` 中设置 Mapping Context；在玩家蓝图的同一分类设置 Move/Look/Attack Input Action。Move/Look 使用 `Axis2D`，Attack 使用数字/布尔触发；未设置时仍可用既有轴映射和 UI 攻击。
 5. 创建或配置 GameMode 蓝图（父类 `AZLSocialSandboxGameMode`），将 `SandboxPlayerClass` 和 `SandboxNpcClass` 指向上述角色蓝图，并在地图 World Settings 选用该 GameMode。资源路径不进入 JSON 或网络协议。
+6. 普通攻击蒙太奇加入 `Do Attack Trace` Notify；连招加入 `Check Combo String` Notify 并设置 `ComboSections`；蓄力循环加入 `Check Charged Attack` Notify 并设置 `ChargeLoopSection`、`ChargeAttackSection`。
+6. 普通攻击蒙太奇加入 `Do Attack Trace` Notify；需要连招时在可衔接帧加入 `Check Combo String` Notify，并设置 Pawn 的 `ComboSections`；蓄力蒙太奇在蓄力循环帧加入 `Check Charged Attack` Notify，并设置 `ChargeLoopSection` 与 `ChargeAttackSection`。这些 Notify 使用现有 `Variant_Combat` 类。
+7. 创建 NPC 控制器蓝图（父类 `AZLSocialSandboxAIController`），在 `StateTreeAI` 组件选择 StateTree 资产；NPC 蓝图的 AI Controller Class 可使用该控制器蓝图。

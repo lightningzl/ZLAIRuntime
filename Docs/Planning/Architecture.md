@@ -91,6 +91,7 @@ Milestone 7 在同一依赖方向上增加可操作社会沙盒：
 - `IZLSocialSandboxCombatPresentation` 是可选的 Blueprint 表现接口；只有 UE 已接受攻击和伤害后才通知玩家/NPC 自身配置的攻击/受击蒙太奇（可选 Section 与播放速率），未绑定资源时无副作用。
 - `AZLSocialSandboxPawn` 与 `AZLSocialSandboxNpc` 都继承 `ACharacter` 并使用其内置 `Mesh` 承载用户设置的骨骼网格和动画蓝图；NPC 使用内置 Capsule/CharacterMovement，且在放置或生成时自动由标准 `AAIController` Possess。两者不再创建 `BodyMesh` 或 `FacingArrow` 占位组件。GameMode 仅通过可配置的玩家/NPC 子类生成角色，不把资源路径写入预设或协议。
 - `AZLSocialSandboxPlayerController` 在本地初始化时添加其配置的 Enhanced Input Mapping Context；`AZLSocialSandboxPawn` 只绑定 Move、Look、Attack Action。无配置时既有轴映射和 UI 攻击入口继续有效。Face、Approach、MoveAway、Stop 只有在玩家 Gameplay 执行器接受后才产生 Started/Completed 观察，Action Observation 不包含输入原文。
+- 普通、连招和蓄力攻击复用 `CombatAttacker` AnimNotify：Pawn 只在 Notify 帧请求，GameMode 重查目标、距离与状态后才结算生命。NPC 的专用 AIController 提供可配置 StateTree 组件，不改变现有 Tool 执行语义。
 - `UZLSocialSandboxWidget` 提供说话/行为模式、Whisper/Talk/Shout/InEar、目标、文本提交、拒绝状态、右侧按钮展开的最多 12 条玩家/NPC 行动对话记录和逐 NPC Inspector；`UZLSocialBubbleWidget` 只显化已接受说话、动作状态和明确标记的 `RulePlaceholder` 本地反馈。
 - 默认沙盒参数为 120 度水平视野、1500 cm 视觉距离以及 Whisper 200、Talk 800、Shout 2500、InEar 150 cm；这些值保存在场景 Observation Settings，可由场景配置覆盖。
 - 专用地图 `/Game/SocialSandbox/Lvl_SocialSandbox` 使用 `AZLSocialSandboxGameMode`；`ResetSocialSandbox` 恢复确定初始状态，`RunSocialSandboxDemo` 经正常 UI/GameMode 提交路径执行一次不依赖 Python 的受控 Talk。
