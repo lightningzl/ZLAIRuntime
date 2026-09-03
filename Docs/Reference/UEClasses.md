@@ -153,6 +153,15 @@ ZL Gameplay / UI
 - 完成回调回到 Game Thread，并在触发前确认上下文仍有效。
 - Python Provider 超时小于 UE 外层请求超时。
 
+## 已确认未实现的 Decision v2 类型边界
+
+Milestone 12 已确认但尚未实现 `/v2/decision`。后续 UE 类型将以 [Protocol.md](./Protocol.md) 为准，至少包括个人 `social_situation` 事实快照、请求级 `available_capabilities`、开放 `plan`、表现建议、最多四个步骤及每个步骤的执行结果。
+
+- Context Builder 只从当前 NPC 已感知、已确认接收或已执行的事实构造 `social_situation`，不读取其他 NPC 私有 Observation。
+- Client 继续负责关联、本地 TTL 和协议解析；GameMode/计划执行器负责状态版本、能力实例、目标、位置、冷却、幂等、Handler 与结果回流校验。
+- 表现建议只能映射已注册表情、视线、姿态或手势资源；未映射建议无 Gameplay 副作用。
+- 现有 v1 类型和运行路径在 v2 验收前保持不变，不能以文本或 v1 ToolCall 模拟 v2 步骤。
+
 ## 演示入口
 
 - `ZL.AI.DialogueDemo`：无 Context/Memory 回归。

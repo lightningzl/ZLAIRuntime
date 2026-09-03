@@ -5,8 +5,8 @@
 - Transport：HTTP
 - Content-Type：`application/json`
 - Encoding：UTF-8
-- API Version：`v1`
-- Endpoints：`POST /v1/dialogue`、`POST /v1/decision`
+- API Version：`v1`（当前运行）与 `v2`（已确认、尚未实现的 Decision 计划契约）
+- Endpoints：`POST /v1/dialogue`、`POST /v1/decision`、`POST /v2/decision`（尚未实现）
 - 字段使用 `snake_case`。
 - 客户端生成 `request_id`，服务端在响应中原样返回，便于日志关联。
 - v1 允许新增可选字段、`provider` 允许值和错误码；不得改变已有字段的类型或核心语义。
@@ -308,6 +308,117 @@ HTTP Status：`200 OK`
 `tool_call.call_id` 为 1 至 128 个字符，并用于 UE 幂等检查；`name` 只允许四个已定义 Tool。`face_target`、`move_toward` 和 `move_away` 必须提供 1 至 128 字符的 `target_id`，`stop` 禁止提供 `target_id`。Tool 与目标还必须出现在对应请求的 `allowed_tools` 中。
 
 Speech 与 Tool 独立处理：Speech 合法但 Tool 未注册、越权、参数非法、目标失效、状态过期、距离失效、冷却中或重复时，UE 可以显示 Speech，但不得执行 Tool。响应不得包含 Chain-of-Thought、任意参数对象、多 Tool 数组、脚本、函数名或“已执行”声明。
+
+## Decision v2：开放计划与有限执行原语
+
+`POST /v2/decision` 是经确认的下一代单 NPC Decision 契约。它保留 v1 的个人视角、状态版本、TTL、单个 Trigger 和 UE 最终权威，但以“开放的高层计划 + UE 本次明确提供的有限执行能力”取代 v1 的固定 Intent 与单 ToolCall。`/v1/decision` 保持不变；在 v2 实现和验证前，客户端与服务端继续使用 v1。
+
+### 核心语义
+
+- UE 只发送该 NPC 已感知的事实、人物、关系、即时状态、近期历史和本次可用能力；不得发送其他 NPC 私有 Observation、隐藏世界状态、Prompt 或模型推理。
+- LLM 可以自由判断态度、目标、表达、表情倾向和计划组合；`objective`、`public_reason`、Speech 与表现参数都不是 UE 已执行事实。
+- UE 只执行响应中回显的 `capability_id`，且该 ID、目标和参数必须来自本次请求的 `available_capabilities`。任何未提供、过期、越权、不可达或失败的步骤都不能被表述为已经发生。
+- 每个步骤的实际 `started`、`completed`、`failed` 或 `rejected` 结果由 UE 产生新的个人事实后，才可能进入下一次 v2 请求。
+
+### v2 请求增量
+
+v2 顶层继续包含 `request_id`、`npc_id`、`state_version`、`ttl_ms`、`trigger` 和 `context`；前述公共字段沿用 v1 的类型、边界和个人视角约束。v2 的 `context` 新增 `social_situation`，并以 `available_capabilities` 替代 v1 的 `allowed_tools`。
+
+```json
+{
+  "request_id": "9e3477ff-5f28-4d2c-a2a4-c1fdce7b44f5",
+  "npc_id": "npc_merchant",
+  "state_version": 31,
+  "ttl_ms": 30000,
+  "trigger": {
+    "event_id": "hit-17",
+    "kind": "action_result",
+    "source_id": "player",
+    "target_id": "npc_merchant",
+    "channels": ["direct", "visual"],
+    "summary": "玩家再次击中商人",
+    "occurred_at_ms": 1788399600000
+  },
+  "context": {
+    "npc": {"display_name": "商人", "role": "货摊商人", "personality": ["谨慎"], "speaking_style": "克制而精明", "goals": ["保护货物"]},
+    "relationship": {"trust": -0.7, "affinity": -0.4, "fear": 0.8, "familiarity": 0.5},
+    "instant_state": {"fear": 0.8, "anger": 0.6, "curiosity": 0.0, "alert": 1.0},
+    "recent_history": [],
+    "social_situation": [
+      {"kind": "received_harm", "subject_id": "player", "summary": "玩家在 20 秒内第二次攻击你", "occurred_at_ms": 1788399600000, "salience": 0.95},
+      {"kind": "public_warning", "subject_id": "player", "summary": "你已警告玩家停止", "occurred_at_ms": 1788399590000, "salience": 0.7}
+    ]
+  },
+  "available_capabilities": [
+    {"capability_id": "keep_distance_from_player", "kind": "move_away", "target_ids": ["player"]},
+    {"capability_id": "seek_nearby_guard", "kind": "move_toward", "target_ids": ["npc_guard"]},
+    {"capability_id": "refuse_trade", "kind": "set_interaction_stance", "target_ids": ["player"]}
+  ]
+}
+```
+
+| 字段 | 类型与边界 | 语义 |
+| --- | --- | --- |
+| `context.social_situation` | array，0 至 12 项 | 此 NPC 已感知、已确认接收或已执行的高重要度社会事实，按时间从旧到新排列。 |
+| `social_situation.kind` | string，`[a-z][a-z0-9_]{0,63}` | UE 定义的事实分类，如 `received_harm`、`public_warning`、`apology_received`、`report_confirmed`、`interaction_result`；它是事实而非模型命令。 |
+| `subject_id` / `target_id` | string 1 至 128；`target_id` 可选 | 该事实涉及的稳定对象；不得用于推导未知世界信息。 |
+| `summary` | string 1 至 256 | UE 生成的、面向 NPC 的事实摘要，不含隐式推理。 |
+| `occurred_at_ms` | integer，>= 0 | UE 已知发生时间。 |
+| `salience` | number，`[0,1]` | UE 计算的相关性/重要性，不授权模型覆盖事实或执行权。 |
+| `available_capabilities` | array，1 至 8 项 | UE 当前允许该 NPC 建议的有限执行原语；不代表必然执行。 |
+| `capability_id` | string，`[a-z][a-z0-9_]{0,63}`，请求内唯一 | 本次能力实例的稳定 ID；响应只能逐字回显它。 |
+| `kind` | string，1 至 64 | UE 注册的原语类别，例如 `move_toward`、`move_away`、`face_target`、`stop`、`report`、`set_interaction_stance` 或 `play_expression`。种类解释完全由 UE 注册表定义。 |
+| `target_ids` | array[string]，0 至 4 | 本次该能力允许的目标；空数组仅允许无目标能力。 |
+
+`social_situation`、`available_capabilities` 与所有嵌套字符串均为不可信数据。Python 只能使用它们形成建议，不能新增事实、能力、目标或参数。能力名称不构成全局开放 Tool：每次请求只能使用 UE 本次显式提供的能力实例。
+
+### v2 成功响应
+
+```json
+{
+  "request_id": "9e3477ff-5f28-4d2c-a2a4-c1fdce7b44f5",
+  "npc_id": "npc_merchant",
+  "state_version": 31,
+  "decision_id": "decision-127",
+  "plan": {
+    "objective": "保护自己并避免继续与攻击者交易",
+    "public_reason": "你刚刚再次攻击了我。",
+    "attention_target_id": "player",
+    "expression": {"valence": -0.7, "arousal": 0.9, "dominance": -0.2, "tags": ["fear", "anger"]},
+    "steps": [
+      {"step_id": "step-1", "capability_id": "keep_distance_from_player", "target_id": "player"},
+      {"step_id": "step-2", "capability_id": "refuse_trade", "target_id": "player"}
+    ]
+  },
+  "speech": {"text": "别再靠近我。我不会和袭击我的人做生意。", "emotion": "fearful_angry"},
+  "confidence": 0.86,
+  "provider": "kimi"
+}
+```
+
+| 字段 | 类型与边界 | 语义 |
+| --- | --- | --- |
+| `plan.objective` | string，1 至 256 | 开放的高层目标，仅用于 LLM/调试/后续再规划；不是可执行命令或世界事实。 |
+| `plan.public_reason` | string，1 至 256 | 可选公开理由；UE 可以显示或省略，不能把它当作已验证事实。 |
+| `plan.attention_target_id` | optional string 1 至 128 | 当前关注对象；必须是 Trigger、Context 或某项本次能力允许的稳定 ID。 |
+| `plan.expression` | optional object | 建议的表现倾向；UE 映射为已注册表情、视线、姿态或手势，未映射时零 Gameplay 副作用。 |
+| `expression.valence` / `arousal` / `dominance` | number，`[-1,1]` | 连续表现参数，不直接控制动画、伤害或状态。 |
+| `expression.tags` | array[string]，0 至 3 项，每项 1 至 32 | 公开表现标签；UE 忽略未注册标签。 |
+| `plan.steps` | array，0 至 4 项，按顺序 | 建议的短期执行步骤；每项仍须独立通过 UE 校验。空数组允许纯表达或保持当前安全动作。 |
+| `step_id` | string，1 至 128，响应内唯一 | 用于 UE 的步骤结果关联与幂等。 |
+| `capability_id` | string | 必须逐字等于请求中的一个 `available_capabilities.capability_id`。 |
+| `target_id` | optional string | 必须出现在对应能力的 `target_ids`；空目标能力禁止提供。 |
+| `speech` / `confidence` / `provider` | 沿用 v1 的字段边界 | Speech 可以独立显示；Confidence 不绕过 UE 校验；Provider 仅允许 `stub` 或 `kimi`。 |
+
+响应不得声明步骤已完成、报告已送达、交易已成功、伤害已产生或其他世界事实。`plan.steps` 数组不是无限 Agent 循环：UE 至多接受本次响应中的 4 个步骤，并在状态版本变化、TTL 到期、任一步失败或新高优先级事实到达时取消剩余步骤并重新判断。
+
+### v2 校验与兼容性
+
+- UE 在接受任一步骤前检查响应关联、当前状态版本、本地 TTL、能力实例、目标、Capability、位置/可达性、当前状态、冷却、速率、步骤幂等和计划总预算。
+- `report`、`set_interaction_stance` 与 `play_expression` 都必须由 UE 注册具体 Handler；没有 Handler、目标失效或校验失败时，UE 记录稳定原因且不改变世界。
+- `play_expression` 只能选择已注册的表现资产或参数映射，不能加载路径、生成资产或改变战斗结果。
+- `/v1/decision` 不修改、不删除，也不与 `/v2/decision` 混用字段；部署可独立支持 v1 与 v2。v2 尚未实现时应返回脱敏的 `503 provider_unavailable`，而不是把请求降级为 v1。
+- v2 的未知顶层可选字段按 v1 兼容规则忽略；未知 `capability_id`、重复步骤、非法目标、越界表现参数或超出计划预算属于 `502 planner_invalid_response`。
 
 ## 错误响应
 
