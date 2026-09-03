@@ -55,7 +55,7 @@
 
 - 用有效预设驱动 `AZLSocialSandboxGameMode` 的玩家和 NPC 生成，移除本阶段触及的固定出生位置和固定 Profile 初始数据依赖。
 - 将玩家公开显示名、颜色、出生 Transform、初始生命接入既有 Pawn；将 NPC 配置接入既有 Profile、生命、名称、颜色和个人 Context 路径。
-- 保留当前 Pawn、NPC 类、占位网格、UI 和四个受控 Tool；不要求新增蓝图或资产来完成代码验证。
+- 保留当前 Pawn、NPC 类、UI 和四个受控 Tool；移除 `BodyMesh` 与 `FacingArrow` 占位组件，改由角色蓝图配置骨骼网格与动画蓝图；不要求新增蓝图或资产来完成代码验证。
 
 ### 攻击表现边界
 
@@ -88,3 +88,18 @@
 2. 两套预设在同一地图切换时，玩家/NPC 可见属性及每个 NPC 的个人 Context 均随配置变化。
 3. 无效 JSON、非法字段或越界值不会改变当前有效场景；导出保持脱敏、有限且可再次导入。
 4. 所有必须由用户完成的蓝图或资源绑定均以明确、可执行的清单交付，未配置时 C++ 路径保持可运行。
+
+## 追加范围：角色攻击与输入配置
+
+- 角色攻击表现采用与 `ACombatCharacter` 相同的“角色持有蒙太奇配置、运行时只负责播放”的边界，但不复用其连招、蓄力、Trace 或 AnimNotify 命中逻辑。
+- 玩家和 NPC 分别暴露攻击/受击蒙太奇、Section 与播放速率；现有社会沙盒攻击校验和伤害先完成，才允许播放对应表现。
+- 玩家暴露 Enhanced Input Mapping Context 与移动、视角、攻击 Input Action 配置；未配置时保留已有轴映射输入和 UI 攻击入口。
+- 不修改用户已有蓝图、蒙太奇、Input Action 或 Mapping Context 资源；不将资源路径写入 JSON 或协议。
+
+## 用户资源配置清单
+
+1. 创建玩家蓝图，父类为 `AZLSocialSandboxPawn`；在其内置 `Mesh` 设置骨骼网格、动画蓝图、相对位置与旋转。
+2. 创建 NPC 蓝图，父类为 `AZLSocialSandboxNpc`；在 `CharacterMesh` 设置骨骼网格、动画蓝图、相对位置与旋转。
+3. 在两类蓝图的 `Sandbox|Combat Presentation` 中分别设置 Attack/Hit Montage、可选 Section 和播放速率；未设置时攻击、伤害和 UI 仍按既有权威路径工作，只不播放动画。
+4. 在玩家蓝图的 `Sandbox|Input` 中设置 Mapping Context 与 Move/Look/Attack Input Action。Move/Look 使用 `Axis2D`，Attack 使用数字/布尔触发；未设置时仍可用既有轴映射和 UI 攻击。
+5. 创建或配置 GameMode 蓝图（父类 `AZLSocialSandboxGameMode`），将 `SandboxPlayerClass` 和 `SandboxNpcClass` 指向上述角色蓝图，并在地图 World Settings 选用该 GameMode。资源路径不进入 JSON 或网络协议。

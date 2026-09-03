@@ -16,8 +16,8 @@
 | --- | --- | --- |
 | `M11-A01` | 通过 | 协议与 Tool 无变更；`ZL.Social` 29/29 通过。 |
 | `M11-A02` 至 `M11-A06` | 通过 | 两套预设解析、路径拒绝、公开导出和两次真实地图烟测通过。 |
-| `M11-A07` | 通过 | 已编译的可选接口只在伤害接受后通知，未绑定资源无副作用。 |
-| `M11-A08` | 通过 | UE Target 编译、29 项自动化、两套预设烟测与文档收口完成。 |
+| `M11-A07` | 通过 | 攻击/受击接口只在权威校验接受后通知；玩家/NPC 自身的蒙太奇、Section、播放速率未绑定时无副作用。 |
+| `M11-A08` | 通过 | UE Target 编译、29 项自动化、两套预设烟测、无资源回退与文档收口完成。 |
 
 ## M11-T02：JSON Schema、校验与受控预设
 
@@ -31,3 +31,9 @@
 - 2026-09-03：最终合并后再次执行 `ZL.Social.Sandbox.PresetValidation`；日志显示收集 1 项并通过。命令行进程输出仅记录平台 SDK 探测，测试完成结果以 `ZL/Saved/Logs/ZL.log` 为准。
 - 2026-09-03：`ZL.Social` 全量 NullRHI 回归收集 29 项并全部通过。
 - 2026-09-03：`-ZLSandboxPreset=market_day -ZLSandboxPresetSmoke` 与 `night_watch` 两套真实地图烟测均通过；后者同时核对玩家/NPC 稳定 ID、显示名、出生位置、NPC Profile 与初始生命。
+
+## M11-T06 至 T07：骨骼角色、攻击与输入配置
+
+- 2026-09-03：`ZLEditor Win64 Development` 编译成功。玩家移除 `BodyMesh` 与 `FacingArrow`，改用 `ACharacter::Mesh`；NPC 移除同名占位组件，改用 `CharacterMesh`。两类角色可各自设置骨骼网格、动画蓝图、Attack/Hit Montage、可选 Section 和播放速率。
+- 2026-09-03：GameMode 增加 `SandboxPlayerClass` 与 `SandboxNpcClass`，由用户的 GameMode 蓝图选择角色蓝图；玩家增加 Mapping Context、Move/Look/Attack Action 配置。资源缺失时不播放蒙太奇，并保留既有轴映射和 UI 攻击入口。
+- 2026-09-03：使用 NullRHI 与内存 DDC 执行 `Automation RunTests ZL.Social`，收集 29 项且全部 `Success`，进程退出码 0；覆盖攻击校验、NPC 行动、预设、场景配置以及既有社会模拟回归。

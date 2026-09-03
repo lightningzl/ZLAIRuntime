@@ -13,6 +13,8 @@
 #include "ZLSocialSandboxGameMode.generated.h"
 
 class AZLSocialSandboxNpc;
+class AZLSocialSandboxPawn;
+class AController;
 struct FZLSocialSandboxDamageResult;
 struct FZLSocialSandboxNpcPreset;
 struct FZLSocialSandboxPreset;
@@ -64,6 +66,7 @@ public:
 protected:
 	virtual void BeginPlay() override;
 	virtual void Tick(float DeltaSeconds) override;
+	virtual UClass* GetDefaultPawnClassForController_Implementation(AController* InController) override;
 
 private:
 	void SpawnEnvironment();
@@ -99,6 +102,12 @@ private:
 
 	UPROPERTY()
 	TArray<TObjectPtr<AZLSocialSandboxNpc>> SandboxNpcs;
+
+	UPROPERTY(EditDefaultsOnly, Category="Sandbox|Character Classes")
+	TSubclassOf<AZLSocialSandboxPawn> SandboxPlayerClass;
+
+	UPROPERTY(EditDefaultsOnly, Category="Sandbox|Character Classes")
+	TSubclassOf<AZLSocialSandboxNpc> SandboxNpcClass;
 
 	UPROPERTY(EditDefaultsOnly, Category="Sandbox|Perception")
 	FZLSocialObservationSettings ObservationSettings;

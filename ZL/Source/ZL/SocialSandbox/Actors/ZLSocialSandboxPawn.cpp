@@ -6,18 +6,22 @@
 #include "SocialSandbox/UI/ZLSocialNameWidget.h"
 
 #include "Camera/CameraComponent.h"
-#include "Components/ArrowComponent.h"
+#include "EnhancedInputComponent.h"
+#include "EnhancedInputSubsystems.h"
+#include "InputActionValue.h"
 #include "Components/CapsuleComponent.h"
-#include "Components/StaticMeshComponent.h"
 #include "Components/WidgetComponent.h"
 #include "GameFramework/CharacterMovementComponent.h"
 #include "GameFramework/Controller.h"
 #include "Camera/PlayerCameraManager.h"
 #include "GameFramework/SpringArmComponent.h"
+#include "Animation/AnimInstance.h"
+#include "Engine/LocalPlayer.h"
+#include "SocialSandbox/Actors/ZLSocialSandboxPlayerController.h"
+#include "SocialSandbox/World/ZLSocialSandboxGameMode.h"
 #include "Kismet/GameplayStatics.h"
 #include "Materials/MaterialInstanceDynamic.h"
 #include "TimerManager.h"
-#include "UObject/ConstructorHelpers.h"
 
 AZLSocialSandboxPawn::AZLSocialSandboxPawn()
 {
@@ -28,22 +32,7 @@ AZLSocialSandboxPawn::AZLSocialSandboxPawn()
 	GetCharacterMovement()->MaxWalkSpeed = 450.0f;
 	GetCharacterMovement()->BrakingDecelerationWalking = 1800.0f;
 
-	BodyMesh = CreateDefaultSubobject<UStaticMeshComponent>(TEXT("BodyMesh"));
-	BodyMesh->SetupAttachment(GetCapsuleComponent());
-	BodyMesh->SetCollisionEnabled(ECollisionEnabled::NoCollision);
-	BodyMesh->SetRelativeScale3D(FVector(0.65f, 0.65f, 1.9f));
-	static ConstructorHelpers::FObjectFinder<UStaticMesh> CylinderMesh(TEXT("/Engine/BasicShapes/Cylinder.Cylinder"));
-	if (CylinderMesh.Succeeded())
-	{
-		BodyMesh->SetStaticMesh(CylinderMesh.Object);
-	}
-
-	FacingArrow = CreateDefaultSubobject<UArrowComponent>(TEXT("FacingArrow"));
-	FacingArrow->SetupAttachment(GetCapsuleComponent());
-	FacingArrow->SetRelativeLocation(FVector(65.0f, 0.0f, 0.0f));
-	FacingArrow->ArrowColor = FColor(40, 220, 255);
-	FacingArrow->ArrowSize = 2.0f;
-	FacingArrow->SetHiddenInGame(false);
+	GetMesh()->SetCollisionEnabled(ECollisionEnabled::NoCollision);
 
 	NameWidget = CreateDefaultSubobject<UWidgetComponent>(TEXT("NameWidget"));
 	NameWidget->SetupAttachment(GetCapsuleComponent());
@@ -80,9 +69,12 @@ void AZLSocialSandboxPawn::InitializeSandboxPlayer(const FZLSocialSandboxPlayerP
 	SandboxDisplayName = Preset.DisplayName;
 	SandboxStartTransform = Preset.SpawnTransform;
 	SetActorTransform(SandboxStartTransform, false, nullptr, ETeleportType::TeleportPhysics);
-	if (UMaterialInstanceDynamic* Material = BodyMesh->CreateDynamicMaterialInstance(0))
+	if (GetMesh()->GetNumMaterials() > 0)
 	{
-		Material->SetVectorParameterValue(TEXT("Color"), Preset.BodyColor);
+		if (UMaterialInstanceDynamic* Material = GetMesh()->CreateDynamicMaterialInstance(0))
+		{
+			Material->SetVectorParameterValue(TEXT("Color"), Preset.BodyColor);
+		}
 	}
 	NameWidget->InitWidget();
 	if (UZLSocialNameWidget* Widget = Cast<UZLSocialNameWidget>(NameWidget->GetUserWidgetObject()))
@@ -95,15 +87,24 @@ void AZLSocialSandboxPawn::BeginPlay()
 {
 	Super::BeginPlay();
 	SandboxStartTransform = GetActorTransform();
-	if (UMaterialInstanceDynamic* Material = BodyMesh->CreateDynamicMaterialInstance(0))
+	if (GetMesh()->GetNumMaterials() > 0)
 	{
-		Material->SetVectorParameterValue(TEXT("Color"), FLinearColor(0.03f, 0.32f, 0.85f));
+		if (UMaterialInstanceDynamic* Material = GetMesh()->CreateDynamicMaterialInstance(0))
+		{
+			Material->SetVectorParameterValue(TEXT("Color"), FLinearColor(0.03f, 0.32f, 0.85f));
+		}
 	}
 	NameWidget->InitWidget();
 	if (UZLSocialNameWidget* Widget = Cast<UZLSocialNameWidget>(NameWidget->GetUserWidgetObject()))
 	{
 		Widget->SetName(FText::FromString(TEXT("玩家")), FLinearColor(0.16f, 0.86f, 1.0f));
 	}
+}
+
+void AZLSocialSandboxPawn::PawnClientRestart()
+{
+	Super::PawnClientRestart();
+	ApplyCharacterInputMapping();
 }
 
 void AZLSocialSandboxPawn::SetupPlayerInputComponent(UInputComponent* PlayerInputComponent)
@@ -113,6 +114,66 @@ void AZLSocialSandboxPawn::SetupPlayerInputComponent(UInputComponent* PlayerInpu
 	PlayerInputComponent->BindAxis(TEXT("SandboxMoveRight"), this, &AZLSocialSandboxPawn::MoveRight);
 	PlayerInputComponent->BindAxis(TEXT("SandboxTurn"), this, &AZLSocialSandboxPawn::Turn);
 	PlayerInputComponent->BindAxis(TEXT("SandboxLookUp"), this, &AZLSocialSandboxPawn::LookUp);
+	if (UEnhancedInputComponent* EnhancedInput = Cast<UEnhancedInputComponent>(PlayerInputComponent))
+	{
+		if (MoveInputAction != nullptr) { EnhancedInput->BindAction(MoveInputAction, ETriggerEvent::Triggered, this, &AZLSocialSandboxPawn::MoveFromInput); }
+		if (LookInputAction != nullptr) { EnhancedInput->BindAction(LookInputAction, ETriggerEvent::Triggered, this, &AZLSocialSandboxPawn::LookFromInput); }
+		if (AttackInputAction != nullptr) { EnhancedInput->BindAction(AttackInputAction, ETriggerEvent::Started, this, &AZLSocialSandboxPawn::ConfiguredAttackPressed); }
+	}
+}
+
+void AZLSocialSandboxPawn::ApplyCharacterInputMapping()
+{
+	const APlayerController* PlayerController = Cast<APlayerController>(Controller);
+	if (PlayerController == nullptr || CharacterInputMapping == nullptr)
+	{
+		return;
+	}
+	if (ULocalPlayer* LocalPlayer = PlayerController->GetLocalPlayer())
+	{
+		if (UEnhancedInputLocalPlayerSubsystem* InputSubsystem = LocalPlayer->GetSubsystem<UEnhancedInputLocalPlayerSubsystem>())
+		{
+			InputSubsystem->AddMappingContext(CharacterInputMapping, 0);
+		}
+	}
+}
+
+void AZLSocialSandboxPawn::ConfiguredAttackPressed()
+{
+	const AZLSocialSandboxPlayerController* SandboxController = Cast<AZLSocialSandboxPlayerController>(Controller);
+	AZLSocialSandboxGameMode* GameMode = GetWorld() == nullptr ? nullptr : GetWorld()->GetAuthGameMode<AZLSocialSandboxGameMode>();
+	if (SandboxController != nullptr && GameMode != nullptr && SandboxController->GetSandboxWidget() != nullptr)
+	{
+		GameMode->SubmitAction(SandboxController->GetSandboxWidget()->GetSelectedTargetId(), TEXT("攻击"));
+	}
+}
+
+void AZLSocialSandboxPawn::PlaySandboxAttackPresentation_Implementation(AActor*)
+{
+	if (AttackMontage != nullptr)
+	{
+		if (UAnimInstance* AnimInstance = GetMesh()->GetAnimInstance())
+		{
+			if (AnimInstance->Montage_Play(AttackMontage, MontagePlayRate) > 0.0f && AttackMontageSection != NAME_None)
+			{
+				AnimInstance->Montage_JumpToSection(AttackMontageSection, AttackMontage);
+			}
+		}
+	}
+}
+
+void AZLSocialSandboxPawn::PlaySandboxHitPresentation_Implementation(AActor*, float, bool)
+{
+	if (HitMontage != nullptr)
+	{
+		if (UAnimInstance* AnimInstance = GetMesh()->GetAnimInstance())
+		{
+			if (AnimInstance->Montage_Play(HitMontage, MontagePlayRate) > 0.0f && HitMontageSection != NAME_None)
+			{
+				AnimInstance->Montage_JumpToSection(HitMontageSection, HitMontage);
+			}
+		}
+	}
 }
 
 void AZLSocialSandboxPawn::ResetToSandboxStart()
@@ -241,4 +302,18 @@ void AZLSocialSandboxPawn::Turn(const float Value)
 void AZLSocialSandboxPawn::LookUp(const float Value)
 {
 	AddControllerPitchInput(Value);
+}
+
+void AZLSocialSandboxPawn::MoveFromInput(const FInputActionValue& Value)
+{
+	const FVector2D Movement = Value.Get<FVector2D>();
+	MoveForward(Movement.Y);
+	MoveRight(Movement.X);
+}
+
+void AZLSocialSandboxPawn::LookFromInput(const FInputActionValue& Value)
+{
+	const FVector2D Look = Value.Get<FVector2D>();
+	Turn(Look.X);
+	LookUp(Look.Y);
 }

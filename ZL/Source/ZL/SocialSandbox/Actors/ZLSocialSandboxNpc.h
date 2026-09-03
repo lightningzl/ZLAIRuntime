@@ -3,13 +3,14 @@
 #include "CoreMinimal.h"
 #include "GameFramework/Actor.h"
 #include "ZLSocialObservation.h"
+#include "SocialSandbox/Domain/ZLSocialSandboxCombatPresentation.h"
 #include "SocialSandbox/Domain/ZLSocialSandboxNpcProfile.h"
 #include "ZLSocialSandboxNpc.generated.h"
 
-class UArrowComponent;
 class UCapsuleComponent;
-class UStaticMeshComponent;
+class USkeletalMeshComponent;
 class UWidgetComponent;
+class UAnimMontage;
 
 struct FZLSocialSandboxDamageResult
 {
@@ -23,7 +24,7 @@ struct FZLSocialSandboxDamageResult
 };
 
 UCLASS()
-class ZL_API AZLSocialSandboxNpc final : public AActor
+class ZL_API AZLSocialSandboxNpc final : public AActor, public IZLSocialSandboxCombatPresentation
 {
 	GENERATED_BODY()
 
@@ -61,6 +62,8 @@ public:
 	void ShowDecisionRejection(FName ReasonCode);
 	void ShowDecisionFallback();
 	void ShowDamageResult(const FZLSocialSandboxDamageResult& Result);
+	virtual void PlaySandboxAttackPresentation_Implementation(AActor* Target) override;
+	virtual void PlaySandboxHitPresentation_Implementation(AActor* Instigator, float AppliedDamage, bool bIncapacitated) override;
 
 protected:
 	virtual void Tick(float DeltaSeconds) override;
@@ -70,16 +73,24 @@ private:
 	TObjectPtr<UCapsuleComponent> Capsule;
 
 	UPROPERTY(VisibleAnywhere, Category="Sandbox")
-	TObjectPtr<UStaticMeshComponent> BodyMesh;
-
-	UPROPERTY(VisibleAnywhere, Category="Sandbox")
-	TObjectPtr<UArrowComponent> FacingArrow;
+	TObjectPtr<USkeletalMeshComponent> CharacterMesh;
 
 	UPROPERTY(VisibleAnywhere, Category="Sandbox")
 	TObjectPtr<UWidgetComponent> NameWidget;
 
 	UPROPERTY(VisibleAnywhere, Category="Sandbox")
 	TObjectPtr<UWidgetComponent> BubbleWidget;
+
+	UPROPERTY(EditDefaultsOnly, Category="Sandbox|Combat Presentation")
+	TObjectPtr<UAnimMontage> AttackMontage;
+	UPROPERTY(EditDefaultsOnly, Category="Sandbox|Combat Presentation")
+	FName AttackMontageSection = NAME_None;
+	UPROPERTY(EditDefaultsOnly, Category="Sandbox|Combat Presentation")
+	TObjectPtr<UAnimMontage> HitMontage;
+	UPROPERTY(EditDefaultsOnly, Category="Sandbox|Combat Presentation")
+	FName HitMontageSection = NAME_None;
+	UPROPERTY(EditDefaultsOnly, Category="Sandbox|Combat Presentation", meta=(ClampMin="0.1", ClampMax="3.0"))
+	float MontagePlayRate = 1.0f;
 
 	UPROPERTY(VisibleAnywhere, Category="Sandbox")
 	FName StableId;
