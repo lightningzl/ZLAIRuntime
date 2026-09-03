@@ -28,6 +28,7 @@
 | `FZLDialogueResponse` | 表示请求关联、NPC ID、纯文本回复和逻辑 Provider | 推断或执行 Gameplay 指令 |
 | `FZLDecisionRequest` | 表示请求/NPC/状态版本/TTL、单个个人 Trigger、人物/关系/即时状态/历史和允许 Tool | 访问 Actor、自动收集 World 或授权 Tool 执行 |
 | `FZLDecisionResponse` | 表示结构化 Intent、可选 Speech、可选单 Tool 建议、Confidence 和 Provider | 声明 Tool 已执行或绕过 UE 当前状态校验 |
+| `FZLDecisionV2Request` / `FZLDecisionV2Response` | 表示单 NPC 的个人社会事实、请求级能力实例及开放目标/公开理由/有界步骤/Speech | 自动收集 World、创建能力、声明未执行世界结果 |
 | `FZLServiceError` | 表示错误分类、错误码、消息、请求 ID 和 HTTP 状态 | 暴露底层堆栈、路径或原始 Provider 异常 |
 
 `ZLAIServiceProtocol` 命名空间负责 Dialogue/Decision 请求校验与序列化、成功响应解析和协议错误解析。Decision 只允许四个固定 Tool、一个 ToolCall 和个人视角硬边界；字段必须与 [Protocol.md](./Protocol.md) 一致。
@@ -153,14 +154,12 @@ ZL Gameplay / UI
 - 完成回调回到 Game Thread，并在触发前确认上下文仍有效。
 - Python Provider 超时小于 UE 外层请求超时。
 
-## 已确认未实现的 Decision v2 类型边界
+## Decision v2 类型边界
 
-Milestone 12 已确认但尚未实现 `/v2/decision`。后续 UE 类型将以 [Protocol.md](./Protocol.md) 为准，至少包括个人 `social_situation` 事实快照、请求级 `available_capabilities`、开放 `plan`、表现建议、最多四个步骤及每个步骤的执行结果。
+`/v2/decision` 已实现。`FZLSocialSandboxDecisionContextBuilder::BuildV2` 只从当前 NPC 已感知或 UE 已确认的容量 12 社会事实构造快照；`UZLAIServiceSubsystem` 负责关联、TTL 与解析，GameMode 负责能力实例、目标、状态版本和 Handler 复核。当前注册能力覆盖面向玩家、远离玩家、前往守卫、进入防御与拒绝交易；实际完成/报告才回流事实。
 
-- Context Builder 只从当前 NPC 已感知、已确认接收或已执行的事实构造 `social_situation`，不读取其他 NPC 私有 Observation。
-- Client 继续负责关联、本地 TTL 和协议解析；GameMode/计划执行器负责状态版本、能力实例、目标、位置、冷却、幂等、Handler 与结果回流校验。
-- 表现建议只能映射已注册表情、视线、姿态或手势资源；未映射建议无 Gameplay 副作用。
-- 现有 v1 类型和运行路径在 v2 验收前保持不变，不能以文本或 v1 ToolCall 模拟 v2 步骤。
+- 表现建议当前未映射任何资源，因此无 Gameplay 副作用；Speech、互动立场和动作只在 UE 接受/执行后显化。
+- 现有 v1 类型和 Guard 路径保持兼容；非 Guard NPC 使用 v2，不能以文本或 v1 ToolCall 模拟 v2 步骤。
 
 ## 演示入口
 

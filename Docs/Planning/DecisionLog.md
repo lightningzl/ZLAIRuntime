@@ -16,7 +16,7 @@ Milestone 12 新增独立 `POST /v2/decision`，不修改既有 `/v1/decision`�
 - 表情与手势仅映射至已注册资源/参数，不能由模型加载、生成或修改二进制资产。
 
 状态：
-已接受；协议已文档化，尚未实现。
+已接受；协议、Python v2 Planner/Route 与 UE Client/沙盒执行器已实现，v1 保持兼容。
 
 重要性：
 重要

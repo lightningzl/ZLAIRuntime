@@ -189,9 +189,9 @@ FastAPI Route -> Dialogue Service
 
 ## 后续扩展边界
 
-### 已确认但尚未实现：Decision v2
+### Decision v2
 
-Milestone 12 已确认独立 `/v2/decision`，用于单 NPC 的开放高层计划与请求级有限能力实例。UE 将个人高重要度社会事实作为 `social_situation`，并为本次世界状态显式提供 `available_capabilities`；Python Planner 可以提出目标、表达、表现建议和有界步骤，不能创建能力、目标、资产或世界事实。UE 的计划执行器将在实现后逐步校验、执行、取消并把结果回流为个人事实；当前架构和运行代码仍只使用 v1，具体契约以 [Protocol.md](../Reference/Protocol.md) 为准。
+Milestone 12 已实现独立 `/v2/decision`。UE 为非 Guard NPC 提供容量 12 的个人 `social_situation` 与本次有限 `available_capabilities`；Python Kimi/Stub Planner 返回开放目标、公开理由、Speech 与有界步骤，不能创建能力、目标或世界事实。UE Client 执行关联/TTL/协议解析，GameMode 复核能力、目标、状态和 Handler，并只回流实际动作、交易立场和已确认报告；具体字段以 [Protocol.md](../Reference/Protocol.md) 为准。v1 保持兼容。
 
 - **Memory Retrieval 扩展**：向量检索、摘要、事实抽取和相关性评分必须继续位于 Memory Service 边界内，不得扩散到 Route、UE Client 或 Provider。
 - **Tool Planner**：生成结构化 Tool Call。

@@ -44,11 +44,14 @@ PythonService/
 | `app.main` | 创建 FastAPI App，组装 Settings、Repository、Memory Service、Provider 和 Dialogue Service，并管理关闭生命周期 |
 | `app.api.dialogue` | 提供 `POST /v1/dialogue` HTTP 适配，将已校验请求交给 Dialogue Service |
 | `app.api.decision` | 提供 `POST /v1/decision` HTTP 适配，只记录脱敏关联元数据并交给 Decision Service |
+| `app.api.decision_v2` | 提供独立 `POST /v2/decision`，将已校验个人社会计划请求交给 v2 Service |
 | `app.core.settings` | 读取并校验 Provider、超时、输出预算、数据库路径和 Memory 检索预算 |
 | `app.schemas.dialogue` | 定义 v1 Dialogue、Context、Memory、成功响应和错误边界 |
 | `app.schemas.decision` | 定义经确认的 v1 Decision、个人上下文、允许 Tool、结构化 Speech/Tool 建议和硬边界 |
 | `app.services.decision_context_builder` | 将单 NPC Trigger、人物、关系、即时状态、个人历史和允许 Tool 确定性组装为不可信 JSON 数据；固定约束 Kimi 的公开 Speech 使用简体中文 |
 | `app.services.decision_service` | 校验非空业务语义、调用一次 Planner、复核允许 Tool/目标并生成 Decision/Tool ID |
+| `app.services.decision_v2_service` | 调用一次 v2 Planner，复核能力实例/目标/步骤预算并生成开放计划 ID；异常表现建议不宣称世界结果 |
+| `app.services.decision_v2_context_builder` | 将 UE 提供的个人 `social_situation` 和 `available_capabilities` 组装为供应商无关 JSON |
 | `app.planners.base` | 定义与 FastAPI、协议模型、UE 和 SDK 解耦的 Decision Planner 接口与内部结果 |
 | `app.planners.stub_planner` | 提供确定性离线连续 Speech/Intent/单 Tool 建议；只依据最新 Trigger、有限个人历史和当前 NPC Profile，为 Guard、Merchant、Rival、Civilian 产生不同但有界的简体中文攻击、道歉、近期冲突和默认表达 |
 | `app.planners.kimi_planner` | 使用 Kimi JSON Object 输出并校验 Intent、Speech、单 Tool 与 Confidence，分类 SDK 异常；固定约束要求只扮演当前 NPC，不把多 NPC Context 压成通用 Guard 表达 |
@@ -145,9 +148,9 @@ OpenAI 兼容 SDK 运行依赖为 `openai>=2.46,<3.0`。Kimi Client 禁用 SDK �
 - Decision Planner 必须把最新 Trigger 与有限个人历史视为唯一的连续互动事实来源；攻击、道歉和距离等事件只能在它们已出现在该个人上下文时影响建议，生命、命中和伤害始终由 UE 权威维护。
 - 多 NPC 调用仍是彼此独立的单 NPC Decision；Planner 可以使用当前请求中的身份、人物、表达风格、目标、关系和个人历史形成差异，但不得推断其他 NPC 看见、听见或决定了什么。
 
-## 已确认未实现的 Decision v2 模块边界
+## Decision v2 模块边界
 
-Milestone 12 已确认独立 `/v2/decision`，但当前 Python Service 尚未实现该 Route、Schema 或 Planner。实现时将增加 v2 Schema/Route/Service/Planner 的平行路径；`/v1/decision`、其固定单 Tool 语义和现有测试保持不变。
+独立 `/v2/decision` 已实现为与 v1 平行的 Schema/Route/Service/Planner 路径；`/v1/decision`、其固定单 Tool 语义和测试保持不变。
 
 - v2 Context Builder 只将 UE 提供的个人 `social_situation` 和 `available_capabilities` 作为不可信输入组装为供应商无关上下文；不得查询 UE、扩充能力、补充目标或读取 Dialogue Memory。
 - v2 Planner 可以开放地形成目标、公开理由、Speech、表现建议和最多四个步骤；Service 必须复核每个 `capability_id`、目标、步骤数、字符串/数值边界和关联字段。

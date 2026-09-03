@@ -5,8 +5,8 @@
 - Transport：HTTP
 - Content-Type：`application/json`
 - Encoding：UTF-8
-- API Version：`v1`（当前运行）与 `v2`（已确认、尚未实现的 Decision 计划契约）
-- Endpoints：`POST /v1/dialogue`、`POST /v1/decision`、`POST /v2/decision`（尚未实现）
+- API Version：`v1`（兼容运行）与 `v2`（当前运行的 Decision 计划契约）
+- Endpoints：`POST /v1/dialogue`、`POST /v1/decision`、`POST /v2/decision`
 - 字段使用 `snake_case`。
 - 客户端生成 `request_id`，服务端在响应中原样返回，便于日志关联。
 - v1 允许新增可选字段、`provider` 允许值和错误码；不得改变已有字段的类型或核心语义。
@@ -417,7 +417,7 @@ v2 顶层继续包含 `request_id`、`npc_id`、`state_version`、`ttl_ms`、`tr
 - UE 在接受任一步骤前检查响应关联、当前状态版本、本地 TTL、能力实例、目标、Capability、位置/可达性、当前状态、冷却、速率、步骤幂等和计划总预算。
 - `report`、`set_interaction_stance` 与 `play_expression` 都必须由 UE 注册具体 Handler；没有 Handler、目标失效或校验失败时，UE 记录稳定原因且不改变世界。
 - `play_expression` 只能选择已注册的表现资产或参数映射，不能加载路径、生成资产或改变战斗结果。
-- `/v1/decision` 不修改、不删除，也不与 `/v2/decision` 混用字段；部署可独立支持 v1 与 v2。v2 尚未实现时应返回脱敏的 `503 provider_unavailable`，而不是把请求降级为 v1。
+- `/v1/decision` 不修改、不删除，也不与 `/v2/decision` 混用字段；部署可独立支持 v1 与 v2。v2 的 Provider 不可用时返回脱敏错误，不能把请求降级为 v1。
 - v2 的未知顶层可选字段按 v1 兼容规则忽略；未知 `capability_id`、重复步骤、非法目标、越界表现参数或超出计划预算属于 `502 planner_invalid_response`。
 
 ## 错误响应
