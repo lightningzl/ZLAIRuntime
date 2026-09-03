@@ -3,6 +3,7 @@
 import math
 from uuid import uuid4
 
+from pydantic import ValidationError
 from app.planners.base import DecisionPlannerInvalidResponse
 from app.planners.decision_v2 import DecisionV2Planner, DecisionV2PlannerResult
 from app.schemas.decision_v2 import DecisionPlan, DecisionV2Request, DecisionV2Response, DecisionV2Speech, PlanExpression, PlanStep
@@ -16,7 +17,12 @@ class DecisionV2Service:
     def build_response(self, request: DecisionV2Request) -> DecisionV2Response:
         result = self._planner.plan(build_decision_v2_generation_context(request))
         self._validate(request, result)
-        expression = PlanExpression.model_validate(result.expression) if result.expression else None
+        try:
+            expression = PlanExpression.model_validate(result.expression) if result.expression else None
+        except ValidationError:
+            # Presentation is advisory. A malformed expression must not make a
+            # otherwise valid social plan claim a world action.
+            expression = None
         return DecisionV2Response(
             request_id=request.request_id, npc_id=request.npc_id, state_version=request.state_version,
             decision_id=str(uuid4()),

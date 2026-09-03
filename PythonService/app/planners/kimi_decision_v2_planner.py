@@ -17,9 +17,9 @@ class _Payload(BaseModel):
     objective: str = Field(min_length=1, max_length=256)
     public_reason: str | None = Field(default=None, min_length=1, max_length=256)
     attention_target_id: str | None = Field(default=None, min_length=1, max_length=128)
-    expression: dict[str, object] | None = None
+    expression: object | None = None
     steps: list[dict[str, str | None]] = Field(default_factory=list, max_length=4)
-    speech: dict[str, str | None] | None = None
+    speech: dict[str, str | None] | str | None = None
     confidence: float = Field(ge=0, le=1)
 
 
@@ -44,4 +44,10 @@ class KimiDecisionV2Planner:
         except (AttributeError, IndexError, TypeError, KeyError, json.JSONDecodeError, ValidationError):
             raise DecisionPlannerInvalidResponse("kimi", "Kimi Planner returned an invalid social plan") from None
         speech = payload.speech or {}
-        return DecisionV2PlannerResult(payload.objective.strip(), payload.public_reason, payload.attention_target_id, payload.expression, steps, speech.get("text"), speech.get("emotion"), payload.confidence, "kimi")
+        speech_text = speech if isinstance(speech, str) else speech.get("text")
+        return DecisionV2PlannerResult(
+            payload.objective.strip(), payload.public_reason, payload.attention_target_id,
+            payload.expression if isinstance(payload.expression, dict) else None, steps,
+            speech_text.strip() if isinstance(speech_text, str) else None,
+            speech.get("emotion") if isinstance(speech, dict) else None, payload.confidence, "kimi"
+        )
