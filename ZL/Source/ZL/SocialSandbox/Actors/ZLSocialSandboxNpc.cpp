@@ -4,15 +4,14 @@
 #include "SocialSandbox/Domain/ZLSocialSandboxMotion.h"
 #include "SocialSandbox/UI/ZLSocialNameWidget.h"
 
-#include "Components/ArrowComponent.h"
 #include "Components/CapsuleComponent.h"
-#include "Components/StaticMeshComponent.h"
+#include "Components/SkeletalMeshComponent.h"
 #include "Components/WidgetComponent.h"
+#include "Animation/AnimInstance.h"
 #include "Camera/PlayerCameraManager.h"
 #include "Kismet/GameplayStatics.h"
 #include "Materials/MaterialInstanceDynamic.h"
 #include "TimerManager.h"
-#include "UObject/ConstructorHelpers.h"
 
 namespace
 {
@@ -38,22 +37,9 @@ AZLSocialSandboxNpc::AZLSocialSandboxNpc()
 	Capsule->SetCollisionProfileName(TEXT("BlockAllDynamic"));
 	SetRootComponent(Capsule);
 
-	BodyMesh = CreateDefaultSubobject<UStaticMeshComponent>(TEXT("BodyMesh"));
-	BodyMesh->SetupAttachment(Capsule);
-	BodyMesh->SetCollisionEnabled(ECollisionEnabled::NoCollision);
-	BodyMesh->SetRelativeScale3D(FVector(0.65f, 0.65f, 1.9f));
-	static ConstructorHelpers::FObjectFinder<UStaticMesh> CylinderMesh(TEXT("/Engine/BasicShapes/Cylinder.Cylinder"));
-	if (CylinderMesh.Succeeded())
-	{
-		BodyMesh->SetStaticMesh(CylinderMesh.Object);
-	}
-
-	FacingArrow = CreateDefaultSubobject<UArrowComponent>(TEXT("FacingArrow"));
-	FacingArrow->SetupAttachment(Capsule);
-	FacingArrow->SetRelativeLocation(FVector(72.0f, 0.0f, 25.0f));
-	FacingArrow->ArrowColor = FColor(255, 185, 45);
-	FacingArrow->ArrowSize = 2.2f;
-	FacingArrow->SetHiddenInGame(false);
+	CharacterMesh = CreateDefaultSubobject<USkeletalMeshComponent>(TEXT("CharacterMesh"));
+	CharacterMesh->SetupAttachment(Capsule);
+	CharacterMesh->SetCollisionEnabled(ECollisionEnabled::NoCollision);
 
 	NameWidget = CreateDefaultSubobject<UWidgetComponent>(TEXT("NameWidget"));
 	NameWidget->SetupAttachment(Capsule);
@@ -95,20 +81,12 @@ void AZLSocialSandboxNpc::InitializeSandboxNpc(const FZLSocialSandboxNpcProfile&
 	bIncapacitated = false;
 	SetActorTransform(SandboxStartTransform, false, nullptr, ETeleportType::TeleportPhysics);
 	RefreshNameLabel();
-	if (UMaterialInstanceDynamic* Material = BodyMesh->CreateDynamicMaterialInstance(0))
+	if (CharacterMesh->GetNumMaterials() > 0)
 	{
-		Material->SetVectorParameterValue(TEXT("Color"), Profile.BodyColor);
-	}
-	const TCHAR* MeshPaths[] = {
-		TEXT("/Engine/BasicShapes/Cube.Cube"),
-		TEXT("/Engine/BasicShapes/Cone.Cone"),
-		TEXT("/Engine/BasicShapes/Sphere.Sphere"),
-		TEXT("/Engine/BasicShapes/Cylinder.Cylinder")
-	};
-	if (UStaticMesh* Shape = LoadObject<UStaticMesh>(nullptr, MeshPaths[GetTypeHash(StableId) % UE_ARRAY_COUNT(MeshPaths)]))
-	{
-		BodyMesh->SetStaticMesh(Shape);
-		BodyMesh->SetRelativeScale3D(FVector(0.7f, 0.7f, 1.8f));
+		if (UMaterialInstanceDynamic* Material = CharacterMesh->CreateDynamicMaterialInstance(0))
+		{
+			Material->SetVectorParameterValue(TEXT("Color"), Profile.BodyColor);
+		}
 	}
 }
 
@@ -400,6 +378,34 @@ void AZLSocialSandboxNpc::ShowDamageResult(const FZLSocialSandboxDamageResult& R
 			*State)),
 		FColor(255, 90, 80),
 		5.0f);
+}
+
+void AZLSocialSandboxNpc::PlaySandboxAttackPresentation_Implementation(AActor*)
+{
+	if (AttackMontage != nullptr && CharacterMesh != nullptr)
+	{
+		if (UAnimInstance* AnimInstance = CharacterMesh->GetAnimInstance())
+		{
+			if (AnimInstance->Montage_Play(AttackMontage, MontagePlayRate) > 0.0f && AttackMontageSection != NAME_None)
+			{
+				AnimInstance->Montage_JumpToSection(AttackMontageSection, AttackMontage);
+			}
+		}
+	}
+}
+
+void AZLSocialSandboxNpc::PlaySandboxHitPresentation_Implementation(AActor*, float, bool)
+{
+	if (HitMontage != nullptr && CharacterMesh != nullptr)
+	{
+		if (UAnimInstance* AnimInstance = CharacterMesh->GetAnimInstance())
+		{
+			if (AnimInstance->Montage_Play(HitMontage, MontagePlayRate) > 0.0f && HitMontageSection != NAME_None)
+			{
+				AnimInstance->Montage_JumpToSection(HitMontageSection, HitMontage);
+			}
+		}
+	}
 }
 
 void AZLSocialSandboxNpc::RefreshNameLabel()

@@ -27,9 +27,16 @@
 AZLSocialSandboxGameMode::AZLSocialSandboxGameMode()
 {
 	PrimaryActorTick.bCanEverTick = true;
-	DefaultPawnClass = AZLSocialSandboxPawn::StaticClass();
+	SandboxPlayerClass = AZLSocialSandboxPawn::StaticClass();
+	SandboxNpcClass = AZLSocialSandboxNpc::StaticClass();
+	DefaultPawnClass = SandboxPlayerClass;
 	PlayerControllerClass = AZLSocialSandboxPlayerController::StaticClass();
 	ToolRegistry.RegisterMilestone8Defaults();
+}
+
+UClass* AZLSocialSandboxGameMode::GetDefaultPawnClassForController_Implementation(AController* InController)
+{
+	return SandboxPlayerClass != nullptr ? SandboxPlayerClass.Get() : Super::GetDefaultPawnClassForController_Implementation(InController);
 }
 
 void AZLSocialSandboxGameMode::BeginPlay()
@@ -1623,7 +1630,7 @@ void AZLSocialSandboxGameMode::SpawnNpc(const FName StableId, const FVector& Loc
 {
 	FActorSpawnParameters Params;
 	Params.Name = StableId;
-	AZLSocialSandboxNpc* Npc = GetWorld()->SpawnActor<AZLSocialSandboxNpc>(AZLSocialSandboxNpc::StaticClass(), Location, Rotation, Params);
+	AZLSocialSandboxNpc* Npc = GetWorld()->SpawnActor<AZLSocialSandboxNpc>(SandboxNpcClass != nullptr ? SandboxNpcClass.Get() : AZLSocialSandboxNpc::StaticClass(), Location, Rotation, Params);
 	if (Npc != nullptr)
 	{
 	Npc->InitializeSandboxNpc(FZLSocialSandboxNpcProfile::Create(StableId), FTransform(Rotation, Location));
@@ -1639,7 +1646,7 @@ void AZLSocialSandboxGameMode::SpawnNpc(const FZLSocialSandboxNpcPreset& Preset)
 {
 	FActorSpawnParameters Params;
 	Params.Name = Preset.Profile.StableId;
-	if (AZLSocialSandboxNpc* Npc = GetWorld()->SpawnActor<AZLSocialSandboxNpc>(AZLSocialSandboxNpc::StaticClass(), Preset.SpawnTransform))
+	if (AZLSocialSandboxNpc* Npc = GetWorld()->SpawnActor<AZLSocialSandboxNpc>(SandboxNpcClass != nullptr ? SandboxNpcClass.Get() : AZLSocialSandboxNpc::StaticClass(), Preset.SpawnTransform))
 	{
 		Npc->InitializeSandboxNpc(Preset.Profile, Preset.SpawnTransform, Preset.InitialHealth);
 		SandboxNpcs.Add(Npc);
