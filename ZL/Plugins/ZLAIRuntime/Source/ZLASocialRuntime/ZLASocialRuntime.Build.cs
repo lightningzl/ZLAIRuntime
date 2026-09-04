@@ -13,7 +13,8 @@ public class ZLASocialRuntime : ModuleRules
 			"Engine",
 			"GameplayTags",
 			"DataRegistry",
-			"DeveloperSettings"
+			"DeveloperSettings",
+			"Json"
 		});
 	}
 }

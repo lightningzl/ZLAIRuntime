@@ -1,5 +1,6 @@
 #include "Misc/AutomationTest.h"
 #include "ZLSocialPersona.h"
+#include "ZLSocialPersonaJson.h"
 
 #if WITH_DEV_AUTOMATION_TESTS
 
@@ -26,6 +27,14 @@ bool FZLSocialPersonaValidationTest::RunTest(const FString&)
 	Persona.BackgroundSummary = TEXT("A cautious trader who protects the market stall.");
 	Persona.InitialRelationship.Trust = 1.1f;
 	TestFalse(TEXT("Out-of-range initial relationship is rejected"), Persona.IsValid());
+
+	Persona.InitialRelationship.Trust = 0.0f;
+	FString Json;
+	TestTrue(TEXT("A valid Persona serializes to JSON"), FZLSocialPersonaJsonCodec::Serialize(Persona, Json, Error));
+	FZLSocialPersonaData RoundTrip;
+	TestTrue(TEXT("Serialized Persona parses back"), FZLSocialPersonaJsonCodec::Deserialize(Json, RoundTrip, Error));
+	TestEqual(TEXT("Round trip preserves stable ID"), RoundTrip.StableId, Persona.StableId);
+	TestFalse(TEXT("Unknown JSON fields are rejected"), FZLSocialPersonaJsonCodec::Deserialize(Json.LeftChop(1) + TEXT(",\"unexpected\":true}"), RoundTrip, Error));
 
 	return true;
 }

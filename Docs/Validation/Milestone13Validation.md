@@ -5,6 +5,6 @@
 | 范围 | 实际结果 |
 | --- | --- |
 | UE 编译 | `ZLEditor Win64 Development` 在 Persona Runtime 类型、DataRegistry 插件依赖和 Setting 改动后编译成功。 |
-| Persona 边界自动化 | NullRHI 运行 `ZL.Social.Persona.Validation`，发现 1 项并以 `Success` 完成。 |
+| Persona 与 JSON 边界自动化 | NullRHI 运行 `ZL.Social.Persona.Validation`，发现 1 项并以 `Success` 完成；覆盖字段边界、JSON 往返和未知字段拒绝。 |
 
 `M13-A01`、`M13-A02` 仍需单条 JSON、DataRegistry 查询与编辑器工作流完成后再整体验收；本记录不将未实现部分标记为通过。

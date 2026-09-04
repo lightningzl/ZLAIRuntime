@@ -3,6 +3,7 @@
 #include "CoreMinimal.h"
 #include "Engine/DataAsset.h"
 #include "Engine/DataTable.h"
+#include "UObject/SoftObjectPath.h"
 
 #include "ZLSocialPersona.generated.h"
 
@@ -111,6 +112,21 @@ class ZLASOCIALRUNTIME_API UZLSocialPersonaAsset final : public UPrimaryDataAsse
 public:
 	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "Persona")
 	FZLSocialPersonaData Persona;
+
+	UPROPERTY(EditAnywhere, Category = "JSON")
+	FFilePath ImportFile;
+
+	UPROPERTY(EditAnywhere, Category = "JSON")
+	FFilePath ExportFile;
+
+	UPROPERTY(VisibleAnywhere, Transient, Category = "JSON")
+	FString LastJsonOperationResult;
+
+	UFUNCTION(CallInEditor, Category = "JSON")
+	void ImportPersonaJson();
+
+	UFUNCTION(CallInEditor, Category = "JSON")
+	void ExportPersonaJson();
 
 	bool IsValid(FString* OutError = nullptr) const { return Persona.IsValid(OutError); }
 };
