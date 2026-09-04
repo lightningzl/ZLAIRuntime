@@ -22,6 +22,9 @@ public:
 	UPROPERTY(EditAnywhere, Category = "Spawner", meta = (EditCondition = "PersonaAsset != nullptr"))
 	TObjectPtr<UZLSocialPersonaAsset> PersonaAsset;
 
+	UPROPERTY(EditAnywhere, Category = "Spawner", meta = (EditCondition = "PersonaAsset == nullptr"))
+	FName PersonaId;
+
 	UPROPERTY(EditAnywhere, Category = "Spawner")
 	FLinearColor BodyColor = FLinearColor::White;
 

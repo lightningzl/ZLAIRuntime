@@ -3,6 +3,7 @@
 #include "SocialSandbox/Actors/ZLSocialSandboxNpc.h"
 #include "SocialSandbox/Domain/ZLSocialSandboxPersonaAdapter.h"
 #include "ZLSocialPersona.h"
+#include "ZLSocialPersonaSettings.h"
 
 AZLSocialSandboxNpcSpawner::AZLSocialSandboxNpcSpawner()
 {
@@ -22,11 +23,15 @@ bool AZLSocialSandboxNpcSpawner::SpawnNpc()
 {
 	FString Error;
 	FZLSocialSandboxNpcProfile Profile;
-	if (!GetWorld() || !NpcClass || !PersonaAsset || !FZLSocialSandboxPersonaAdapter::ToNpcProfile(PersonaAsset->Persona, BodyColor, Profile, Error))
+	FZLSocialPersonaData Persona;
+	if (!GetWorld() || !NpcClass || (PersonaAsset == nullptr && PersonaId.IsNone()) || (PersonaAsset != nullptr && !PersonaId.IsNone()))
 	{
-		LastSpawnResult = Error.IsEmpty() ? TEXT("Spawner requires a world, NPC class, and valid Persona Asset") : Error;
+		LastSpawnResult = TEXT("Spawner requires exactly one valid Persona Asset or Persona ID and an NPC class");
 		return false;
 	}
+	if (PersonaAsset) { Persona = PersonaAsset->Persona; }
+	else if (!GetDefault<UZLSocialPersonaSettings>()->ResolveConfiguredPersona(PersonaId, Persona, Error)) { LastSpawnResult = Error; return false; }
+	if (!FZLSocialSandboxPersonaAdapter::ToNpcProfile(Persona, BodyColor, Profile, Error)) { LastSpawnResult = Error; return false; }
 
 	AZLSocialSandboxNpc* Npc = GetWorld()->SpawnActorDeferred<AZLSocialSandboxNpc>(NpcClass, GetActorTransform(), this, nullptr, ESpawnActorCollisionHandlingMethod::AdjustIfPossibleButAlwaysSpawn);
 	if (!Npc)
