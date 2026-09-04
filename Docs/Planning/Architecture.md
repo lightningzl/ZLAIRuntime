@@ -68,6 +68,9 @@ Python AI Service
 - 通过原生 Gameplay Tags 定义 Event、Instant State 和 Intent 的稳定扩展点。
 - 只依赖 UE Runtime 基础模块与 `GameplayTags`，不依赖 `ZL`、`ZLAIRuntime`、HTTP、Python、Provider、Widget 或具体 NPC Actor。
 - `ZL` 可以依赖并适配其公开接口；`ZLASocialRuntime` 不反向依赖游戏模块。
+- Persona 内容模型位于 `ZLASocialRuntime`：`UZLSocialPersonaAsset`、`FZLSocialPersonaRow` 与共享 `FZLSocialPersonaData` 使用同一稳定 ID、身份、背景、人物、表达、目标和初始社会状态语义；它们不保存运行时 Observation、Prompt、Provider 响应或世界事实。`FZLSocialPersonaJsonCodec` 只读写严格 Schema 的公开静态字段，Asset 仅在候选完整校验后才应用导入。`UZLSocialPersonaSettings` 仅声明允许的 DataRegistry 资产，后续查询和生成不得扫描任意项目资产。
+- `ZL` 的 `FZLSocialSandboxPersonaAdapter` 显式把已校验 Persona 转换为现有 Sandbox NPC Profile；`AZLSocialSandboxNpcSpawner` 仅在 NPC 类、Asset Persona 和转换结果均有效时以 Deferred Spawn 初始化角色，失败只保留可见原因且不生成半初始化 Actor。
+- `ZLASocialRuntimeEditor` 只提供编辑器 DataTable Persona 批量导入/导出工具。该工具在写入前完整解析批量 JSON，并用单一 UE 撤销事务按稳定 ID 覆盖或新增 `FZLSocialPersonaRow`；它不写入运行中 NPC。
 - Agent 仅在注册、注销或跨 Cell 移动时更新二维网格；Event Router 只枚举半径覆盖的 Cell，再做精确二维距离过滤。
 - Event 包含 Root/Parent、Depth、Budget、Causation、Confidence 和 Social 来源基础字段；根事件由 Router 初始化并受深度、预算和生命周期硬上限约束。
 - Router 为 Punch、Gunshot、Help 提供受控默认参数，拒绝非法/过期事件，并按 `(root_event_id, agent_id)` 确定性去重。

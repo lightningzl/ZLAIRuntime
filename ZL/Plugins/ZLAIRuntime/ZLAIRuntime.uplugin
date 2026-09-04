@@ -10,6 +10,12 @@
 	"IsBetaVersion": true,
 	"Installed": false,
 	"EnabledByDefault": true,
+	"Plugins": [
+		{
+			"Name": "DataRegistry",
+			"Enabled": true
+		}
+	],
 	"Modules": [
 		{
 			"Name": "ZLAIRuntime",
@@ -19,6 +25,11 @@
 		{
 			"Name": "ZLASocialRuntime",
 			"Type": "Runtime",
+			"LoadingPhase": "Default"
+		},
+		{
+			"Name": "ZLASocialRuntimeEditor",
+			"Type": "Editor",
 			"LoadingPhase": "Default"
 		}
 	]
