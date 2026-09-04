@@ -179,6 +179,72 @@ bool FZLSocialPersonaJsonCodec::Deserialize(const FString& Json, FZLSocialPerson
 	return true;
 }
 
+bool FZLSocialPersonaJsonCodec::SerializeBatch(const TArray<FZLSocialPersonaData>& Personas, FString& OutJson, FString& OutError)
+{
+	TArray<TSharedPtr<FJsonValue>> JsonPersonas;
+	TSet<FName> StableIds;
+	for (const FZLSocialPersonaData& Persona : Personas)
+	{
+		FString PersonaJson;
+		if (!Serialize(Persona, PersonaJson, OutError) || StableIds.Contains(Persona.StableId))
+		{
+			return Fail(OutError, StableIds.Contains(Persona.StableId) ? TEXT("batch contains a duplicate stable_id") : *OutError);
+		}
+		StableIds.Add(Persona.StableId);
+		TSharedPtr<FJsonObject> PersonaObject;
+		if (!FJsonSerializer::Deserialize(TJsonReaderFactory<>::Create(PersonaJson), PersonaObject))
+		{
+			return Fail(OutError, TEXT("failed to create Persona batch JSON"));
+		}
+		JsonPersonas.Add(MakeShared<FJsonValueObject>(PersonaObject));
+	}
+	TSharedRef<FJsonObject> Root = MakeShared<FJsonObject>();
+	Root->SetNumberField(TEXT("schema_version"), PersonaSchemaVersion);
+	Root->SetArrayField(TEXT("personas"), JsonPersonas);
+	return FJsonSerializer::Serialize(Root, TJsonWriterFactory<>::Create(&OutJson)) || Fail(OutError, TEXT("failed to serialize Persona batch JSON"));
+}
+
+bool FZLSocialPersonaJsonCodec::DeserializeBatch(const FString& Json, TArray<FZLSocialPersonaData>& OutPersonas, FString& OutError)
+{
+	TSharedPtr<FJsonObject> Root;
+	if (!FJsonSerializer::Deserialize(TJsonReaderFactory<>::Create(Json), Root) || !Root.IsValid())
+	{
+		return Fail(OutError, TEXT("batch JSON is not valid"));
+	}
+	static const TSet<FString> Fields = {TEXT("schema_version"), TEXT("personas")};
+	int32 SchemaVersion = 0;
+	const TArray<TSharedPtr<FJsonValue>>* JsonPersonas = nullptr;
+	if (!HasOnlyFields(Root, Fields, OutError) || !Root->TryGetNumberField(TEXT("schema_version"), SchemaVersion) || SchemaVersion != PersonaSchemaVersion || !Root->TryGetArrayField(TEXT("personas"), JsonPersonas) || !JsonPersonas)
+	{
+		return Fail(OutError, TEXT("batch JSON schema is invalid"));
+	}
+	TArray<FZLSocialPersonaData> Candidates;
+	TSet<FName> StableIds;
+	for (const TSharedPtr<FJsonValue>& Value : *JsonPersonas)
+	{
+		const TSharedPtr<FJsonObject>* Object = nullptr;
+		if (!Value.IsValid() || !Value->TryGetObject(Object) || !Object || !Object->IsValid())
+		{
+			return Fail(OutError, TEXT("batch Persona item is invalid"));
+		}
+		FString ItemJson;
+		if (!FJsonSerializer::Serialize(Object->ToSharedRef(), TJsonWriterFactory<>::Create(&ItemJson)))
+		{
+			return Fail(OutError, TEXT("failed to read batch Persona item"));
+		}
+		FZLSocialPersonaData Candidate;
+		if (!Deserialize(ItemJson, Candidate, OutError) || StableIds.Contains(Candidate.StableId))
+		{
+			return Fail(OutError, StableIds.Contains(Candidate.StableId) ? TEXT("batch contains a duplicate stable_id") : *OutError);
+		}
+		StableIds.Add(Candidate.StableId);
+		Candidates.Add(MoveTemp(Candidate));
+	}
+	OutPersonas = MoveTemp(Candidates);
+	OutError.Reset();
+	return true;
+}
+
 void UZLSocialPersonaAsset::ImportPersonaJson()
 {
 	FString Json;

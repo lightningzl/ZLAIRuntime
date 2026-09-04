@@ -35,6 +35,12 @@ bool FZLSocialPersonaValidationTest::RunTest(const FString&)
 	TestTrue(TEXT("Serialized Persona parses back"), FZLSocialPersonaJsonCodec::Deserialize(Json, RoundTrip, Error));
 	TestEqual(TEXT("Round trip preserves stable ID"), RoundTrip.StableId, Persona.StableId);
 	TestFalse(TEXT("Unknown JSON fields are rejected"), FZLSocialPersonaJsonCodec::Deserialize(Json.LeftChop(1) + TEXT(",\"unexpected\":true}"), RoundTrip, Error));
+	FString BatchJson;
+	TestTrue(TEXT("A valid batch serializes"), FZLSocialPersonaJsonCodec::SerializeBatch({Persona}, BatchJson, Error));
+	TArray<FZLSocialPersonaData> Batch;
+	TestTrue(TEXT("A valid batch parses"), FZLSocialPersonaJsonCodec::DeserializeBatch(BatchJson, Batch, Error));
+	TestEqual(TEXT("Batch preserves item count"), Batch.Num(), 1);
+	TestFalse(TEXT("Batch rejects duplicate stable IDs"), FZLSocialPersonaJsonCodec::SerializeBatch({Persona, Persona}, BatchJson, Error));
 
 	return true;
 }
