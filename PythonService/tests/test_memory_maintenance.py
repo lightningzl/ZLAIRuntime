@@ -164,4 +164,4 @@ def test_maintenance_command_is_not_exposed_as_http_api() -> None:
         create_app(provider=StubDialogueProvider()).openapi()["paths"].keys()
     )
 
-    assert route_paths == {"/v1/dialogue", "/v1/decision"}
+    assert route_paths == {"/v1/dialogue", "/v1/decision", "/v2/decision"}

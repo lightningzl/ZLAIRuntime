@@ -76,6 +76,7 @@ void AZLSocialSandboxNpc::InitializeSandboxNpc(const FZLSocialSandboxNpcProfile&
 	Health = MaxHealth;
 	bDefending = false;
 	bIncapacitated = false;
+	LastDamageAtSeconds = -1.0;
 	SetActorTransform(SandboxStartTransform, false, nullptr, ETeleportType::TeleportPhysics);
 	RefreshNameLabel();
 	if (GetMesh()->GetNumMaterials() > 0)
@@ -97,6 +98,7 @@ void AZLSocialSandboxNpc::ResetToSandboxStart()
 	Health = MaxHealth;
 	bDefending = false;
 	bIncapacitated = false;
+	LastDamageAtSeconds = -1.0;
 	GetCapsuleComponent()->SetCollisionEnabled(ECollisionEnabled::QueryAndPhysics);
 	GetCapsuleComponent()->SetCollisionProfileName(TEXT("BlockAllDynamic"));
 	GetCharacterMovement()->SetMovementMode(MOVE_Walking);
@@ -123,11 +125,17 @@ bool AZLSocialSandboxNpc::ApplySandboxDamage(
 		OutResult.ReasonCode = TEXT("TargetIncapacitated");
 		return false;
 	}
+	if (LastDamageAtSeconds >= 0.0 && NowSeconds - LastDamageAtSeconds < 0.35)
+	{
+		OutResult.ReasonCode = TEXT("DamageInvulnerable");
+		return false;
+	}
 	const bool bWasDefending = bDefending;
 	const float AppliedDamage = bWasDefending
 		? FMath::Max(1.0f, FMath::CeilToFloat(RawDamage * 0.35f))
 		: RawDamage;
 	Health = FMath::Clamp(Health - AppliedDamage, 0.0f, MaxHealth);
+	LastDamageAtSeconds = NowSeconds;
 	bIncapacitated = Health <= 0.0f;
 	if (bIncapacitated)
 	{

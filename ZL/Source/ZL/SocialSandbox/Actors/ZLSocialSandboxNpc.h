@@ -102,6 +102,7 @@ private:
 	float Health = 100.0f;
 	bool bDefending = false;
 	bool bIncapacitated = false;
+	double LastDamageAtSeconds = -1.0;
 	FTimerHandle BubbleTimer;
 
 	void ShowBubble(const FText& Text, const FColor& Color, float DurationSeconds = 4.0f);
