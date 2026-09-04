@@ -11,7 +11,9 @@ public class ZLASocialRuntime : ModuleRules
 			"Core",
 			"CoreUObject",
 			"Engine",
-			"GameplayTags"
+			"GameplayTags",
+			"DataRegistry",
+			"DeveloperSettings"
 		});
 	}
 }
