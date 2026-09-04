@@ -18,4 +18,5 @@ public:
 	TArray<TSoftObjectPtr<UDataRegistry>> PersonaRegistries;
 
 	bool IsConfiguredRegistry(const UDataRegistry* Registry) const;
+	void GetConfiguredPersonaIds(TArray<FName>& OutPersonaIds) const;
 };

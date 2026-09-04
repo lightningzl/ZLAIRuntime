@@ -7,8 +7,8 @@
 | 最后更新 | 2026-09-04 |
 | 当前里程碑 | Milestone 13：NPC 内容配置、批量管理与场景投放 |
 | 里程碑状态 | `规划中` |
-| 当前活动任务 | `M13-T02` Asset 单条 JSON 工作流 |
-| 下一候选任务 | `M13-T03` DataTable/DataRegistry 批量工作流 |
+| 当前活动任务 | `M13-T03` DataTable/DataRegistry 批量工作流 |
+| 下一候选任务 | `M13-T04` NPC Spawner 与 Persona 解析 |
 | 已知阻塞 | 无；DataRegistry、编辑器导入和 Spawner 尚未实现 |
 | 最近验收 | Milestone 12：社会后果与角色行为打磨已完成 |
 

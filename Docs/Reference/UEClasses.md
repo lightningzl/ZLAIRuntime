@@ -45,7 +45,7 @@
 | `FZLSocialPersonaData` / `FZLSocialPersonaRow` | 共享可编辑 Persona 字段与 DataTable 行语义，验证稳定 ID、身份、背景、人物、表达、目标、初始关系和即时状态的长度、容量与数值边界 |
 | `UZLSocialPersonaAsset` | 保存一个经过 `FZLSocialPersonaData` 校验的可复用静态 NPC Persona 起点 |
 | `FZLSocialPersonaJsonCodec` | 严格校验单条 Persona JSON Schema、白名单字段和所有字段边界；无效导入在 Asset 写入前失败，导出只包含公开静态 Persona 字段 |
-| `UZLSocialPersonaSettings` | 仅在 Config 中声明允许查询的 Persona DataRegistry；不扫描项目资产或保存运行时社会事实 |
+| `UZLSocialPersonaSettings` | 仅在 Config 中声明允许查询的 Persona DataRegistry，并按 Persona Row 类型列出稳定 ID；不扫描项目资产或保存运行时社会事实 |
 | `ZLSocialTags` | 定义 Event、Instant State 与 Intent 原生 Gameplay Tags |
 | `FZLSocialSpatialIndex` | 维护 Agent 到二维 Cell 的索引，并返回有界半径查询与候选统计 |
 | `FZLSocialEventRouter` | 创建受控根事件、校验 Event Chain 硬边界、执行空间查询并按 Root/Agent 去重 |
