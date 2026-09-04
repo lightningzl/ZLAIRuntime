@@ -180,6 +180,12 @@ Instant State 为 Fear、Anger、Curiosity、Alert，按秒或分钟衰减。Gam
 
 Long-Term State 包含 Trust、Reputation、Relationship 和 Faction Standing。关系使用稀疏边，不为 100+ NPC 建立完整 N×N 图。
 
+## Persona 配置与世界认知（目标）
+
+Persona 是静态内容配置，应包含稳定 ID、背景摘要、身份、性格、表达风格、目标、初始关系和即时状态。Persona Asset 与 DataTable/DataRegistry Row 使用同一字段语义；JSON 只是受校验的导入导出格式，Spawner 通过 Asset 或稳定 ID 将 Persona 应用到具体 NPC Actor。未来 World Context Asset 以插件 Setting 选择受控场景世界规则、势力背景与初始公开常识，但不替代个人知识。
+
+世界背景必须分层：场景级世界规则可以作为公共常识；动态世界事实仍由 UE 权威维护；NPC 的 `Knowledge/Belief` 只保存其亲自感知、可信报告或受限传播得到的信息。每条个人知识至少有来源、可信度、时间、时效和确认状态。LLM 请求只携带当前 NPC 的有界知识与立场，不能获得全局世界快照或其他 NPC 的私有信念。
+
 行为分数：
 
 ```text

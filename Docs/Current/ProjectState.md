@@ -1,29 +1,25 @@
 # Project State
 
-本文件只记录当前项目快照。范围、任务明细和长期路线分别以 [CurrentMilestone.md](./CurrentMilestone.md)、[TaskBoard.md](./TaskBoard.md) 和 [SocialSimulationPlan.md](../Planning/SocialSimulationPlan.md) 为准。
-
 ## 当前快照
 
 | 项目 | 当前值 |
 | --- | --- |
-| 最后更新 | 2026-09-03 |
-| 当前里程碑 | Milestone 12：社会后果与角色行为打磨 |
-| 里程碑状态 | `已完成` |
-| 当前活动任务 | 无 |
-| 下一候选任务 | 等待下一里程碑规划 |
-| 已知阻塞 | 无 |
-| 最近验收 | Milestone 11：`M11-A01` 至 `M11-A12` 已归档 |
+| 最后更新 | 2026-09-04 |
+| 当前里程碑 | Milestone 13：NPC 内容配置、批量管理与场景投放 |
+| 里程碑状态 | `规划中` |
+| 当前活动任务 | 无（等待启动实施） |
+| 下一候选任务 | `M13-T01` Persona 数据模型与插件 Setting |
+| 已知阻塞 | 无；DataRegistry、编辑器导入和 Spawner 尚未实现 |
+| 最近验收 | Milestone 12：社会后果与角色行为打磨已完成 |
 
 ## 当前能力基线
 
-- Milestone 1 至 11 已完成；M11 的配置驱动角色/NPC、角色输入、Notify 命中、NPC 击退与 ragdoll 范围已归档至 [Milestone11.md](../Milestones/Milestone11.md)。
-- 社会沙盒稳定生成 4 个个人视角隔离的 NPC，具备 Speech/Action 分离输入、定向视觉、分级听觉、气泡、Inspector、逐 NPC 调度及有界公开历史。
-- UE 现已为非 Guard NPC 维护容量 12 的个人社会事实、重复受击、道歉、交易尝试、实际执行动作与已确认报告；这些事实只进入该 NPC 的 Decision v2 Context。交易入口只返回 UE 权威互动立场，不创建经济系统。
-- `/v2/decision` 已由 Python Schema/Route/Service、Kimi/Stub Planner 与 UE Client/沙盒计划执行器实现；Kimi 只从请求的有限能力实例中选择计划步骤，UE 二次校验并只展示实际 Speech、立场和动作结果。`/v1/decision` 保持兼容。
+- Milestone 1 至 12 已完成；M12 的个人社会后果、Decision v2、最小交易立场和 Kimi/Stub/UE 回归见 [Milestone12.md](../Milestones/Milestone12.md)。
+- 当前 NPC 人物配置只存在于项目级 JSON 预设和 C++ 默认 Profile；尚无可复用 Persona Asset、DataRegistry、批量编辑器工作流或场景 Spawner。
+- 当前世界背景只能间接写入 NPC Profile 字段；尚未存在场景级世界规则配置、动态世界事实或逐 NPC 世界认知。
 
 ## 当前执行边界
 
-- `/v1/decision` 保持现状；`/v2/decision` 以开放高层计划、`social_situation` 与请求级有限能力实例承载角色判断。
-- UE 继续权威维护逐 NPC 感知、社会后果、关系、状态版本、调度和动作执行；Python 每次只返回一个 NPC 的现有结构化建议。
-- M12 的最小交易入口仅验证互动立场；不建设货币、库存、物品、结算或经济系统。
-- M12 已完成 Python 情境回归、真实 Kimi 抽样、UE Development 编译及 29 项 `ZL.Social` 无界面自动化；证据见 [Milestone12Validation.md](../Validation/Milestone12Validation.md)。
+- M13 先建设静态 NPC Persona 与场景投放管线，不实现动态世界认知；后者已规划为 M14。
+- M13 不修改 `/v1/decision` 或 `/v2/decision`。任何新协议字段必须先获得用户确认。
+- 当前已实现架构仍以 [Architecture.md](../Planning/Architecture.md) 为准；M13/M14 的目标设计不应写成已实现能力。

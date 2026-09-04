@@ -1,38 +1,32 @@
 # Task Board
 
-## 文档职责
-
-本文档维护当前 [Milestone 12](./CurrentMilestone.md) 的工作包、依赖、状态和完成条件。稳定验收标准只在 Current Milestone 定义；实际证据只写入实施后创建的 [Milestone12Validation.md](../Validation/Milestone12Validation.md)。
-
 ## 当前状态
 
-- 当前里程碑：Milestone 12——社会后果与角色行为打磨
-- 里程碑状态：`已完成`
-- 当前活动工作包：无
-- 下一工作包：等待下一里程碑规划
-- 协议状态：用户已确认新增独立 Decision v2；`/v1/decision` 保持不变，v2 的计划、能力和校验字段以 [Protocol.md](../Reference/Protocol.md) 为准。
+- 当前里程碑：Milestone 13——NPC 内容配置、批量管理与场景投放
+- 里程碑状态：`规划中`
+- 当前活动工作包：无（等待启动实施）
+- 下一工作包：`M13-T01` Persona 数据模型与插件 Setting
+- 协议状态：本里程碑不修改 UE/Python 协议；如需要新增 Context 字段，必须先取得用户确认。
 
 ## 工作包
 
 | ID | 工作包 | 主要成果 | 依赖 | 状态 | 完成条件 |
 | --- | --- | --- | --- | --- | --- |
-| `M12-T01` | 范围、v2 契约与体验探针 | 明确个人感知隔离、社会后果状态、最小交易边界、Decision v2、验收探针和无界执行约束 | Milestone 11 | `已完成` | `M12-A01` 至 `M12-A07` 及 v2 字段/校验可审查 |
-| `M12-T02` | Python v2 决策质量验证 | 使用受控个人社会处境快照实现/测试 v2 Schema、Context Builder、Kimi Planner 与 Stub；验证首次/重复受击、缓和、交易、目击和求助情境的计划差异 | `M12-T01` | `已完成` | Python 先满足 `M12-A01`、`M12-A05`、`M12-A07` 的 Planner 部分 |
-| `M12-T03` | UE 个人后果与 v2 Context | 攻击、威胁、缓和、报告与交易尝试形成按 NPC 隔离、有界且可检视的 UE 权威事实和 `social_situation` | `M12-T02` | `已完成` | 满足 `M12-A02`、`M12-A04` |
-| `M12-T04` | UE v2 计划执行器与表现适配 | UE 验证并执行有限 `available_capabilities`，回流步骤结果；表现建议仅映射已注册资源 | `M12-T03` | `已完成` | 满足 `M12-A01`、`M12-A03` |
-| `M12-T05` | 最小交易立场入口与场景反馈 | 玩家可尝试交易并看到既往行为造成的互动结果，不引入经济系统 | `M12-T04` | `已完成` | 满足 `M12-A03`、`M12-A06` |
-| `M12-T06` | 集成回归、场景验收与文档收口 | Python 情境抽样、UE 自动化、Kimi/离线地图验证、Inspector 证据和受影响 Reference/Architecture 文档完成 | `M12-T05` | `已完成` | 完成 `M12-A07` 的端到端部分 |
+| `M13-T01` | Persona 数据模型与插件 Setting | Persona Asset/Row、字段校验、DataRegistry Setting 与稳定 ID 查询边界 | M12 | `待开始` | 满足 `M13-A01`、`M13-A02` 的模型部分 |
+| `M13-T02` | Asset 单条 JSON 工作流 | Asset 编辑器导入/导出、Schema 校验和失败不写入语义 | `M13-T01` | `待开始` | 满足 `M13-A01` |
+| `M13-T03` | DataTable/DataRegistry 批量工作流 | JSON 批量覆盖/新增、导出、逐行报告、ID 下拉 | `M13-T01` | `待开始` | 满足 `M13-A02`、`M13-A03` |
+| `M13-T04` | NPC Spawner 与 Persona 解析 | 可放置 Spawner、类 + Asset/ID、固定位置与安全失败反馈 | `M13-T01` | `待开始` | 满足 `M13-A04` |
+| `M13-T05` | 沙盒接入与回归 | Persona 注入 Inspector/Decision Context、编辑器与运行时验证、M12 回归和文档收口 | `M13-T02`、`M13-T03`、`M13-T04` | `待开始` | 满足 `M13-A05`、`M13-A06` |
 
 ## 推荐实施顺序
 
 ```text
-M12-T01 -> M12-T02 (Python) -> M12-T03 (UE Context) -> M12-T04 (UE 执行/表现) -> M12-T05 -> M12-T06
+M13-T01 -> (M13-T02 + M13-T03 + M13-T04) -> M13-T05
 ```
 
 ## 工作规则
 
-- 社会后果事实只由 UE 根据个人已感知事件或已确认报告更新；模型回复、未执行 Tool、隐藏推理和其他 NPC 私有 Observation 不得写入。LLM 基于这些事实自主选择高层策略，不使用固定角色反应表。
-- 每个新事实必须有稳定来源、目标、时间、上限、去重、衰减和 Reset 语义；不得跨 NPC 串线或无界增长。
-- 商人交易入口只表达互动立场，不能添加货币、库存、物品、价格或经济结算事实。
-- `/v2/decision` 的字段、能力实例、计划预算和校验规则已获用户确认；后续实现必须逐字遵守 [Protocol.md](../Reference/Protocol.md)，v1 不得被破坏或混用。
-- Task 状态变化时同步 [ProjectState.md](./ProjectState.md)；实际命令、环境和结果只写入 Validation 文档。
+- Persona 是配置数据，不是运行时记忆；攻击、报告、交易、关系变化和个人社会事实仍由 UE 在运行时维护。
+- Asset 和 DataRegistry 共享同一字段语义；JSON 仅是导入导出格式，不成为第三套独立配置来源。
+- 只有插件 Setting 声明的 DataRegistry 可被查询；不得在详情面板或运行时任意扫描项目资产。
+- 实际验证写入 `Milestone13Validation.md`；TaskBoard 只维护工作状态。
