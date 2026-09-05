@@ -248,18 +248,29 @@ bool FZLSocialPersonaJsonCodec::DeserializeBatch(const FString& Json, TArray<FZL
 void UZLSocialPersonaAsset::ImportPersonaJson()
 {
 	FString Json;
+	if (ImportFile.FilePath.IsEmpty() || !FFileHelper::LoadFileToString(Json, *ImportFile.FilePath))
+	{
+		LastJsonOperationResult = TEXT("Persona JSON file could not be read");
+		return;
+	}
+	ImportPersonaJsonText(Json);
+}
+
+bool UZLSocialPersonaAsset::ImportPersonaJsonText(const FString& Json)
+{
 	FString Error;
 	FZLSocialPersonaData Candidate;
-	if (ImportFile.FilePath.IsEmpty() || !FFileHelper::LoadFileToString(Json, *ImportFile.FilePath) || !FZLSocialPersonaJsonCodec::Deserialize(Json, Candidate, Error))
+	if (!FZLSocialPersonaJsonCodec::Deserialize(Json, Candidate, Error))
 	{
 		LastJsonOperationResult = Error.IsEmpty() ? TEXT("Persona JSON import failed") : Error;
-		return;
+		return false;
 	}
 
 	Modify();
 	Persona = MoveTemp(Candidate);
 	MarkPackageDirty();
 	LastJsonOperationResult = TEXT("Persona JSON import succeeded");
+	return true;
 }
 
 void UZLSocialPersonaAsset::ExportPersonaJson()

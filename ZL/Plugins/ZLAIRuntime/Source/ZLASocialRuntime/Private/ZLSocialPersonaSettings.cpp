@@ -17,7 +17,8 @@ void UZLSocialPersonaSettings::GetConfiguredPersonaIds(TArray<FName>& OutPersona
 	OutPersonaIds.Reset();
 	for (const TSoftObjectPtr<UDataRegistry>& RegistryReference : PersonaRegistries)
 	{
-		const UDataRegistry* Registry = RegistryReference.Get();
+		// Editor option lists need the explicitly configured asset available even when it has not been opened yet.
+		const UDataRegistry* Registry = RegistryReference.LoadSynchronous();
 		if (!Registry || !Registry->DoesItemStructMatchFilter(FZLSocialPersonaRow::StaticStruct()->GetFName()))
 		{
 			continue;

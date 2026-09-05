@@ -19,10 +19,10 @@ public:
 	UPROPERTY(EditAnywhere, Category = "Spawner")
 	TSubclassOf<AZLSocialSandboxNpc> NpcClass;
 
-	UPROPERTY(EditAnywhere, Category = "Spawner", meta = (EditCondition = "PersonaAsset != nullptr"))
+	UPROPERTY(EditAnywhere, Category = "Spawner")
 	TObjectPtr<UZLSocialPersonaAsset> PersonaAsset;
 
-	UPROPERTY(EditAnywhere, Category = "Spawner", meta = (EditCondition = "PersonaAsset == nullptr"))
+	UPROPERTY(EditAnywhere, Category = "Spawner", meta = (EditCondition = "PersonaAsset == nullptr", GetOptions = "GetConfiguredPersonaIdOptions"))
 	FName PersonaId;
 
 	UPROPERTY(EditAnywhere, Category = "Spawner")
@@ -39,4 +39,12 @@ public:
 
 	UFUNCTION(CallInEditor, Category = "Spawner")
 	bool SpawnNpc();
+
+	/** Provides only the stable IDs exposed by configured Persona registries. */
+	UFUNCTION()
+	TArray<FString> GetConfiguredPersonaIdOptions() const;
+
+#if WITH_EDITOR
+	virtual void PostEditChangeProperty(FPropertyChangedEvent& PropertyChangedEvent) override;
+#endif
 };

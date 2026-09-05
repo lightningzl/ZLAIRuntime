@@ -16,6 +16,7 @@
 - 在编辑器中为 NPC 选择 Persona Asset 或 DataRegistry Persona ID；场景开始后看到正确 NPC 类、名称、出生位置和人物反馈。
 - 在 NPC 配置编辑界面导入单条 JSON 自动填充 Asset，或导出当前 Asset 为 JSON。
 - 使用批量 JSON 导入 Persona 行：同 ID 覆盖、不同 ID 新增；可导出整个已选 DataTable 的 Persona 行。
+- Spawner 的 Persona ID 从已配置 DataRegistry 的有效 ID 中可搜索选择；单条与批量 JSON 均可直接粘贴到编辑器导入。
 - 在场景中放置 NPC Spawner，通过 NPC 类 + Asset 或 NPC 类 + Persona ID 在固定位置生成 NPC。
 
 ## 屏幕可见成果

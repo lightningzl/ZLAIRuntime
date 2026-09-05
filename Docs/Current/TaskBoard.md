@@ -17,6 +17,7 @@
 | `M13-T03` | DataTable/DataRegistry 批量工作流 | JSON 批量覆盖/新增、导出、逐行报告、ID 下拉 | `M13-T01` | `已完成` | 满足 `M13-A02`、`M13-A03` |
 | `M13-T04` | NPC Spawner 与 Persona 解析 | 可放置 Spawner、类 + Asset/ID、固定位置与安全失败反馈 | `M13-T01` | `已完成` | 满足 `M13-A04` |
 | `M13-T05` | 沙盒接入与回归 | Persona 注入 Inspector/Decision Context、编辑器与运行时验证、M12 回归和文档收口 | `M13-T02`、`M13-T03`、`M13-T04` | `已完成` | 满足 `M13-A05`、`M13-A06` |
+| `M13-T06` | 编辑器内容制作入口 | Persona ID 的已配置 Registry 搜索选择、单条与批量 JSON 粘贴导入界面 | `M13-T02`、`M13-T03`、`M13-T04` | `已完成` | 满足 M13 既有可操作入口要求，且不扫描未配置 Registry |
 
 ## 推荐实施顺序
 
