@@ -12,6 +12,7 @@
 - 当前任务板：[Task Board](./Current/TaskBoard.md)
 - 当前状态：[Project State](./Current/ProjectState.md)
 - 通信协议：[Protocol](./Reference/Protocol.md)
+- Persona 配置指南：[Persona Configuration Guide](./Reference/PersonaConfigurationGuide.md)
 - 文档规则：[Documentation Rules](./Process/DocumentationRules.md)
 - 面试展示：[Interview Guide](./Interview/SocialSimulationInterviewGuide.md)
 
