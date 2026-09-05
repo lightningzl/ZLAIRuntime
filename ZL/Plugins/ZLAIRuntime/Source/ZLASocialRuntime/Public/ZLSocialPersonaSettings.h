@@ -7,6 +7,7 @@
 
 class UDataRegistry;
 struct FZLSocialPersonaData;
+class UZLSocialWorldContextAsset;
 
 UCLASS(Config = Game, DefaultConfig, meta = (DisplayName = "ZL Social Persona"))
 class ZLASOCIALRUNTIME_API UZLSocialPersonaSettings final : public UDeveloperSettings
@@ -17,6 +18,10 @@ public:
 	// Only these registries may be queried by Persona tooling or runtime spawners.
 	UPROPERTY(Config, EditAnywhere, Category = "Persona Registry")
 	TArray<TSoftObjectPtr<UDataRegistry>> PersonaRegistries;
+
+	/** Selects the static scene background. It does not distribute dynamic facts to NPCs. */
+	UPROPERTY(Config, EditAnywhere, Category = "World Context")
+	TSoftObjectPtr<UZLSocialWorldContextAsset> DefaultWorldContext;
 
 	bool IsConfiguredRegistry(const UDataRegistry* Registry) const;
 	void GetConfiguredPersonaIds(TArray<FName>& OutPersonaIds) const;
