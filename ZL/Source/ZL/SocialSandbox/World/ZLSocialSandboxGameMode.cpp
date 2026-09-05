@@ -1715,6 +1715,7 @@ void AZLSocialSandboxGameMode::TriggerWorldEvent(const FName EventType)
 	Fact.ConfirmedAtSeconds = NowSeconds;
 	Fact.ExpiresAtSeconds = NowSeconds + 90.0;
 	if (!KnowledgeStore.RecordWorldFact(Fact, NowSeconds)) { return; }
+	LastWorldFact = Fact;
 	AZLSocialSandboxPawn* Player = Cast<AZLSocialSandboxPawn>(UGameplayStatics::GetPlayerPawn(this, 0));
 	for (AZLSocialSandboxNpc* Npc : SandboxNpcs)
 	{
@@ -1727,6 +1728,18 @@ void AZLSocialSandboxGameMode::TriggerWorldEvent(const FName EventType)
 		}
 	}
 	AppendInteractionRecord(FText::FromString(TEXT("世界事件已触发；只有在感知范围内的 NPC 获得确认知识。")), FLinearColor(0.95f, 0.7f, 0.2f));
+	RefreshInspector();
+}
+
+void AZLSocialSandboxGameMode::ReportWorldEvent(const FName ReporterId, const FName ReceiverId)
+{
+	const double NowSeconds = GetWorld() ? GetWorld()->GetTimeSeconds() : 0.0;
+	AZLSocialSandboxNpc* Receiver = FindSandboxNpc(ReceiverId);
+	const FZLSocialKnowledgeItem* ReporterKnowledge = KnowledgeStore.Find(ReporterId, LastWorldFact.FactId);
+	if (!Receiver || !ReporterKnowledge || !LastWorldFact.IsValid(NowSeconds)) { return; }
+	LearnWorldEvent(Receiver, LastWorldFact, EZLSocialKnowledgeSource::ConfirmedReport, FMath::Min(ReporterKnowledge->Confidence, 0.8f), FString::Printf(TEXT("confirmed report from %s"), *ReporterId.ToString()));
+	Receiver->ShowDecisionSpeech(TEXT("我收到了确认报告，但会保留来源和可信度。"), TEXT("RulePlaceholder"));
+	AppendInteractionRecord(FText::FromString(TEXT("确认报告已只交给指定接收者。")), FLinearColor(0.55f, 0.8f, 1.0f));
 	RefreshInspector();
 }
 

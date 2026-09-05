@@ -58,6 +58,8 @@ public:
 
 	UFUNCTION(Exec)
 	void TriggerWorldEvent(FName EventType);
+	UFUNCTION(Exec)
+	void ReportWorldEvent(FName ReporterId, FName ReceiverId);
 
 	const TArray<TObjectPtr<AZLSocialSandboxNpc>>& GetSandboxNpcs() const { return SandboxNpcs; }
 	AZLSocialSandboxNpc* FindSandboxNpc(FName StableId) const;
@@ -125,6 +127,7 @@ private:
 	FZLSocialSandboxMultiNpcDecision MultiNpcDecision;
 	FZLSocialSandboxConflictState GuardConflictState;
 	FZLSocialKnowledgeStore KnowledgeStore;
+	FZLSocialWorldFact LastWorldFact;
 	FZLSocialSandboxDecisionDebug DecisionDebug;
 	TArray<FZLSocialSandboxPublicHistoryFact> GuardPublicHistory;
 	TArray<double> GuardExecutionTimes;
