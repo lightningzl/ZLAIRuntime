@@ -69,6 +69,9 @@ Python AI Service
 - 只依赖 UE Runtime 基础模块与 `GameplayTags`，不依赖 `ZL`、`ZLAIRuntime`、HTTP、Python、Provider、Widget 或具体 NPC Actor。
 - `ZL` 可以依赖并适配其公开接口；`ZLASocialRuntime` 不反向依赖游戏模块。
 - Persona 内容模型位于 `ZLASocialRuntime`：`UZLSocialPersonaAsset`、`FZLSocialPersonaRow` 与共享 `FZLSocialPersonaData` 使用同一稳定 ID、身份、背景、人物、表达、目标和初始社会状态语义；它们不保存运行时 Observation、Prompt、Provider 响应或世界事实。`FZLSocialPersonaJsonCodec` 只读写严格 Schema 的公开静态字段，Asset 仅在候选完整校验后才应用导入。`UZLSocialPersonaSettings` 仅声明允许的 DataRegistry 资产，后续查询和生成不得扫描任意项目资产。
+- World Context 内容模型同样位于 `ZLASocialRuntime`：`FZLSocialWorldContextData`、`UZLSocialWorldContextAsset` 与 `FZLSocialWorldContextJsonCodec` 只表达场景静态规则、势力背景和初始公开常识。JSON 导入先做 Schema、字段白名单、唯一性、容量及文本边界的完整候选校验；失败不会更改 Asset。Setting 只可选择默认 Asset，不能把动态事件、运行时关系、攻击结果或任何 NPC 个人 Knowledge 写入或广播。
+- `FZLSocialKnowledgeStore` 将 UE 已确认的临时 World Fact 与逐 NPC Knowledge/Belief 分开保存；Knowledge 必须显式写入对应 Agent，记录来源、可信度、时效和更新原因，并在容量或时效边界内淘汰。它不访问 Actor、UI、HTTP 或 Decision Context。
+- Social Sandbox 的 `TriggerWorldEvent curfew|hazard|alert` 是受控世界变化入口：UE 产生短时确认事实，仅将其写入 Shout 感知范围内 NPC 的个人 Knowledge，并在对应气泡与 Inspector 显化；它不将事件加入 Decision Context，也不向范围外 NPC 广播。
 - `ZL` 的 `FZLSocialSandboxPersonaAdapter` 显式把已校验 Persona 转换为现有 Sandbox NPC Profile；`AZLSocialSandboxNpcSpawner` 仅在 NPC 类、Asset Persona 和转换结果均有效时以 Deferred Spawn 初始化角色，失败只保留可见原因且不生成半初始化 Actor。
 - `ZLASocialRuntimeEditor` 提供 Persona Asset 详情面板的粘贴 JSON 导入，以及 Persona DataTable 右键菜单的粘贴批量 JSON 导入、复制和保存到文件。底层工具在写入前完整解析批量 JSON，并用单一 UE 撤销事务按稳定 ID 覆盖或新增 `FZLSocialPersonaRow`；它不写入运行中 NPC。
 - Agent 仅在注册、注销或跨 Cell 移动时更新二维网格；Event Router 只枚举半径覆盖的 Cell，再做精确二维距离过滤。

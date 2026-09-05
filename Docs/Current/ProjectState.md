@@ -6,9 +6,9 @@
 | --- | --- |
 | 最后更新 | 2026-09-06 |
 | 当前里程碑 | Milestone 14：个人世界认知与动态背景反馈 |
-| 里程碑状态 | `未启动` |
+| 里程碑状态 | `已完成` |
 | 当前活动任务 | 无 |
-| 下一候选任务 | M14-T01：世界上下文数据模型与配置边界（待启动） |
+| 下一候选任务 | 后续里程碑待规划 |
 | 已知阻塞 | 无 |
 | 最近验收 | Milestone 13：NPC 内容配置、批量管理与场景投放已归档 |
 
@@ -20,6 +20,5 @@
 
 ## 当前执行边界
 
-- M14 尚未开始实施；当前只归档 M13 并建立 M14 的文档范围。
-- M14 若需增加 Decision Context 或 UE/Python 协议字段，必须先获得用户明确确认。
+- M14 已完成并归档至 [Milestone14.md](../Milestones/Milestone14.md)：World Context、逐 NPC Knowledge/Belief、受控事件、指定报告、单跳传闻与 Inspector 已完成；协议与 Decision Context 未改动。
 - 当前已实现架构仍以 [Architecture.md](../Planning/Architecture.md) 为准；M14 的目标设计不应写成已实现能力。
