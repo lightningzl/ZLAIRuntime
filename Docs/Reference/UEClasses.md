@@ -43,10 +43,10 @@
 | `UZLSocialEventArchetype` | 声明可配置事件类型、范围、强度、通道和生命周期的 DataAsset 类型；当前运行时尚未消费该资产 |
 | `UZLSocialPersonalityArchetype` | 声明可复用人格 Trait 的 DataAsset 类型；当前运行时尚未接入资产选择或 DataTable 覆盖 |
 | `FZLSocialPersonaData` / `FZLSocialPersonaRow` | 共享可编辑 Persona 字段与 DataTable 行语义，验证稳定 ID、身份、背景、人物、表达、目标、初始关系和即时状态的长度、容量与数值边界 |
-| `UZLSocialPersonaAsset` | 保存一个经过 `FZLSocialPersonaData` 校验的可复用静态 NPC Persona 起点 |
+| `UZLSocialPersonaAsset` | 保存一个经过 `FZLSocialPersonaData` 校验的可复用静态 NPC Persona 起点，并支持文件或粘贴文本的单条 JSON 导入 |
 | `FZLSocialPersonaJsonCodec` | 严格校验单条 Persona JSON Schema、白名单字段和所有字段边界；无效导入在 Asset 写入前失败，导出只包含公开静态 Persona 字段 |
 | `UZLSocialPersonaSettings` | 仅在 Config 中声明允许查询的 Persona DataRegistry，并按 Persona Row 类型列出稳定 ID；不扫描项目资产或保存运行时社会事实 |
-| `FZLSocialPersonaDataTableTools` | Editor 模块中的批量 JSON 导入/导出入口；先校验整个批次，再以单一撤销事务按 ID 覆盖/新增 DataTable Persona Row |
+| `FZLSocialPersonaDataTableTools` | Editor 模块中的批量 JSON 导入/导出入口；Persona DataTable 右键菜单支持粘贴导入、复制 JSON 与保存到文件；导入先校验整个批次，再以单一撤销事务按 ID 覆盖/新增行 |
 | `ZLSocialTags` | 定义 Event、Instant State 与 Intent 原生 Gameplay Tags |
 | `FZLSocialSpatialIndex` | 维护 Agent 到二维 Cell 的索引，并返回有界半径查询与候选统计 |
 | `FZLSocialEventRouter` | 创建受控根事件、校验 Event Chain 硬边界、执行空间查询并按 Root/Agent 去重 |
@@ -94,7 +94,7 @@ Runtime 固定上限为 10000 个注册 Agent、1024 个活动 Root、4096 条 P
 | `AZLSocialSandboxPawn` | 提供玩家移动/转向、Face/Approach/MoveAway/Stop 的权威执行和说话/动作气泡，并应用预设公开显示名、颜色、出生 Transform；使用 `ACharacter::Mesh` 承载用户配置的骨骼模型/动画，并可配置攻击蒙太奇、连招 Section 数组、连招输入缓存和 Enhanced Input | 从自由文本推断未注册行为、伪造完成状态或直接伤害 NPC |
 | `AZLSocialSandboxNpc` | 保存稳定人物配置、权威状态版本、位置/朝向、生命、防卫、短暂无敌、失能和容量 32 的个人 Observation；实现 `ICombatDamageable`，非致命命中处理击退，失能时切换 ragdoll；显示规则/Decision/降级反馈，并执行已接受的 Face/Approach/MoveAway/Stop | 读取其他 NPC Observation、解析模型输出、绕过 Registry 或读取玩家输入原文 |
 | `FZLSocialSandboxPersonaAdapter` | 将已验证静态 Persona 明确映射为现有 Sandbox NPC Profile | 自动读取运行时社会事实或引入新的协议字段 |
-| `AZLSocialSandboxNpcSpawner` | 在固定 Transform 以 NPC 类与有效 Persona Asset Deferred Spawn 并初始化 NPC；失败提供可见结果且不生成半初始化角色 | 导航、行为树、网络同步或让 LLM 创建角色 |
+| `AZLSocialSandboxNpcSpawner` | 在固定 Transform 以 NPC 类与有效 Persona Asset 或已配置 Registry 的可搜索 Persona ID Deferred Spawn 并初始化 NPC；失败提供可见结果且不生成半初始化角色 | 导航、行为树、网络同步或让 LLM 创建角色 |
 | `AZLSocialSandboxPlayerController` | 创建交互 Widget，连接提交/重置并刷新目标与 Inspector；为本地玩家添加配置的 Enhanced Input Mapping Context | 持有协议或 Provider 状态，或绑定角色 Move/Look/Attack Action |
 | `AZLSocialSandboxAIController` | 持有可配置的 `StateTreeAIComponent`，在 Possess 后启动其 StateTree | 将 StateTree 资产直接变成未校验的 Tool、伤害或协议行为 |
 | `UZLSocialSandboxWidget` | 提供说话/行为、模式、目标、文本、提交、错误状态、右侧按钮展开的最多 12 条玩家/NPC 行动对话记录和逐 NPC Observation Inspector | 保存持久历史、Prompt、scope 或凭据 |

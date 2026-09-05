@@ -5,6 +5,10 @@
 #include "ZLSocialPersona.h"
 #include "ZLSocialPersonaSettings.h"
 
+#if WITH_EDITOR
+#include "UObject/UnrealType.h"
+#endif
+
 AZLSocialSandboxNpcSpawner::AZLSocialSandboxNpcSpawner()
 {
 	PrimaryActorTick.bCanEverTick = false;
@@ -44,3 +48,34 @@ bool AZLSocialSandboxNpcSpawner::SpawnNpc()
 	LastSpawnResult = TEXT("NPC spawn succeeded");
 	return true;
 }
+
+TArray<FString> AZLSocialSandboxNpcSpawner::GetConfiguredPersonaIdOptions() const
+{
+	TArray<FName> PersonaIds;
+	GetDefault<UZLSocialPersonaSettings>()->GetConfiguredPersonaIds(PersonaIds);
+
+	TArray<FString> Options;
+	Options.Reserve(PersonaIds.Num());
+	for (const FName PersonaIdOption : PersonaIds)
+	{
+		Options.Add(PersonaIdOption.ToString());
+	}
+	return Options;
+}
+
+#if WITH_EDITOR
+void AZLSocialSandboxNpcSpawner::PostEditChangeProperty(FPropertyChangedEvent& PropertyChangedEvent)
+{
+	Super::PostEditChangeProperty(PropertyChangedEvent);
+
+	const FName ChangedPropertyName = PropertyChangedEvent.GetPropertyName();
+	if (ChangedPropertyName == GET_MEMBER_NAME_CHECKED(AZLSocialSandboxNpcSpawner, PersonaAsset) && PersonaAsset)
+	{
+		PersonaId = NAME_None;
+	}
+	else if (ChangedPropertyName == GET_MEMBER_NAME_CHECKED(AZLSocialSandboxNpcSpawner, PersonaId) && !PersonaId.IsNone())
+	{
+		PersonaAsset = nullptr;
+	}
+}
+#endif

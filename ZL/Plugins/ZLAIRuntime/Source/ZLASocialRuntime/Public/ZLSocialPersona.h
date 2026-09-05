@@ -128,5 +128,8 @@ public:
 	UFUNCTION(CallInEditor, Category = "JSON")
 	void ExportPersonaJson();
 
+	/** Validates and applies a pasted single-Persona JSON document. */
+	bool ImportPersonaJsonText(const FString& Json);
+
 	bool IsValid(FString* OutError = nullptr) const { return Persona.IsValid(OutError); }
 };
