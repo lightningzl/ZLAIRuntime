@@ -41,8 +41,8 @@
 7. **已完成：连续互动与冲突变化**——NPC 随距离、行为、道歉、威胁和冲突结果持续重新判断。
 8. **已完成：最终场景 1 交付**——4 个差异化 NPC 完成开放式社会交互沙盒 `FS1-01` 至 `FS1-11` 验收。
 9. **已完成：社会后果与角色行为打磨**——攻击、缓和、报告与最小交易尝试形成按个人感知隔离的连续后果。
-10. **当前：NPC 内容配置与场景投放**——让 Persona Asset、DataRegistry、JSON 和 Spawner 成为同一套可复用内容管线；当前范围见 [Milestone 13](../Current/CurrentMilestone.md)。
-11. **后续：个人世界认知与动态背景反馈**——世界真实状态经感知、报告和有界传播成为不同 NPC 的不同知识，而不是全局共享背景。
+10. **已完成：NPC 内容配置与场景投放**——Persona Asset、DataRegistry、JSON 和 Spawner 已形成可复用内容管线；见 [Milestone 13](../Milestones/Milestone13.md)。
+11. **当前：个人世界认知与动态背景反馈**——世界真实状态经感知、报告和有界传播成为不同 NPC 的不同知识，而不是全局共享背景；当前范围见 [Milestone 14](../Current/CurrentMilestone.md)。
 
 ## 文档入口
 
