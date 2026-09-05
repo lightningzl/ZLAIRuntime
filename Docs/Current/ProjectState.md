@@ -6,9 +6,9 @@
 | --- | --- |
 | 最后更新 | 2026-09-06 |
 | 当前里程碑 | Milestone 14：个人世界认知与动态背景反馈 |
-| 里程碑状态 | `进行中` |
-| 当前活动任务 | M14-T03 / M14-T04：世界事件感知与认知调试（进行中） |
-| 下一候选任务 | M14-T05：协议确认后的 Decision 接入与回归（待启动） |
+| 里程碑状态 | `已完成` |
+| 当前活动任务 | 无 |
+| 下一候选任务 | 后续里程碑待规划 |
 | 已知阻塞 | 无 |
 | 最近验收 | Milestone 13：NPC 内容配置、批量管理与场景投放已归档 |
 
@@ -20,8 +20,5 @@
 
 ## 当前执行边界
 
-- M14-T01 已完成：World Context 静态公开配置可经严格 JSON 导入导出并由 Setting 选择；动态世界事实与逐 NPC 认知仍未实现。
-- M14-T02 已完成：World Fact 与逐 NPC Knowledge/Belief 已隔离建模；其感知、确认报告和有界传播入口尚未接入。
-- M14-T03/T04 正在接入受控世界事件：当前事件仅让感知范围内 NPC 获得确认知识，Inspector 已显示个人来源、可信度与更新原因；报告和受限传播仍待接入。
-- M14 若需增加 Decision Context 或 UE/Python 协议字段，必须先获得用户明确确认。
+- M14 已完成并归档至 [Milestone14.md](../Milestones/Milestone14.md)：World Context、逐 NPC Knowledge/Belief、受控事件、指定报告、单跳传闻与 Inspector 已完成；协议与 Decision Context 未改动。
 - 当前已实现架构仍以 [Architecture.md](../Planning/Architecture.md) 为准；M14 的目标设计不应写成已实现能力。
