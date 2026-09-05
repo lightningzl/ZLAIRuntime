@@ -102,7 +102,15 @@ namespace ZLSocialWorldContextJsonPrivate
 	}
 }
 
-using namespace ZLSocialWorldContextJsonPrivate;
+#define Fail ZLSocialWorldContextJsonPrivate::Fail
+#define HasOnlyFields ZLSocialWorldContextJsonPrivate::HasOnlyFields
+#define ReadObjectArray ZLSocialWorldContextJsonPrivate::ReadObjectArray
+#define ToJsonArray ZLSocialWorldContextJsonPrivate::ToJsonArray
+#define ReadArray ZLSocialWorldContextJsonPrivate::ReadArray
+#define ReadRule ZLSocialWorldContextJsonPrivate::ReadRule
+#define ReadFaction ZLSocialWorldContextJsonPrivate::ReadFaction
+#define ReadKnowledge ZLSocialWorldContextJsonPrivate::ReadKnowledge
+#define SchemaVersion ZLSocialWorldContextJsonPrivate::SchemaVersion
 
 bool FZLSocialWorldContextJsonCodec::Serialize(const FZLSocialWorldContextData& WorldContext, FString& OutJson, FString& OutError)
 {
@@ -135,3 +143,13 @@ bool FZLSocialWorldContextJsonCodec::Deserialize(const FString& Json, FZLSocialW
 	OutError.Reset();
 	return true;
 }
+
+#undef SchemaVersion
+#undef ReadKnowledge
+#undef ReadFaction
+#undef ReadRule
+#undef ReadArray
+#undef ToJsonArray
+#undef ReadObjectArray
+#undef HasOnlyFields
+#undef Fail

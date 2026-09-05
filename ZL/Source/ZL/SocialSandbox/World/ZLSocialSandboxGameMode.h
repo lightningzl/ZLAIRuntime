@@ -4,6 +4,7 @@
 #include "GameFramework/GameModeBase.h"
 #include "ZLAIServiceTypes.h"
 #include "ZLSocialObservation.h"
+#include "ZLSocialKnowledge.h"
 #include "ZLSocialToolRegistry.h"
 #include "SocialSandbox/Decision/ZLSocialSandboxDecisionContext.h"
 #include "SocialSandbox/Decision/ZLSocialSandboxDecisionScheduler.h"
@@ -55,6 +56,9 @@ public:
 	UFUNCTION(Exec)
 	void RunMultiNpcSandboxDemo();
 
+	UFUNCTION(Exec)
+	void TriggerWorldEvent(FName EventType);
+
 	const TArray<TObjectPtr<AZLSocialSandboxNpc>>& GetSandboxNpcs() const { return SandboxNpcs; }
 	AZLSocialSandboxNpc* FindSandboxNpc(FName StableId) const;
 	FText SubmitSpeech(FName SpeechMode, FName TargetId, const FString& Text);
@@ -103,6 +107,7 @@ private:
 	void FinishPresetSmokeTest();
 	void RefreshInspector() const;
 	void AppendInteractionRecord(const FText& Text, const FLinearColor& Color) const;
+	void LearnWorldEvent(AZLSocialSandboxNpc* Npc, const FZLSocialWorldFact& Fact, EZLSocialKnowledgeSource Source, float Confidence, const FString& Reason);
 
 	UPROPERTY()
 	TArray<TObjectPtr<AZLSocialSandboxNpc>> SandboxNpcs;
@@ -119,6 +124,7 @@ private:
 	FZLSocialSandboxDecisionScheduler GuardDecisionScheduler;
 	FZLSocialSandboxMultiNpcDecision MultiNpcDecision;
 	FZLSocialSandboxConflictState GuardConflictState;
+	FZLSocialKnowledgeStore KnowledgeStore;
 	FZLSocialSandboxDecisionDebug DecisionDebug;
 	TArray<FZLSocialSandboxPublicHistoryFact> GuardPublicHistory;
 	TArray<double> GuardExecutionTimes;

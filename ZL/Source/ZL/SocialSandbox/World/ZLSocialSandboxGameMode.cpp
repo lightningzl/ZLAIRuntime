@@ -1705,6 +1705,46 @@ void AZLSocialSandboxGameMode::FinishPresetSmokeTest()
 	FPlatformMisc::RequestExitWithStatus(true, bPassed ? 0 : 1);
 }
 
+void AZLSocialSandboxGameMode::TriggerWorldEvent(const FName EventType)
+{
+	const double NowSeconds = GetWorld() ? GetWorld()->GetTimeSeconds() : 0.0;
+	FZLSocialWorldFact Fact;
+	Fact.FactId = EventType == TEXT("curfew") ? TEXT("active_curfew") : EventType == TEXT("hazard") ? TEXT("market_hazard") : TEXT("faction_alert");
+	Fact.Summary = EventType == TEXT("curfew") ? TEXT("The district is under a confirmed curfew.") : EventType == TEXT("hazard") ? TEXT("A confirmed hazard has been reported near the market.") : TEXT("A confirmed faction alert is active in the district.");
+	Fact.CauseEventId = FGuid::NewGuid();
+	Fact.ConfirmedAtSeconds = NowSeconds;
+	Fact.ExpiresAtSeconds = NowSeconds + 90.0;
+	if (!KnowledgeStore.RecordWorldFact(Fact, NowSeconds)) { return; }
+	AZLSocialSandboxPawn* Player = Cast<AZLSocialSandboxPawn>(UGameplayStatics::GetPlayerPawn(this, 0));
+	for (AZLSocialSandboxNpc* Npc : SandboxNpcs)
+	{
+		if (!IsValid(Npc)) { continue; }
+		const float Distance = Player ? FVector::Dist2D(Player->GetActorLocation(), Npc->GetActorLocation()) : TNumericLimits<float>::Max();
+		if (Distance <= ObservationSettings.ShoutRange)
+		{
+			LearnWorldEvent(Npc, Fact, EZLSocialKnowledgeSource::DirectPerception, 1.0f, TEXT("personally observed the controlled world event"));
+			Npc->ShowDecisionSpeech(EventType == TEXT("curfew") ? TEXT("宵禁已经生效，我得调整自己的安排。") : TEXT("我知道这件事，但会谨慎判断。"), TEXT("RulePlaceholder"));
+		}
+	}
+	AppendInteractionRecord(FText::FromString(TEXT("世界事件已触发；只有在感知范围内的 NPC 获得确认知识。")), FLinearColor(0.95f, 0.7f, 0.2f));
+	RefreshInspector();
+}
+
+void AZLSocialSandboxGameMode::LearnWorldEvent(AZLSocialSandboxNpc* Npc, const FZLSocialWorldFact& Fact, const EZLSocialKnowledgeSource Source, const float Confidence, const FString& Reason)
+{
+	if (!IsValid(Npc) || !GetWorld()) { return; }
+	FZLSocialKnowledgeItem Item;
+	Item.FactId = Fact.FactId;
+	Item.Summary = Fact.Summary;
+	Item.Source = Source;
+	Item.SourceAgentId = TEXT("world_authority");
+	Item.Confidence = Confidence;
+	Item.LearnedAtSeconds = GetWorld()->GetTimeSeconds();
+	Item.ExpiresAtSeconds = Fact.ExpiresAtSeconds;
+	Item.UpdateReason = Reason;
+	KnowledgeStore.Learn(Npc->GetStableId(), Item, Item.LearnedAtSeconds);
+}
+
 FText AZLSocialSandboxGameMode::BuildInspectorText(const FName NpcId) const
 {
 	const AZLSocialSandboxNpc* Npc = FindSandboxNpc(NpcId);
@@ -1762,6 +1802,13 @@ FText AZLSocialSandboxGameMode::BuildInspectorText(const FName NpcId) const
 		? &DecisionDebug
 		: NpcDecisionDebug.Find(NpcId);
 	const TArray<FZLDecisionV2SocialFact> SocialFacts = NpcSocialFacts.FindRef(NpcId);
+	const TArray<FZLSocialKnowledgeItem>& Knowledge = KnowledgeStore.GetForAgent(NpcId);
+	FString KnowledgeLine;
+	for (const FZLSocialKnowledgeItem& Item : Knowledge)
+	{
+		KnowledgeLine += FString::Printf(TEXT("\n- %s（来源 %s，可信度 %.2f，原因 %s）"), *Item.FactId.ToString(), *UEnum::GetValueAsString(Item.Source), Item.Confidence, *Item.UpdateReason);
+	}
+	if (KnowledgeLine.IsEmpty()) { KnowledgeLine = TEXT("\n- 未获知任何动态世界事实"); }
 	FString FactsLine;
 	for (const FZLDecisionV2SocialFact& Fact : SocialFacts)
 	{
@@ -1773,8 +1820,9 @@ FText AZLSocialSandboxGameMode::BuildInspectorText(const FName NpcId) const
 	}
 	const FString DecisionLine = SelectedDebug != nullptr
 		? FString::Printf(
-			TEXT("\n个人社会事实：%s\n冲突：%s · 生命 %.0f/%.0f · 防御：%s · 失能：%s\n决策：%s · 待处理：%s · 触发：%s · 本地降级：%s\n请求：%s · 状态：%lld · 合并：%d · 自动：%d\n来源：%s · 当前目标：%s · 台词：%s\n步骤：%s · 结果：%s · 延迟：%d 毫秒"),
+			TEXT("\n个人社会事实：%s\n个人世界认知：%s\n冲突：%s · 生命 %.0f/%.0f · 防御：%s · 失能：%s\n决策：%s · 待处理：%s · 触发：%s · 本地降级：%s\n请求：%s · 状态：%lld · 合并：%d · 自动：%d\n来源：%s · 当前目标：%s · 台词：%s\n步骤：%s · 结果：%s · 延迟：%d 毫秒"),
 			*FactsLine,
+			*KnowledgeLine,
 			SelectedDebug->ConflictLevel.IsEmpty() ? TEXT("平静") : *SelectedDebug->ConflictLevel,
 			Npc->GetHealth(),
 			Npc->GetMaxHealth(),

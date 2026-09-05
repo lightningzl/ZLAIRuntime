@@ -37,23 +37,21 @@ namespace ZLSocialWorldContextPrivate
 	}
 }
 
-using namespace ZLSocialWorldContextPrivate;
-
 bool FZLSocialWorldRule::IsValid() const
 {
-	return IsBoundedId(StableId) && IsBoundedText(Summary, ZLSocialWorldContextLimits::MaxSummaryLength);
+	return ZLSocialWorldContextPrivate::IsBoundedId(StableId) && ZLSocialWorldContextPrivate::IsBoundedText(Summary, ZLSocialWorldContextLimits::MaxSummaryLength);
 }
 
 bool FZLSocialFactionBackground::IsValid() const
 {
-	return IsBoundedId(FactionId)
-		&& IsBoundedText(DisplayName, ZLSocialWorldContextLimits::MaxDisplayNameLength)
-		&& IsBoundedText(BackgroundSummary, ZLSocialWorldContextLimits::MaxSummaryLength);
+	return ZLSocialWorldContextPrivate::IsBoundedId(FactionId)
+		&& ZLSocialWorldContextPrivate::IsBoundedText(DisplayName, ZLSocialWorldContextLimits::MaxDisplayNameLength)
+		&& ZLSocialWorldContextPrivate::IsBoundedText(BackgroundSummary, ZLSocialWorldContextLimits::MaxSummaryLength);
 }
 
 bool FZLSocialPublicKnowledgeSeed::IsValid() const
 {
-	return IsBoundedId(StableId) && IsBoundedText(Summary, ZLSocialWorldContextLimits::MaxSummaryLength);
+	return ZLSocialWorldContextPrivate::IsBoundedId(StableId) && ZLSocialWorldContextPrivate::IsBoundedText(Summary, ZLSocialWorldContextLimits::MaxSummaryLength);
 }
 
 bool FZLSocialWorldContextData::IsValid(FString* OutError) const
@@ -63,19 +61,19 @@ bool FZLSocialWorldContextData::IsValid(FString* OutError) const
 		if (OutError) { *OutError = Message; }
 		return false;
 	};
-	if (!IsBoundedId(StableId) || !IsBoundedText(DisplayName, ZLSocialWorldContextLimits::MaxDisplayNameLength))
+	if (!ZLSocialWorldContextPrivate::IsBoundedId(StableId) || !ZLSocialWorldContextPrivate::IsBoundedText(DisplayName, ZLSocialWorldContextLimits::MaxDisplayNameLength))
 	{
 		return Fail(TEXT("world context identity is invalid"));
 	}
-	if (!AreUniqueAndValid<FZLSocialWorldRule>(Rules, [](const FZLSocialWorldRule& Rule) { return Rule.StableId; }))
+	if (!ZLSocialWorldContextPrivate::AreUniqueAndValid<FZLSocialWorldRule>(Rules, [](const FZLSocialWorldRule& Rule) { return Rule.StableId; }))
 	{
 		return Fail(TEXT("world rules must be valid, unique, and within the item limit"));
 	}
-	if (!AreUniqueAndValid<FZLSocialFactionBackground>(Factions, [](const FZLSocialFactionBackground& Faction) { return Faction.FactionId; }))
+	if (!ZLSocialWorldContextPrivate::AreUniqueAndValid<FZLSocialFactionBackground>(Factions, [](const FZLSocialFactionBackground& Faction) { return Faction.FactionId; }))
 	{
 		return Fail(TEXT("factions must be valid, unique, and within the item limit"));
 	}
-	if (!AreUniqueAndValid<FZLSocialPublicKnowledgeSeed>(PublicKnowledge, [](const FZLSocialPublicKnowledgeSeed& Knowledge) { return Knowledge.StableId; }))
+	if (!ZLSocialWorldContextPrivate::AreUniqueAndValid<FZLSocialPublicKnowledgeSeed>(PublicKnowledge, [](const FZLSocialPublicKnowledgeSeed& Knowledge) { return Knowledge.StableId; }))
 	{
 		return Fail(TEXT("public knowledge must be valid, unique, and within the item limit"));
 	}
