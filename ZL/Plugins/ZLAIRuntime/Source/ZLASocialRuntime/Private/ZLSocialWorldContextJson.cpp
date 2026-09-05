@@ -4,7 +4,7 @@
 #include "Serialization/JsonReader.h"
 #include "Serialization/JsonSerializer.h"
 
-namespace
+namespace ZLSocialWorldContextJsonPrivate
 {
 	constexpr int32 SchemaVersion = 1;
 
@@ -101,6 +101,8 @@ namespace
 		return true;
 	}
 }
+
+using namespace ZLSocialWorldContextJsonPrivate;
 
 bool FZLSocialWorldContextJsonCodec::Serialize(const FZLSocialWorldContextData& WorldContext, FString& OutJson, FString& OutError)
 {

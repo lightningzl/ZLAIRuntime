@@ -47,6 +47,7 @@
 | `FZLSocialPersonaJsonCodec` | 严格校验单条 Persona JSON Schema、白名单字段和所有字段边界；无效导入在 Asset 写入前失败，导出只包含公开静态 Persona 字段 |
 | `FZLSocialWorldContextData` | 表示场景的静态世界规则、势力背景与初始公开常识；验证稳定 ID、字段白名单、唯一性、容量和文本边界，不包含动态事实或个人认知 |
 | `UZLSocialWorldContextAsset` / `FZLSocialWorldContextJsonCodec` | 候选完整校验后才导入或应用 World Context；严格 Schema JSON 导出只包含静态公开起点，无效导入不改变当前 Asset |
+| `FZLSocialKnowledgeStore` | 保存 UE 确认的短时世界事实与逐 NPC 隔离的 Knowledge/Belief；每项具有来源、可信度、时效和更新原因，并支持有界容量、反驳与遗忘 |
 | `UZLSocialPersonaSettings` | 仅在 Config 中声明允许查询的 Persona DataRegistry 与可选默认 World Context Asset；不扫描项目资产、保存运行时社会事实或向 NPC 分发动态事件 |
 | `FZLSocialPersonaDataTableTools` | Editor 模块中的批量 JSON 导入/导出入口；Persona DataTable 右键菜单支持粘贴导入、复制 JSON 与保存到文件；导入先校验整个批次，再以单一撤销事务按 ID 覆盖/新增行 |
 | `ZLSocialTags` | 定义 Event、Instant State 与 Intent 原生 Gameplay Tags |

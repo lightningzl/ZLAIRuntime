@@ -4,7 +4,7 @@
 
 #include "Misc/FileHelper.h"
 
-namespace
+namespace ZLSocialWorldContextPrivate
 {
 	bool IsBoundedText(const FString& Value, const int32 MaxLength)
 	{
@@ -36,6 +36,8 @@ namespace
 		return true;
 	}
 }
+
+using namespace ZLSocialWorldContextPrivate;
 
 bool FZLSocialWorldRule::IsValid() const
 {

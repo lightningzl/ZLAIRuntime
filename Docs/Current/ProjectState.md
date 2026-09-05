@@ -8,7 +8,7 @@
 | 当前里程碑 | Milestone 14：个人世界认知与动态背景反馈 |
 | 里程碑状态 | `进行中` |
 | 当前活动任务 | 无 |
-| 下一候选任务 | M14-T02：世界事实与个人知识模型（待启动） |
+| 下一候选任务 | M14-T03：感知、报告与有界传播接入（待启动） |
 | 已知阻塞 | 无 |
 | 最近验收 | Milestone 13：NPC 内容配置、批量管理与场景投放已归档 |
 
@@ -21,5 +21,6 @@
 ## 当前执行边界
 
 - M14-T01 已完成：World Context 静态公开配置可经严格 JSON 导入导出并由 Setting 选择；动态世界事实与逐 NPC 认知仍未实现。
+- M14-T02 已完成：World Fact 与逐 NPC Knowledge/Belief 已隔离建模；其感知、确认报告和有界传播入口尚未接入。
 - M14 若需增加 Decision Context 或 UE/Python 协议字段，必须先获得用户明确确认。
 - 当前已实现架构仍以 [Architecture.md](../Planning/Architecture.md) 为准；M14 的目标设计不应写成已实现能力。
