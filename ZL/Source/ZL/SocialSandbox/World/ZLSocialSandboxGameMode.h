@@ -60,6 +60,8 @@ public:
 	void TriggerWorldEvent(FName EventType);
 	UFUNCTION(Exec)
 	void ReportWorldEvent(FName ReporterId, FName ReceiverId);
+	UFUNCTION(Exec)
+	void SpreadWorldRumor(FName ReporterId, FName ReceiverId);
 
 	const TArray<TObjectPtr<AZLSocialSandboxNpc>>& GetSandboxNpcs() const { return SandboxNpcs; }
 	AZLSocialSandboxNpc* FindSandboxNpc(FName StableId) const;

@@ -1743,6 +1743,18 @@ void AZLSocialSandboxGameMode::ReportWorldEvent(const FName ReporterId, const FN
 	RefreshInspector();
 }
 
+void AZLSocialSandboxGameMode::SpreadWorldRumor(const FName ReporterId, const FName ReceiverId)
+{
+	const double NowSeconds = GetWorld() ? GetWorld()->GetTimeSeconds() : 0.0;
+	AZLSocialSandboxNpc* Receiver = FindSandboxNpc(ReceiverId);
+	const FZLSocialKnowledgeItem* ReporterKnowledge = KnowledgeStore.Find(ReporterId, LastWorldFact.FactId);
+	if (!Receiver || !ReporterKnowledge || ReporterKnowledge->Source == EZLSocialKnowledgeSource::BoundedPropagation || !LastWorldFact.IsValid(NowSeconds)) { return; }
+	LearnWorldEvent(Receiver, LastWorldFact, EZLSocialKnowledgeSource::BoundedPropagation, FMath::Min(ReporterKnowledge->Confidence * 0.6f, 0.5f), FString::Printf(TEXT("single-hop rumor from %s"), *ReporterId.ToString()));
+	Receiver->ShowDecisionSpeech(TEXT("我听到了传闻，但还不能把它当成确定事实。"), TEXT("RulePlaceholder"));
+	AppendInteractionRecord(FText::FromString(TEXT("单跳传闻已只交给指定接收者。")), FLinearColor(0.7f, 0.6f, 1.0f));
+	RefreshInspector();
+}
+
 void AZLSocialSandboxGameMode::LearnWorldEvent(AZLSocialSandboxNpc* Npc, const FZLSocialWorldFact& Fact, const EZLSocialKnowledgeSource Source, const float Confidence, const FString& Reason)
 {
 	if (!IsValid(Npc) || !GetWorld()) { return; }
