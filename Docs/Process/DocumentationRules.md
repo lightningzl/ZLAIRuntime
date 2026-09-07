@@ -11,6 +11,7 @@ Docs/
   Planning/    长期目标、目标设计、当前架构和重要决策
     FinalScenarios/  最终场景的体验设想、开放交互边界和场景级验收属性
   Current/     当前里程碑、当前任务板和实时项目状态
+  Configuration/ 可操作的内容与场景配置指南
   Reference/   协议、UE 类型、Python 模块和数据库设计
   Process/     文档、编码和 Git 工作规则
   Interview/   面试展示、复习资料和历史问答
@@ -32,6 +33,7 @@ Docs/
 | `Planning/DecisionLog.md` | 已接受或已取代的重要决策及原因 | 任务流水账、临时方案、单独改变范围或协议 |
 | `Planning/FinalScenarios/*.md` | 单个最终场景的体验目标、交互边界、观察探针和底座需求来源 | 当前实施授权、固定剧情脚本、固定模型台词或实际验证结果 |
 | `Current/CurrentMilestone.md` | 当前范围、明确不做、验收标准和完成定义 | 任务状态、验证日志、历史里程碑正文 |
+| `Configuration/*.md` | 公开内容资产、场景设置与受控运行时操作的配置步骤 | 协议正文、当前任务状态或验证证据 |
 | `Current/TaskBoard.md` | 当前工作包、依赖、状态和完成条件 | 复制验收标准、验证命令和历史结果 |
 | `Current/ProjectState.md` | 活动任务、下一步、阻塞和验收进度的简洁快照 | 任务明细、架构、协议和验证日志 |
 | `Reference/Protocol.md` | UE/Python 线上字段、语义、状态码和兼容性 | Provider SDK、Prompt、Tool 执行规则、实现步骤 |

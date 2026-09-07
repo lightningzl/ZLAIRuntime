@@ -21,6 +21,7 @@
 #include "Widgets/SBoxPanel.h"
 #include "Widgets/SWindow.h"
 #include "ZLSocialPersona.h"
+#include "ZLSocialWorldContext.h"
 
 namespace
 {
@@ -149,6 +150,43 @@ namespace
 	private:
 		TWeakObjectPtr<UZLSocialPersonaAsset> PersonaAsset;
 	};
+
+	class FZLSocialWorldContextAssetCustomization final : public IDetailCustomization
+	{
+	public:
+		static TSharedRef<IDetailCustomization> MakeInstance() { return MakeShared<FZLSocialWorldContextAssetCustomization>(); }
+
+		virtual void CustomizeDetails(IDetailLayoutBuilder& DetailBuilder) override
+		{
+			TArray<TWeakObjectPtr<UObject>> Objects;
+			DetailBuilder.GetObjectsBeingCustomized(Objects);
+			for (const TWeakObjectPtr<UObject>& Object : Objects)
+			{
+				if (UZLSocialWorldContextAsset* Asset = Cast<UZLSocialWorldContextAsset>(Object.Get())) { WorldContextAsset = Asset; break; }
+			}
+			DetailBuilder.EditCategory(TEXT("JSON"))
+				.AddCustomRow(NSLOCTEXT("ZLSocialWorldContext", "PasteImportFilter", "粘贴 JSON 导入"))
+				.WholeRowContent()
+				[
+					SNew(SButton).Text(NSLOCTEXT("ZLSocialWorldContext", "PasteImport", "粘贴 JSON 导入世界背景"))
+					.OnClicked_Lambda([WeakAsset = WorldContextAsset]()
+					{
+						OpenPersonaJsonImportWindow(NSLOCTEXT("ZLSocialWorldContext", "PasteImportTitle", "导入 World Context JSON"), [WeakAsset](const FString& Json)
+						{
+							if (UZLSocialWorldContextAsset* Asset = WeakAsset.Get())
+							{
+								Asset->ImportWorldContextJsonText(Json);
+								FMessageDialog::Open(EAppMsgType::Ok, FText::FromString(Asset->LastJsonOperationResult));
+							}
+						});
+						return FReply::Handled();
+					})
+				];
+		}
+
+	private:
+		TWeakObjectPtr<UZLSocialWorldContextAsset> WorldContextAsset;
+	};
 }
 
 class FZLASocialRuntimeEditorModule final : public IModuleInterface
@@ -158,6 +196,7 @@ public:
 	{
 		FPropertyEditorModule& PropertyEditor = FModuleManager::LoadModuleChecked<FPropertyEditorModule>(TEXT("PropertyEditor"));
 		PropertyEditor.RegisterCustomClassLayout(UZLSocialPersonaAsset::StaticClass()->GetFName(), FOnGetDetailCustomizationInstance::CreateStatic(&FZLSocialPersonaAssetCustomization::MakeInstance));
+		PropertyEditor.RegisterCustomClassLayout(UZLSocialWorldContextAsset::StaticClass()->GetFName(), FOnGetDetailCustomizationInstance::CreateStatic(&FZLSocialWorldContextAssetCustomization::MakeInstance));
 		PropertyEditor.NotifyCustomizationModuleChanged();
 
 		FContentBrowserModule& ContentBrowser = FModuleManager::LoadModuleChecked<FContentBrowserModule>(TEXT("ContentBrowser"));
@@ -180,6 +219,7 @@ public:
 		{
 			FPropertyEditorModule& PropertyEditor = FModuleManager::GetModuleChecked<FPropertyEditorModule>(TEXT("PropertyEditor"));
 			PropertyEditor.UnregisterCustomClassLayout(UZLSocialPersonaAsset::StaticClass()->GetFName());
+			PropertyEditor.UnregisterCustomClassLayout(UZLSocialWorldContextAsset::StaticClass()->GetFName());
 		}
 	}
 
