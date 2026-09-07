@@ -93,7 +93,7 @@ Runtime 固定上限为 10000 个注册 Agent、1024 个活动 Root、4096 条 P
 | 类型 | 职责 | 不负责 |
 | --- | --- | --- |
 | `FZLSocialSandboxPresetCodec` | 从受控 Config 目录加载并完整校验版本化 JSON 预设，导出公开字段到 Saved；拒绝未知字段、路径逃逸、越界值、重复 ID 与非法角色数 | 读取任意用户路径、自动应用 AI 输出、保存 Prompt/历史/密钥或运行时状态 |
-| `AZLSocialSandboxGameMode` | 默认生成 4 个 NPC，或以有效受控预设生成玩家和 2 至 4 个 NPC；逐 NPC 计算 Observation、调度单 NPC Decision，并校验玩家 Attack 的目标/距离/冷却和伤害 | Prompt、Provider SDK、任意 Tool、跨 NPC 隐式知识或 Python 社会状态 |
+| `AZLSocialSandboxGameMode` | 注册关卡 Spawner 实际生成的 NPC，或以有效受控预设生成测试 NPC；逐 NPC 计算 Observation、调度单 NPC Decision，并校验玩家 Attack 的目标/距离/冷却和伤害 | 投放固定角色/坐标、Prompt、Provider SDK、任意 Tool、跨 NPC 隐式知识或 Python 社会状态 |
 | `AZLSocialSandboxPawn` | 提供玩家移动/转向、Face/Approach/MoveAway/Stop 的权威执行和说话/动作气泡，并应用预设公开显示名、颜色、出生 Transform；使用 `ACharacter::Mesh` 承载用户配置的骨骼模型/动画，并可配置攻击蒙太奇、连招 Section 数组、连招输入缓存和 Enhanced Input | 从自由文本推断未注册行为、伪造完成状态或直接伤害 NPC |
 | `AZLSocialSandboxNpc` | 保存稳定人物配置、权威状态版本、位置/朝向、生命、防卫、短暂无敌、失能和容量 32 的个人 Observation；实现 `ICombatDamageable`，非致命命中处理击退，失能时切换 ragdoll；显示规则/Decision/降级反馈，并执行已接受的 Face/Approach/MoveAway/Stop | 读取其他 NPC Observation、解析模型输出、绕过 Registry 或读取玩家输入原文 |
 | `FZLSocialSandboxPersonaAdapter` | 将已验证静态 Persona 明确映射为现有 Sandbox NPC Profile | 自动读取运行时社会事实或引入新的协议字段 |

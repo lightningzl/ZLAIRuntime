@@ -43,12 +43,9 @@ void AZLSocialSandboxGameMode::BeginPlay()
 {
 	Super::BeginPlay();
 	SpawnEnvironment();
-	if (!TryApplyNamedPreset())
+	if (!TryApplyNamedPreset() && SandboxNpcs.IsEmpty())
 	{
-		SpawnNpc(TEXT("npc_guard"), FVector(500.0f, -350.0f, 96.0f), FRotator(0.0f, 145.0f, 0.0f));
-		SpawnNpc(TEXT("npc_merchant"), FVector(500.0f, 350.0f, 96.0f), FRotator(0.0f, 215.0f, 0.0f));
-		SpawnNpc(TEXT("npc_rival"), FVector(950.0f, -350.0f, 96.0f), FRotator(0.0f, 160.0f, 0.0f));
-		SpawnNpc(TEXT("npc_civilian"), FVector(950.0f, 350.0f, 96.0f), FRotator(0.0f, 200.0f, 0.0f));
+		UE_LOG(LogZL, Warning, TEXT("Social Sandbox has no registered NPCs. Place NPC Spawner actors in the level or pass -ZLSandboxPreset=<name>."));
 	}
 	UpdateGuardDistanceBand();
 	if (AZLSocialSandboxPlayerController* Controller = Cast<AZLSocialSandboxPlayerController>(UGameplayStatics::GetPlayerController(this, 0)))
@@ -177,6 +174,26 @@ AZLSocialSandboxNpc* AZLSocialSandboxGameMode::FindSandboxNpc(const FName Stable
 		}
 	}
 	return nullptr;
+}
+
+bool AZLSocialSandboxGameMode::RegisterSandboxNpc(AZLSocialSandboxNpc* Npc)
+{
+	if (!IsValid(Npc) || Npc->GetStableId().IsNone() || FindSandboxNpc(Npc->GetStableId()) != nullptr)
+	{
+		return false;
+	}
+	if (!MultiNpcDecision.RegisterNpc(Npc->GetStableId()))
+	{
+		return false;
+	}
+	SandboxNpcs.Add(Npc);
+	UpdateGuardDistanceBand();
+	UpdateNpcDistanceBands();
+	if (AZLSocialSandboxPlayerController* Controller = Cast<AZLSocialSandboxPlayerController>(UGameplayStatics::GetPlayerController(this, 0)))
+	{
+		Controller->RefreshSandboxTargets();
+	}
+	return true;
 }
 
 FText AZLSocialSandboxGameMode::SubmitSpeech(const FName SpeechMode, const FName TargetId, const FString& Text)
@@ -514,11 +531,6 @@ void AZLSocialSandboxGameMode::QueueNpcDecision(
 {
 	if (!IsValid(Npc))
 	{
-		return;
-	}
-	if (Npc->GetStableId() == TEXT("npc_guard"))
-	{
-		QueueGuardDecision(Npc, Trigger, SpeechContent, Reason, bAdvanceStateVersion);
 		return;
 	}
 	if (bAdvanceStateVersion)
@@ -1940,22 +1952,6 @@ void AZLSocialSandboxGameMode::SpawnEnvironment()
 	}
 }
 
-void AZLSocialSandboxGameMode::SpawnNpc(const FName StableId, const FVector& Location, const FRotator& Rotation)
-{
-	FActorSpawnParameters Params;
-	Params.Name = StableId;
-	AZLSocialSandboxNpc* Npc = GetWorld()->SpawnActor<AZLSocialSandboxNpc>(SandboxNpcClass != nullptr ? SandboxNpcClass.Get() : AZLSocialSandboxNpc::StaticClass(), Location, Rotation, Params);
-	if (Npc != nullptr)
-	{
-	Npc->InitializeSandboxNpc(FZLSocialSandboxNpcProfile::Create(StableId), FTransform(Rotation, Location));
-	SandboxNpcs.Add(Npc);
-	if (StableId != TEXT("npc_guard"))
-	{
-		MultiNpcDecision.RegisterNpc(StableId);
-	}
-	}
-}
-
 void AZLSocialSandboxGameMode::SpawnNpc(const FZLSocialSandboxNpcPreset& Preset)
 {
 	FActorSpawnParameters Params;
@@ -1963,7 +1959,6 @@ void AZLSocialSandboxGameMode::SpawnNpc(const FZLSocialSandboxNpcPreset& Preset)
 	if (AZLSocialSandboxNpc* Npc = GetWorld()->SpawnActor<AZLSocialSandboxNpc>(SandboxNpcClass != nullptr ? SandboxNpcClass.Get() : AZLSocialSandboxNpc::StaticClass(), Preset.SpawnTransform))
 	{
 		Npc->InitializeSandboxNpc(Preset.Profile, Preset.SpawnTransform, Preset.InitialHealth);
-		SandboxNpcs.Add(Npc);
-		if (Preset.Profile.StableId != TEXT("npc_guard")) { MultiNpcDecision.RegisterNpc(Preset.Profile.StableId); }
+		if (!RegisterSandboxNpc(Npc)) { Npc->Destroy(); }
 	}
 }

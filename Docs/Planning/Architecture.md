@@ -92,7 +92,7 @@ Milestone 7 在同一依赖方向上增加可操作社会沙盒：
 
 - `ZL/Source/ZL/SocialSandbox` 按职责分为 `Actors`（玩家、NPC、控制器）、`Decision`（个人 Context、调度与多 NPC 轮转）、`Domain`（Profile、运动、冲突与战斗纯规则）、`UI`（交互、气泡、名称）、`World`（GameMode 世界边界）和 `Tests`（自动化）；目录划分不改变模块依赖方向。
 - `ZLASocialRuntime` 公开彼此分离的有界 Speech Event、Action Event、Observer、Observation 与 Observation Buffer，以及说话模式、目标判断、行为白名单解析和输入边界校验。纯规则层不保存 Actor、Widget、HTTP 或输入正文到 Observation。
-- `ZL` 游戏模块中的 `AZLSocialSandboxGameMode` 是场景权威入口：默认生成既有 1 个玩家和 4 个 NPC；带受控 `-ZLSandboxPreset=<name>` 参数时，从本地版本化 JSON 的有效快照生成 1 个玩家与 2 至 4 个 NPC。它构造 Speech/Action Event 并逐 NPC 调用定向视觉和分级听觉规则；每个 NPC 只保存自己的容量 32 Observation Buffer。
+- `ZL` 游戏模块中的 `AZLSocialSandboxGameMode` 是场景权威入口：正常场景只接收关卡中 `NPC Spawner` 生成并注册的 NPC，不再投放固定角色或固定坐标；带受控 `-ZLSandboxPreset=<name>` 参数时，仍可从本地版本化 JSON 的有效快照生成测试 NPC。它构造 Speech/Action Event 并逐 NPC 调用定向视觉和分级听觉规则；每个 NPC 只保存自己的容量 32 Observation Buffer。
 - `FZLSocialSandboxPresetCodec` 只从项目 Config 下的受控预设目录读取 JSON，校验 Schema、字段白名单、稳定 ID、角色数和数值范围，并仅向 Saved 导出公开字段；失败不替换当前有效场景。
 - `IZLSocialSandboxCombatPresentation` 是可选的 Blueprint 攻击表现接口；仅在 UE 已接受攻击后通知角色播放其攻击蒙太奇，未绑定资源时无副作用。
 - `AZLSocialSandboxPawn` 与 `AZLSocialSandboxNpc` 都继承 `ACharacter` 并使用其内置 `Mesh` 承载用户设置的骨骼网格和动画蓝图；NPC 使用内置 Capsule/CharacterMovement，且在放置或生成时自动由标准 `AAIController` Possess。两者不再创建 `BodyMesh` 或 `FacingArrow` 占位组件。GameMode 仅通过可配置的玩家/NPC 子类生成角色，不把资源路径写入预设或协议。

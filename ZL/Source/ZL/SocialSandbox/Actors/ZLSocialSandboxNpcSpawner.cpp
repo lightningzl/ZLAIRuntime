@@ -2,6 +2,7 @@
 
 #include "SocialSandbox/Actors/ZLSocialSandboxNpc.h"
 #include "SocialSandbox/Domain/ZLSocialSandboxPersonaAdapter.h"
+#include "SocialSandbox/World/ZLSocialSandboxGameMode.h"
 #include "ZLSocialPersona.h"
 #include "ZLSocialPersonaSettings.h"
 
@@ -45,6 +46,12 @@ bool AZLSocialSandboxNpcSpawner::SpawnNpc()
 	}
 	Npc->InitializeSandboxNpc(Profile, GetActorTransform(), InitialHealth);
 	Npc->FinishSpawning(GetActorTransform());
+	if (AZLSocialSandboxGameMode* GameMode = GetWorld()->GetAuthGameMode<AZLSocialSandboxGameMode>(); !GameMode || !GameMode->RegisterSandboxNpc(Npc))
+	{
+		Npc->Destroy();
+		LastSpawnResult = TEXT("NPC spawned but could not be registered with Social Sandbox GameMode");
+		return false;
+	}
 	LastSpawnResult = TEXT("NPC spawn succeeded");
 	return true;
 }

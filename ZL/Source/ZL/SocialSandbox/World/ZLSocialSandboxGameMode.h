@@ -64,6 +64,8 @@ public:
 	void SpreadWorldRumor(FName ReporterId, FName ReceiverId);
 
 	const TArray<TObjectPtr<AZLSocialSandboxNpc>>& GetSandboxNpcs() const { return SandboxNpcs; }
+	/** Registers a valid NPC that was placed through a scene spawner. Duplicate stable IDs are rejected. */
+	bool RegisterSandboxNpc(AZLSocialSandboxNpc* Npc);
 	AZLSocialSandboxNpc* FindSandboxNpc(FName StableId) const;
 	FText SubmitSpeech(FName SpeechMode, FName TargetId, const FString& Text);
 	FText SubmitAction(FName TargetId, const FString& Text);
@@ -79,7 +81,6 @@ protected:
 
 private:
 	void SpawnEnvironment();
-	void SpawnNpc(FName StableId, const FVector& Location, const FRotator& Rotation);
 	void SpawnNpc(const FZLSocialSandboxNpcPreset& Preset);
 	bool TryApplyNamedPreset();
 	void DispatchActionObservation(EZLSocialActionType Action, EZLSocialActionPhase Phase, FName TargetId);
