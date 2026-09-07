@@ -1,61 +1,54 @@
-# Milestone 14：个人世界认知与动态背景反馈
+# Milestone 15：配置驱动场景与测试隔离
 
 ## 状态
 
-- 状态：`已完成`
-- 归档前置：[Milestone13.md](../Milestones/Milestone13.md)
-- 协议状态：未确认；实施前若需扩展 Decision Context 或 UE/Python 协议，必须先获得用户明确确认。
+- 状态：`进行中`
+- 归档前置：[Milestone14.md](../Milestones/Milestone14.md)
+- 协议状态：不修改 UE/Python 协议或 Decision Context。
 
 ## 目标
 
-在 M13 的静态 Persona 基础上，建立世界真实状态与每个 NPC 已感知知识/信念之间的明确分层。世界变化只能通过 UE 权威事件、个人感知、确认报告或有界传播进入某一 NPC 的认知；LLM 只能读取当前 NPC 有界的世界认知与个人立场。
+移除 Social Sandbox 运行时场景中的默认 Actor、固定 NPC 与测试编排；场景只使用已放置 Actor、Spawner、Persona 与 World Context 配置。Smoke、固定测试角色、命令行预设和断言仅保留在测试代码或测试资源中。
 
 ## 玩家可操作成果
 
-- 在场景中触发或切换受控世界事件，例如警戒、宵禁、灾害或势力冲突，并继续与不同 NPC 互动。
-- 通过场景级 World Context 配置选择受控世界规则、势力背景和初始公开常识。
+- 在地图中放置 PlayerStart、场景网格/灯光、NPC Spawner 和可选 World Context 配置后进入场景。
+- 在不依赖默认 Guard/Merchant/Rival/Civilian 的前提下，对已放置 NPC 进行互动。
 
 ## 屏幕可见成果
 
-- 守卫、商人和平民对同一世界变化产生不同且连续的反馈。
-- 已确认者、传闻接收者与未获知者的反馈和调试信息可区分；未知 NPC 不会假装知道，传闻保持不确定性。
+- 场景中只出现关卡实际放置的 Actor；没有 Spawner 时显示明确配置提示，不隐式补建对象。
+- Inspector 和互动目标只列出已由 Spawner 注册的 NPC。
 
 ## 本阶段范围
 
-### 世界上下文与受控配置
+### 场景运行时边界
 
-- 定义场景级 World Context Asset/JSON 导入导出和插件 Setting，用于世界规则、势力背景与初始公开常识。
-- 配置只表达静态公开起点，不能将动态事件直接写成所有 NPC 已知事实。
+- GameMode 不得 Spawn 地板、灯光、PlayerStart、默认 NPC 或固定坐标。
+- NPC 只能经关卡中的 Spawner 生成并注册；普通路径不读取命令行预设或测试参数。
+- 行为调度不得依赖固定 NPC ID；测试专用身份只能存在于测试 Fixture。
 
-### 个人知识与信念
+### 测试隔离
 
-- 世界事实经感知、报告确认或受限传播才可进入单个 NPC 的 Knowledge/Belief。
-- 知识项须记录来源、可信度和时效，并支持有界遗忘、反驳和可检查的更新原因。
-- 个人知识严格隔离，不得通过全局状态或 Decision Context 泄露其他 NPC 的私有认知。
-
-### Decision 接入门槛
-
-- 在 UE 内先建立个人认知与调试可见闭环。
-- 只有在用户确认所需协议变化后，才可将有界世界认知加入 UE/Python Decision Context。
+- 移除 GameMode 中的 Smoke 定时器、命令行解析、退出码和固定角色断言。
+- 测试 Fixture 在测试 World 或测试资源中创建预设角色，执行断言并清理。
 
 ## 明确不做
 
-- 不实现全局全知、自动事实抽取、无限谣言链、知识图谱、长期 SaveGame 或模型自行确认世界事件。
-- 不让 World Context 直接覆盖运行中 NPC 的个人记忆、关系、攻击结果或已确认的世界事实。
-- 未经协议确认，不修改 `/v1/decision`、`/v2/decision` 或其他 UE/Python 通信字段。
+- 不改变 UE/Python 协议、Provider、Prompt 或 Decision Context 字段。
+- 不将测试 Actor、固定 ID 或命令行 Smoke 开关保留在普通运行时场景。
 
 ## 验收标准
 
 | ID | 标准 |
 | --- | --- |
-| `M14-A01` | World Context 的静态公开配置可校验、导入导出并安全应用；无效配置不改变当前场景配置。 |
-| `M14-A02` | 同一世界事件仅通过个人感知、确认报告或有界传播进入对应 NPC 的知识；未获知 NPC 不产生该事实。 |
-| `M14-A03` | 知识/信念保留来源、可信度、时效、反驳和遗忘边界，且可在调试视图检查。 |
-| `M14-A04` | 确认者、传闻接收者与未获知者对同一事件表现出可见差异，不泄露其他 NPC 私有认知。 |
-| `M14-A05` | 若经用户确认接入 Decision Context，UE/Python 协议、Stub/Kimi、离线降级和现有社会沙盒回归保持通过。 |
+| `M15-A01` | 普通 GameMode 不创建默认环境或固定 NPC，且场景无 Spawner 时不隐式生成角色。 |
+| `M15-A02` | 关卡 Spawner 生成的 NPC 均注册到互动、Inspector 和通用调度链路。 |
+| `M15-A03` | GameMode 不包含命令行 Smoke、退出码或测试角色固定断言；对应测试在 `SocialSandbox/Tests` 中。 |
+| `M15-A04` | 场景放置指南明确列出 PlayerStart、网格/灯光、Spawner 和 World Context 的职责；UE Target 编译通过。 |
 
 ## 完成定义
 
-1. TaskBoard 的 M14 工作包全部完成，且 `M14-A01` 至 `M14-A05` 有可复查证据。
-2. 世界真实状态、个人 Knowledge/Belief 和 LLM 可见 Context 形成受控分层，不出现全局知识泄露。
-3. 玩家可操作触发世界变化，并可在场景与调试视图观察到个人认知差异。
+1. TaskBoard 的 M15 工作包全部完成，且 `M15-A01` 至 `M15-A04` 有可复查证据。
+2. 普通地图不含隐式场景或角色投放，且所有 NPC 由内容配置驱动。
+3. 测试代码与普通运行时边界清晰，不依赖生产 GameMode 的测试分支。

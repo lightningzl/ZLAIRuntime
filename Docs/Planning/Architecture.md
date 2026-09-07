@@ -90,9 +90,9 @@ Python AI Service
 
 Milestone 7 在同一依赖方向上增加可操作社会沙盒：
 
-- `ZL/Source/ZL/SocialSandbox` 按职责分为 `Actors`（玩家、NPC、控制器）、`Decision`（个人 Context、调度与多 NPC 轮转）、`Domain`（Profile、运动、冲突与战斗纯规则）、`UI`（交互、气泡、名称）、`World`（GameMode 世界边界）和 `Tests`（自动化）；目录划分不改变模块依赖方向。
+- `ZL/Source/ZL/SocialSandbox` 按职责分为 `Actors`（玩家、NPC、控制器）、`Decision`（个人 Context、调度与多 NPC 轮转）、`Domain`（Profile、运动、冲突与战斗纯规则）、`Systems`（交互、决策、NPC 注册与世界知识协作）、`UI`（交互、气泡、名称）、`World`（GameMode 世界边界）和 `Tests`（自动化）；目录划分不改变模块依赖方向。
 - `ZLASocialRuntime` 公开彼此分离的有界 Speech Event、Action Event、Observer、Observation 与 Observation Buffer，以及说话模式、目标判断、行为白名单解析和输入边界校验。纯规则层不保存 Actor、Widget、HTTP 或输入正文到 Observation。
-- `ZL` 游戏模块中的 `AZLSocialSandboxGameMode` 是场景权威入口：正常场景只接收关卡中 `NPC Spawner` 生成并注册的 NPC，不再投放固定角色或固定坐标；带受控 `-ZLSandboxPreset=<name>` 参数时，仍可从本地版本化 JSON 的有效快照生成测试 NPC。它构造 Speech/Action Event 并逐 NPC 调用定向视觉和分级听觉规则；每个 NPC 只保存自己的容量 32 Observation Buffer。
+- `AZLSocialSandboxGameMode` 是场景生命周期与公开入口协调者：它只接收关卡中 `NPC Spawner` 生成并注册的 NPC，不投放固定角色、固定坐标或命令行预设。`UZLSocialSandboxInteractionComponent` 负责 Speech/Action/Attack 的校验、执行与个人 Observation 分发；`UZLSocialSandboxDecisionComponent` 负责调度、决策、冲突和执行状态；`UZLSocialSandboxNpcRegistrySubsystem` 与 `UZLSocialSandboxWorldKnowledgeSubsystem` 分别保存场景 NPC 索引与逐 NPC 世界知识。每个 NPC 只保存自己的容量 32 Observation Buffer。
 - `FZLSocialSandboxPresetCodec` 只从项目 Config 下的受控预设目录读取 JSON，校验 Schema、字段白名单、稳定 ID、角色数和数值范围，并仅向 Saved 导出公开字段；失败不替换当前有效场景。
 - `IZLSocialSandboxCombatPresentation` 是可选的 Blueprint 攻击表现接口；仅在 UE 已接受攻击后通知角色播放其攻击蒙太奇，未绑定资源时无副作用。
 - `AZLSocialSandboxPawn` 与 `AZLSocialSandboxNpc` 都继承 `ACharacter` 并使用其内置 `Mesh` 承载用户设置的骨骼网格和动画蓝图；NPC 使用内置 Capsule/CharacterMovement，且在放置或生成时自动由标准 `AAIController` Possess。两者不再创建 `BodyMesh` 或 `FacingArrow` 占位组件。GameMode 仅通过可配置的玩家/NPC 子类生成角色，不把资源路径写入预设或协议。
@@ -100,7 +100,7 @@ Milestone 7 在同一依赖方向上增加可操作社会沙盒：
 - 普通、连招和蓄力攻击复用 `CombatAttacker` AnimNotify：攻击输入由 Pawn 直接启动蒙太奇，不读取 UI 选中目标，也不经 GameMode 的社会行为入口；Pawn 只在 Notify 帧请求命中，GameMode 从 Notify 指定骨骼（无骨骼时角色中心）向前执行球形 Sweep，实际命中 NPC 才结算生命。攻击不产生社会行为标签或公开 Action Observation，但命中目标会收到私有 `Hit` Observation 并重新触发自己的 Decision，从而生成正确的 Agent 回复。连招 Section 由有序数组配置，并使用有界输入缓存窗口。NPC 实现 `ICombatDamageable`：非致命命中沿用 `ACombatEnemy::ApplyDamage` 的击退边界，失能后由 `HandleDeath` 切换 ragdoll，不播放受击蒙太奇。NPC 的专用 AIController 提供可配置 StateTree 组件，不改变现有 Tool 执行语义。
 - `UZLSocialSandboxWidget` 提供说话/行为模式、Whisper/Talk/Shout/InEar、目标、文本提交、拒绝状态、右侧按钮展开的最多 12 条玩家/NPC 行动对话记录和逐 NPC Inspector；`UZLSocialBubbleWidget` 只显化已接受说话、动作状态和明确标记的 `RulePlaceholder` 本地反馈。
 - 默认沙盒参数为 120 度水平视野、1500 cm 视觉距离以及 Whisper 200、Talk 800、Shout 2500、InEar 150 cm；这些值保存在场景 Observation Settings，可由场景配置覆盖。
-- 专用地图 `/Game/SocialSandbox/Lvl_SocialSandbox` 使用 `AZLSocialSandboxGameMode`；`ResetSocialSandbox` 恢复确定初始状态，`RunSocialSandboxDemo` 经正常 UI/GameMode 提交路径执行一次不依赖 Python 的受控 Talk。
+- 专用地图 `/Game/SocialSandbox/Lvl_SocialSandbox` 使用 `AZLSocialSandboxGameMode`；地图负责放置 PlayerStart、环境、NPC Spawner 与可选 World Context。`ResetSocialSandbox` 只重置已注册 NPC 和组件/子系统状态，不创建测试场景或角色。
 - 沙盒不会向现有 Dialogue 请求注入 Observation、Relationship 或 Social Memory，不新增 HTTP、Decision Endpoint、ToolCall 或 Python 行为。
 
 Milestone 8 当前已增加协议确认后的客户端与个人上下文基础：
@@ -110,7 +110,7 @@ Milestone 8 当前已增加协议确认后的客户端与个人上下文基础�
 - `UZLAIServiceSubsystem::SendDecisionRequest` 调用独立 `/v1/decision`，在成功前校验关联字段和本地 TTL；当前世界状态版本的最终比较仍由 Gameplay 层负责。
 - `ZLASocialRuntime` 的 `FZLSocialToolRegistry` 只注册 FaceTarget、MoveToward、MoveAway、Stop，按 Capability、目标、状态版本、有效期、距离、导航、可执行状态、冷却、速率和 Call ID 幂等顺序执行无副作用校验；已接受 Call ID 缓存和注册表容量均有硬上限。
 - Registry 不访问 Actor、World、HTTP 或 Provider，也不执行移动；`ZL` Gameplay Handler 必须提供当前权威快照，并且只在校验接受后改变世界。
-- `AZLSocialSandboxGameMode` 只对玩家明确指向 `npc_guard` 且 Guard 实际感知到的 Speech/已完成 Action 发起 Decision；固定最多一个请求在途，重置通过 Generation 使旧回调失效。
+- `UZLSocialSandboxDecisionComponent` 只对实际感知到 Speech、已完成 Action、攻击或距离带变化的注册 NPC 发起 Decision；全局并发、每 NPC 队列与重置代次均由组件管理，不依赖固定 NPC ID。
 - Response Speech 先作为独立合法表达保存；可选 Tool 使用响应状态版本和收到回复时的当前 Guard/玩家位置、目标、平面可达性、执行状态、10 秒执行窗口再次校验。接受后由 `AZLSocialSandboxNpc` 执行受碰撞约束的真实 Transform 变化并产生 Started/Completed Action Observation；拒绝只更新公开 Reason Code。
 - Guard Authority State Version 在重置、动作开始/停止/完成时推进。服务离线、超时、解析或 Provider 失败统一进入不执行 Tool 的可见本地降级；Inspector 只显示有界关联元数据、Provider、公开 Intent、Tool/结果和耗时，不显示 Prompt、输入全文、凭据或原始 Provider 异常。
 
@@ -124,7 +124,7 @@ Milestone 9 当前已增加连续判断基础：
 Milestone 9 当前已增加最小冲突 Gameplay 基础：
 
 - `ZLASocialRuntime` 的受控玩家行为解析增加 Attack 别名；该 Action 只代表 UE 已接受的玩家行为，不是 Decision Tool，也不能由 Python 建议或执行。
-- `ZL` 保留纯数据攻击校验类型供独立规则测试；当前玩家攻击路径不调用它。GameMode 在攻击开始和 Notify 命中时仅检查参与对象仍可用，再产生 Attack Observation 并调用 NPC 权威伤害入口。
+- `ZL` 保留纯数据攻击校验类型供独立规则测试；交互组件在攻击 Notify 命中时检查参与对象、结算权威伤害，并将实际命中作为目标 NPC 的私有 `Hit` Observation。
 - `AZLSocialSandboxNpc` 保存有界生命、防卫、0.35 秒受击无敌窗口与失能状态；命中、减伤、状态版本、停止当前动作和生命显示均在 UE 内完成。拒绝攻击和拒绝伤害不改变生命或状态版本。
 - 攻击、受击和失能通过动作气泡、命中气泡、名称生命标识和 Inspector 显化。
 - 玩家攻击不改变 Pawn 或 PlayerController 当前旋转；镜头朝向只由玩家输入和显式“面向目标”行为改变。
@@ -132,23 +132,23 @@ Milestone 9 当前已增加最小冲突 Gameplay 基础：
 Milestone 9 当前还增加公开冲突立场与本地安全规则：
 
 - `ZLSocialSandboxConflictState` 是纯 UE 状态机，使用 `Calm`、`Alert`、`Escalated`、`Recovering` 四个有界公开等级；只接收已感知攻击、距离变化、停止、已接受 Decision Intent 或本地失败，绝不读取模型推理或直接修改伤害。
-- `ZLSocialSandboxGameMode` 是唯一把该立场映射为 Guard 防卫、Authority State Version、Inspector 和本地失败反馈的边界。请求失败会停止当前计划、进入防卫并显示 `LocalFallback`；其余 Tool 仍经 Registry 校验。
+- `UZLSocialSandboxDecisionComponent` 是将该立场映射为注册 NPC 防卫、Authority State Version、Inspector 与本地失败反馈的边界。请求失败会停止当前计划、进入防卫并显示 `LocalFallback`；其余 Tool 仍经 Registry 校验。
 
 当前最终场景配置基础已将 4 个占位 NPC 固定为 Guard、Merchant、Rival 和 Civilian：
 
 - `FZLSocialSandboxNpcProfile` 为每个稳定 ID 提供独立身份、人物、表达风格、目标、初始 Relationship/Instant State 和可见颜色；Rival 显式包含既有矛盾，其他 NPC 使用不同熟悉度和风险倾向。
 - `AZLSocialSandboxNpc` 持有自己的只读 Profile；Decision Context Builder 从选定 NPC Profile 构造人物、关系和状态，不再把 Guard 人物常量复用于其他 NPC。
 - Profile 只属于 UE 场景配置，不进入协议扩展、不由 Python 推导，也不授权跨 NPC 共享 Observation。
-- `FZLSocialSandboxMultiNpcDecision` 为非 Guard NPC 维护逐 NPC 单在途/最新 Pending、冷却、自动重规划上限和稳定轮转；GameMode 将它与原 Guard Scheduler 组合为全局最多 2 个请求在途。
+- `FZLSocialSandboxMultiNpcDecision` 为注册 NPC 维护逐 NPC 单在途/最新 Pending、冷却、自动重规划上限和稳定轮转；`UZLSocialSandboxDecisionComponent` 以全局最多 2 个请求在途协调它。
 - 新 Speech 和已完成 Action 只在对应 NPC 实际听清或看见后进入它自己的 Scheduler；回调同时捕获 NPC、请求代次和本地发送时间，重置后的旧回调不能改变新场景。
 - Guard 与其他 NPC 的请求仍分别调用单 NPC `/v1/decision`，多 NPC 队列、并发和调试状态不会进入 Python 或协议字段。
 - Speech 只有在该 NPC `bHeardClearly` 时才进入它的 Decision 队列；已完成玩家动作和其他 NPC 动作只有在该观察者 `bSaw` 时才触发旁观判断。未通过个人感知的 Event 仍可保留过滤结果用于 Inspector，但不会进入 Planner。
 - 每个 NPC 的公开 Speech/已执行 Action History 和 `Calm`/`Alert`/`Escalated`/`Recovering` 冲突状态均按稳定 ID 隔离；攻击、Planner Intent 或本地失败只改变对应 NPC。
 - Python Stub 现在按当前请求中的 Guard、Merchant、Rival、Civilian Profile 和 Relationship 选择稳定的差异化表达；Kimi 固定约束要求只扮演当前 NPC，并禁止从一个 NPC 请求推断其他 NPC 的感知或决定。
 - 非 Guard NPC 现在复用同一 `FZLSocialToolRegistry` 硬校验和各自的执行速率窗口；合法 Face/MoveToward/MoveAway/Stop 只改变响应关联 NPC，开始/完成结果写入其个人公开历史并由其他 NPC 重新感知。
-- GameMode 为每个非 Guard NPC 独立跟踪 250/800 cm 距离带；只有跨带且该 NPC 实际看见玩家移动时才推进状态版本并重新判断，不在 Tick 中逐帧请求。
+- 交互组件为每个注册 NPC 独立跟踪 250/800 cm 距离带；只有跨带且该 NPC 实际看见玩家移动时才推进状态版本并重新判断，不在 Tick 中逐帧请求。
 - 个人 Inspector 对任意 NPC 显示最近感知、生命、防卫/失能、冲突等级、调度、Provider、Intent、Tool 结果和延迟；没有该 NPC Decision 时继续标明规则占位来源。
-- `-ZLSandboxMultiNpcSmoke` 在默认地图经无目标 Shout 和正常感知/调度入口验证 4 个 Stub Speech 与全局并发上限；既有离线烟测继续验证明确目标即使只满足 Direct 听见也能进入有界本地降级。
+- Smoke 与固定角色断言只位于 `SocialSandbox/Tests` 的 Fixture 或测试资源；普通地图与 GameMode 不解析 Smoke 命令行参数，也不创建测试角色。
 
 ### Python AI Service
 
@@ -197,7 +197,7 @@ FastAPI Route -> Dialogue Service
 
 ### Decision v2
 
-Milestone 12 已实现独立 `/v2/decision`。UE 为非 Guard NPC 提供容量 12 的个人 `social_situation` 与本次有限 `available_capabilities`；Python Kimi/Stub Planner 返回开放目标、公开理由、Speech 与有界步骤，不能创建能力、目标或世界事实。UE Client 执行关联/TTL/协议解析，GameMode 复核能力、目标、状态和 Handler，并只回流实际动作、交易立场和已确认报告；具体字段以 [Protocol.md](../Reference/Protocol.md) 为准。v1 保持兼容。
+Milestone 12 已实现独立 `/v2/decision`。UE 为注册 NPC 提供容量 12 的个人 `social_situation` 与本次有限 `available_capabilities`；Python Kimi/Stub Planner 返回开放目标、公开理由、Speech 与有界步骤，不能创建能力、目标或世界事实。UE Client 执行关联/TTL/协议解析，决策组件复核能力、目标、状态和 Handler，并只回流实际动作、交易立场和已确认报告；具体字段以 [Protocol.md](../Reference/Protocol.md) 为准。v1 保持兼容。
 
 - **Memory Retrieval 扩展**：向量检索、摘要、事实抽取和相关性评分必须继续位于 Memory Service 边界内，不得扩散到 Route、UE Client 或 Provider。
 - **Tool Planner**：生成结构化 Tool Call。

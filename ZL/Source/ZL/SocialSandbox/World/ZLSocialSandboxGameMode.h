@@ -4,40 +4,15 @@
 #include "GameFramework/GameModeBase.h"
 #include "ZLAIServiceTypes.h"
 #include "ZLSocialObservation.h"
-#include "ZLSocialKnowledge.h"
-#include "ZLSocialToolRegistry.h"
-#include "SocialSandbox/Decision/ZLSocialSandboxDecisionContext.h"
-#include "SocialSandbox/Decision/ZLSocialSandboxDecisionScheduler.h"
-#include "SocialSandbox/Decision/ZLSocialSandboxMultiNpcDecision.h"
-#include "SocialSandbox/Domain/ZLSocialSandboxConflictState.h"
-#include "SocialSandbox/Domain/ZLSocialSandboxPreset.h"
+#include "SocialSandbox/Decision/ZLSocialSandboxDecisionState.h"
 #include "ZLSocialSandboxGameMode.generated.h"
 
 class AZLSocialSandboxNpc;
 class AZLSocialSandboxPawn;
+class UZLSocialSandboxDecisionComponent;
+class UZLSocialSandboxInteractionComponent;
+class UZLSocialSandboxWorldKnowledgeSubsystem;
 class AController;
-struct FZLSocialSandboxDamageResult;
-struct FZLSocialSandboxNpcPreset;
-struct FZLSocialSandboxPreset;
-
-struct FZLSocialSandboxDecisionDebug
-{
-	FString RequestId;
-	FString Provider;
-	FString Intent;
-	FString ToolName;
-	FName ToolResult;
-	int64 StateVersion = 0;
-	int32 LatencyMs = 0;
-	bool bSpeechAccepted = false;
-	bool bInFlight = false;
-	bool bPending = false;
-	FName TriggerReason;
-	int32 CoalescedTriggers = 0;
-	int32 AutomaticReplans = 0;
-	FString ConflictLevel;
-	bool bLocalFallback = false;
-};
 
 UCLASS()
 class ZL_API AZLSocialSandboxGameMode final : public AGameModeBase
@@ -51,27 +26,29 @@ public:
 	void ResetSocialSandbox();
 
 	UFUNCTION(Exec)
-	void RunSocialSandboxDemo();
-
-	UFUNCTION(Exec)
-	void RunMultiNpcSandboxDemo();
-
-	UFUNCTION(Exec)
 	void TriggerWorldEvent(FName EventType);
 	UFUNCTION(Exec)
 	void ReportWorldEvent(FName ReporterId, FName ReceiverId);
 	UFUNCTION(Exec)
 	void SpreadWorldRumor(FName ReporterId, FName ReceiverId);
 
-	const TArray<TObjectPtr<AZLSocialSandboxNpc>>& GetSandboxNpcs() const { return SandboxNpcs; }
+	const TArray<TObjectPtr<AZLSocialSandboxNpc>>& GetSandboxNpcs() const;
 	/** Registers a valid NPC that was placed through a scene spawner. Duplicate stable IDs are rejected. */
 	bool RegisterSandboxNpc(AZLSocialSandboxNpc* Npc);
 	AZLSocialSandboxNpc* FindSandboxNpc(FName StableId) const;
+	/** 返回只读感知阈值，供场景协作系统执行同一套观察规则。 */
+	const FZLSocialObservationSettings& GetObservationSettings() const;
+	/** 返回决策协作组件；其内部状态仍由组件自行维护。 */
+	UZLSocialSandboxDecisionComponent* GetDecisionComponent() const;
+	/** 返回交互协作组件，供决策结果派发可见行为观察。 */
+	UZLSocialSandboxInteractionComponent* GetInteractionComponent() const;
 	FText SubmitSpeech(FName SpeechMode, FName TargetId, const FString& Text);
 	FText SubmitAction(FName TargetId, const FString& Text);
 	void ResolvePlayerAttackFromAnimNotify(AZLSocialSandboxPawn* Player, FName DamageSourceBone);
-	const FZLSocialObservationSettings& GetObservationSettings() const { return ObservationSettings; }
-	const FZLSocialSandboxDecisionDebug& GetDecisionDebug() const { return DecisionDebug; }
+	/** 请求玩家控制器刷新个人观察 Inspector。 */
+	void RefreshInspector() const;
+	/** 向场景互动记录写入一条可见反馈。 */
+	void AppendInteractionRecord(const FText& Text, const FLinearColor& Color) const;
 	FText BuildInspectorText(FName NpcId) const;
 
 protected:
@@ -80,82 +57,14 @@ protected:
 	virtual UClass* GetDefaultPawnClassForController_Implementation(AController* InController) override;
 
 private:
-	void SpawnEnvironment();
-	void SpawnNpc(const FZLSocialSandboxNpcPreset& Preset);
-	bool TryApplyNamedPreset();
-	void DispatchActionObservation(EZLSocialActionType Action, EZLSocialActionPhase Phase, FName TargetId);
-	FZLSocialObservation DispatchNpcActionObservation(AZLSocialSandboxNpc* Actor, EZLSocialActionType Action, EZLSocialActionPhase Phase, FName TargetId);
-	void QueueGuardDecision(AZLSocialSandboxNpc* Guard, const FZLSocialObservation& Trigger, const FString& SpeechContent, EZLSocialSandboxDecisionTriggerReason Reason, bool bAdvanceStateVersion = false);
-	void QueueNpcDecision(AZLSocialSandboxNpc* Npc, const FZLSocialObservation& Trigger, const FString& SpeechContent, EZLSocialSandboxDecisionTriggerReason Reason, bool bAdvanceStateVersion = false);
-	void TryDispatchNpcDecisions();
-	void RequestNpcDecision(AZLSocialSandboxNpc* Npc, const FZLSocialSandboxScheduledDecision& Scheduled);
-	void HandleNpcDecisionV2(AZLSocialSandboxNpc* Npc, const FZLDecisionV2Response& Response, const FZLDecisionV2Request& Request, double SentAtSeconds);
-	void HandleNpcDecision(AZLSocialSandboxNpc* Npc, const FZLDecisionResponse& Response, double SentAtSeconds);
-	void HandleNpcDecisionFailure(AZLSocialSandboxNpc* Npc, const FZLServiceError& Error, double SentAtSeconds);
-	void ExecuteNpcTool(AZLSocialSandboxNpc* Npc, const FZLDecisionResponse& Response);
-	void ExecuteNpcPlanStep(AZLSocialSandboxNpc* Npc, const FZLDecisionV2Response& Response, const FZLDecisionV2Capability& Capability, const FZLDecisionV2PlanStep& Step);
-	FText SubmitTradeAttempt(FName TargetId);
-	void RecordNpcSocialFact(FName NpcId, FString Kind, FName SubjectId, FName TargetId, FString Summary, float Salience);
-	void TryDispatchGuardDecision();
-	void SchedulePendingGuardDecision(double DelaySeconds);
-	void RequestGuardDecision(AZLSocialSandboxNpc* Guard, const FZLSocialObservation& Trigger, const FString& SpeechContent, EZLSocialSandboxDecisionTriggerReason Reason);
-	void HandleGuardDecision(AZLSocialSandboxNpc* Guard, const FZLDecisionResponse& Response, double SentAtSeconds);
-	void HandleGuardDecisionFailure(AZLSocialSandboxNpc* Guard, const FZLServiceError& Error, double SentAtSeconds);
-	void ExecuteGuardTool(AZLSocialSandboxNpc* Guard, const FZLDecisionResponse& Response);
-	void RecordGuardSpeechFact(const FString& Text, double OccurredAtSeconds);
-	void RecordGuardActionFact(EZLSocialActionType Action, EZLSocialActionPhase Phase, double OccurredAtSeconds);
-	void UpdateGuardDistanceBand();
-	void UpdateNpcDistanceBands();
-	void ApplyGuardConflict(AZLSocialSandboxNpc* Guard, EZLSocialSandboxConflictEvent Event, bool bLocalFallback = false);
-	void FinishDecisionSmokeTest();
-	void FinishMultiNpcSmokeTest();
-	void FinishPresetSmokeTest();
-	void RefreshInspector() const;
-	void AppendInteractionRecord(const FText& Text, const FLinearColor& Color) const;
-	void LearnWorldEvent(AZLSocialSandboxNpc* Npc, const FZLSocialWorldFact& Fact, EZLSocialKnowledgeSource Source, float Confidence, const FString& Reason);
-
-	UPROPERTY()
-	TArray<TObjectPtr<AZLSocialSandboxNpc>> SandboxNpcs;
 
 	UPROPERTY(EditDefaultsOnly, Category="Sandbox|Character Classes")
 	TSubclassOf<AZLSocialSandboxPawn> SandboxPlayerClass;
 
-	UPROPERTY(EditDefaultsOnly, Category="Sandbox|Character Classes")
-	TSubclassOf<AZLSocialSandboxNpc> SandboxNpcClass;
-
 	UPROPERTY(EditDefaultsOnly, Category="Sandbox|Perception")
 	FZLSocialObservationSettings ObservationSettings;
-	FZLSocialToolRegistry ToolRegistry;
-	FZLSocialSandboxDecisionScheduler GuardDecisionScheduler;
-	FZLSocialSandboxMultiNpcDecision MultiNpcDecision;
-	FZLSocialSandboxConflictState GuardConflictState;
-	FZLSocialKnowledgeStore KnowledgeStore;
-	FZLSocialWorldFact LastWorldFact;
-	FZLSocialSandboxDecisionDebug DecisionDebug;
-	TArray<FZLSocialSandboxPublicHistoryFact> GuardPublicHistory;
-	TArray<double> GuardExecutionTimes;
-	TMap<FName, FZLSocialSandboxDecisionDebug> NpcDecisionDebug;
-	TMap<FName, TArray<FZLSocialSandboxPublicHistoryFact>> NpcPublicHistory;
-	TMap<FName, TArray<FZLDecisionV2SocialFact>> NpcSocialFacts;
-	TMap<FName, FString> NpcTradeStances;
-	TMap<FName, TArray<double>> NpcExecutionTimes;
-	TMap<FName, FZLSocialSandboxConflictState> NpcConflictStates;
-	TMap<FName, int32> NpcDistanceBands;
-	TMap<FName, float> NpcLastDistances;
-	int32 GuardRequestGeneration = 0;
-	FTimerHandle DemoTimer;
-	FTimerHandle DecisionSmokeTimer;
-	FTimerHandle MultiNpcSmokeTimer;
-	FTimerHandle PresetSmokeTimer;
-	FTimerHandle GuardDecisionCooldownTimer;
-	FTimerHandle NpcDecisionCooldownTimer;
-	FString ExpectedSmokeProvider;
-	bool bExpectStaleSmoke = false;
-	bool bSmokeSawAcceptedTool = false;
-	FVector SmokeInitialGuardLocation = FVector::ZeroVector;
-	int64 SmokeInitialGuardVersion = 0;
-	int32 GuardDistanceBand = INDEX_NONE;
-	float LastGuardDistance = TNumericLimits<float>::Max();
-	FZLSocialSandboxPreset ActivePreset;
-	bool bHasActivePreset = false;
+	UPROPERTY(VisibleAnywhere, Category="Sandbox|Systems")
+	TObjectPtr<UZLSocialSandboxDecisionComponent> DecisionComponent;
+	UPROPERTY(VisibleAnywhere, Category="Sandbox|Systems")
+	TObjectPtr<UZLSocialSandboxInteractionComponent> InteractionComponent;
 };
